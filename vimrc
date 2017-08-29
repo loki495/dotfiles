@@ -179,7 +179,7 @@ let g:airline_symbols.linenr = ''
 
 
 map <C-t> :Ex<Cr>
-unmap! <C-e>
+" unmap! <C-e>
 imap <C-e> <Esc>e<Space>i
 " set runtimepath^=~/.vim/bundle/ctrlp.vim
 " let g:ctrlp_map = '<c-p>' 
