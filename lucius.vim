@@ -326,9 +326,9 @@ if s:style == "light"
     endif
 else
     if s:contrast_bg == "high"
-        hi Normal                       guibg=#121212
+        hi Normal                       guibg=#fd1d0d
     else
-        hi Normal                       guibg=#303030
+        hi Normal                       guibg=#000000
     endif
 endif
 
@@ -449,8 +449,8 @@ if s:style == "light"
         hi Todo         guifg=#875f00   guibg=#ffffaf
     endif
 else
-    hi CursorColumn                 guibg=#444444
-    hi CursorLine                   guibg=#444444
+    hi CursorColumn                 guibg=#000000
+    hi CursorLine                   guibg=#262626
     hi IncSearch    guifg=bg
     hi MatchParen   guifg=fg        guibg=#87af00
     hi Search       guifg=bg
@@ -569,7 +569,7 @@ if s:style == "light"
         hi VertSplit                    guibg=#808080
     endif
 else
-    hi ColorColumn                  guibg=#3a3a3a
+    hi ColorColumn                  guibg=#000000
     hi CursorLineNr guifg=#9e9e9e   guibg=#444444
     hi FoldColumn                   guibg=#4e4e4e
     hi Folded                       guibg=#4e4e4e

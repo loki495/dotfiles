@@ -2,11 +2,21 @@
 Plugin 'VundleVim/Vundle.vim'
 
 Plugin 'tpope/vim-vinegar'
-Plugin 'ctrlpvim/ctrlp.vim'
-Plugin 'scrooloose/nerdtree'
-Plugin 'stanangeloff/php.vim'
+" Plugin 'scrooloose/nerdtree'
+" Plugin 'stanangeloff/php.vim'
 Plugin 'arnaud-lb/vim-php-namespace'
 
+Plugin 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plugin 'junegunn/fzf.vim'
+
+Plugin 'mileszs/ack.vim'
+
+Plugin 'tpope/vim-dispatch'
+Plugin 'tpope/vim-projectionist'
+Plugin 'noahfrederick/vim-composer'
+Plugin 'noahfrederick/vim-laravel'
+
+Plugin 'alvan/vim-assistant'
 
 Plugin 'ryanoasis/vim-devicons'
 " Plugin 'yuttie/comfortable-motion.vim'
@@ -23,12 +33,15 @@ Plugin 'airblade/vim-gitgutter'
 Plugin 'powerline/powerline'
 Plugin 'mattn/emmet-vim'
 " Plugin 'scrooloose/syntastic', '3.0.0'
+
+Plugin 'w0rp/ale'
+
 Plugin 'joonty/vdebug'
 " Plugin 'StanAngeloff/php.vim'
-Plugin 'shawncplus/phpcomplete.vim'
+" Plugin 'shawncplus/phpcomplete.vim'
 " Plugin 'EvanDotPro/php_getset.vim'
 " Plugin 'mikehaertl/pdv-standalone'
-Plugin 'SirVer/ultisnips'
+" Plugin 'SirVer/ultisnips'
 " Plugin 'honza/vim-snippets'
 " Plugin 'shougo/neocomplete.vim'
 " Plugin 'mbbill/code_complete'
@@ -41,5 +54,7 @@ Plugin 'Shougo/vimproc', {
       \    },
       \ }
 " Plugin 'Shougo/unite.vim'
-Plugin 'm2mdas/phpcomplete-extended'
+" Plugin 'm2mdas/phpcomplete-extended'
+
+" Plugin 'maralla/completor.vim'
 
