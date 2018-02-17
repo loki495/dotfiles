@@ -193,7 +193,7 @@ let g:UltiSnipsJumpBackwardTrigger="<tab>"
 "/ NERDTree
 "/
 nmap <Leader>1 :NERDTreeToggle<cr>
-let NERDTreeHijackNetrw = 0
+let NERDTreeHijackNetrw = 1
 
 "/
 "/ Netrw
