@@ -245,6 +245,8 @@ nmap <C-L> <C-W><C-L>
 
 map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>
 
+vnoremap p "_dP                      “ dont overwrite register when pasting
+
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
 match ExtraWhitespace /\s\+$/
