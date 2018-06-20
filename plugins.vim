@@ -58,3 +58,7 @@ Plugin 'Shougo/vimproc', {
 
 " Plugin 'maralla/completor.vim'
 
+Plugin 'maksimr/vim-jsbeautify'
+
+Plugin 'christoomey/vim-tmux-navigator'
+

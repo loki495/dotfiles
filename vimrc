@@ -74,6 +74,7 @@ LuciusDark
 set winminheight=0              " windows can be 0 line high
 set hlsearch                    " highlight search terms
 set number                      " line numbers on
+set numberwidth=5
 set cursorline
 set colorcolumn=
 set scrolloff=3                 " minimum lines to keep above and below cursor
@@ -93,6 +94,8 @@ set wildmode=list:longest       " ,full " command <Tab> completion, list matches
 let g:airline_theme='murmur'
 let g:airline_powerline_fonts = 1
 let g:Powerline_symbols='unicode'
+
+let g:html_indent_tags = 'li\|p'
 
 if !exists('g:airline_symbols')
     let g:airline_symbols = {}
@@ -219,6 +222,16 @@ let Tlist_File_Fold_Auto_Close = 1
 
 " map <C-B> :FufBuffer<CR>
 cmap w!! w !sudo tee % >/dev/null
+
+" Switch between the last two files
+nnoremap <Leader><Leader> <C-^>
+
+" Get off my lawn
+nnoremap <Left> :echoe "Use h"<CR>
+nnoremap <Right> :echoe "Use l"<CR>
+nnoremap <Up> :echoe "Use k"<CR>
+nnoremap <Down> :echoe "Use j"<CR>
+
 
 nmap <Leader>b :bu <C-I>
 nmap <Leader><Tab> :bn<cr>
