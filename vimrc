@@ -1,4 +1,4 @@
-set nocompatible                        " Use ViMproved, don't emulate old vi
+" se
 
 
 let mapleader = ','
@@ -246,4 +246,7 @@ augroup autosourcing
     autocmd!
     autocmd BufWritePost .vimrc source %
 augroup END
+
+nnoremap <leader>m :silent make!\|redraw!\|vert cw<cr> 
+nnoremap <leader>r :silent make run\|redraw!<cr>
 
