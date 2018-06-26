@@ -74,8 +74,9 @@ LuciusDark
 set winminheight=0              " windows can be 0 line high
 set hlsearch                    " highlight search terms
 set number                      " line numbers on
+set numberwidth=5
 set cursorline
-set colorcolumn=81
+set colorcolumn=
 set scrolloff=3                 " minimum lines to keep above and below cursor
 set shortmess+=I                " Disable splash text
 set laststatus=2                " Always show status bar
@@ -93,6 +94,8 @@ set wildmode=list:longest       " ,full " command <Tab> completion, list matches
 let g:airline_theme='murmur'
 let g:airline_powerline_fonts = 1
 let g:Powerline_symbols='unicode'
+
+let g:html_indent_tags = 'li\|p'
 
 if !exists('g:airline_symbols')
     let g:airline_symbols = {}
@@ -121,6 +124,23 @@ let g:airline_symbols.branch = ''
 let g:airline_symbols.readonly = ''
 let g:airline_symbols.linenr = ''
 
+" Set this. Airline will handle the rest.
+let g:airline#extensions#ale#enabled = 1
+
+"/
+"/ Ag
+"/
+let g:ackprg = 'ag --nogroup --nocolor --column'
+
+"/
+"/ ALE - Lint engine
+"/
+let g:ale_sign_column_always = 1
+let g:ale_completion_enabled = 1
+
+nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
+nmap <silent> <Leader>] <Plug>(ale_next_wrap)
+
 "/
 "/ PhpInsertUse
 "/
@@ -144,18 +164,25 @@ let g:phpcomplete_index_composer_command = 'composer'
 "/
 "/ CtlP
 "/
-let g:ctrlp_map = '<c-p>' 
-let g:ctrlp_cmd = 'CtrlPBuffer'
-let g:ctrlp_open_new_file = 't'
-let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-  \ 'vendor':  '\vendor$',
-  \ 'file': '\v\.(exe|so|dll)$',
-  \ }
-let g:ctrlp_match_window = 'top,order:ttb,min:1,max:30,results:30'
-let g:ctrlp_user_command = 'find . -type f ! -path *.git* ! -path *.jpg ! -path *.gif ! -path *.png ! -path *.bmp'
-map <C-p> :CtrlP<Cr>
-map <C-t> :CtrlPBufTag<Cr>
+" let g:ctrlp_map = '<c-p>' 
+" let g:ctrlp_cmd = 'CtrlPBuffer'
+" let g:ctrlp_open_new_file = 't'
+" let g:ctrlp_custom_ignore = {
+"   \ 'dir':  '\v[\/]\.(git|hg|svn)$',
+"   \ 'vendor':  '\vendor$',
+"   \ 'file': '\v\.(exe|so|dll)$',
+"   \ }
+" let g:ctrlp_match_window = 'top,order:ttb,min:1,max:30,results:30'
+" let g:ctrlp_user_command = 'find . -type f ! -path *.git* ! -path *.jpg ! -path *.gif ! -path *.png ! -path *.bmp'
+" map <C-p> :CtrlP<Cr>
+" map <C-t> :CtrlPBufTag<Cr>
+
+"/
+"/ FZF
+"/
+nmap ; :Buffers<CR>
+nmap <Leader>t :Files<CR>
+nmap <Leader>r :Tags<CR>
 
 
 
@@ -181,7 +208,7 @@ let g:UltiSnipsJumpBackwardTrigger="<tab>"
 "/ NERDTree
 "/
 nmap <Leader>1 :NERDTreeToggle<cr>
-let NERDTreeHijackNetrw = 0
+let NERDTreeHijackNetrw = 1
 
 "/
 "/ Netrw
@@ -208,12 +235,26 @@ let Tlist_File_Fold_Auto_Close = 1
 " map <C-B> :FufBuffer<CR>
 cmap w!! w !sudo tee % >/dev/null
 
+" Switch between the last two files
+nnoremap <Leader><Leader> <C-^>
+
+" Get off my lawn
+nnoremap <Left> :echoe "Use h"<CR>
+nnoremap <Right> :echoe "Use l"<CR>
+nnoremap <Up> :echoe "Use k"<CR>
+nnoremap <Down> :echoe "Use j"<CR>
+
+
+nmap <Leader>b :bu <C-I>
+nmap <Leader><Tab> :bn<cr>
+nmap <Leader><S-Tab> :bp<cr>
 " unmap! <C-e>
 imap <C-e> <Esc>e<Space>i
 imap <C-r> <C-o>b
 
 iabbrev cdata <![CDATA[]]>
 iabbrev echol echo '<pre>'.__LINE__.' - '.__FILE__."\n";$e = new \Exception();print_r($e->getTraceAsString());print_r();exit;<Esc><S-f>)i
+iabbrev coutl cout << __LINE__ << " - " << __FILE__ << endl <<x<< endl;<Esc><S-f>xxi
 
 nmap <Leader><space> :nohlsearch<cr>
 nmap <Leader>ev :tabnew $MYVIMRC<cr>
@@ -224,8 +265,12 @@ nmap <LocalLeader>tt :Tlist<cr>
 " simpler split navigation
 nmap <C-H> <C-W><C-H>
 nmap <C-J> <C-W><C-J>
-nmap <C-K> <C-W><C-K>
+" nmap <C-K> <C-W><C-K>
 nmap <C-L> <C-W><C-L>
+
+map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>
+
+vnoremap p "_dP                      “ dont overwrite register when pasting
 
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
