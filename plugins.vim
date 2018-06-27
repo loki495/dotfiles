@@ -1,64 +1,35 @@
+Plug 'Shougo/deoplete.nvim'
+Plug 'roxma/nvim-yarp'
+Plug 'roxma/vim-hug-neovim-rpc'
+Plug 'phpactor/phpactor' ,  {'do': 'composer install', 'for': 'php'}
+Plug 'kristijanhusak/deoplete-phpactor'
 
-Plugin 'VundleVim/Vundle.vim'
+Plug 'ervandew/supertab'
+Plug 'airblade/vim-rooter'
 
-Plugin 'tpope/vim-vinegar'
-" Plugin 'scrooloose/nerdtree'
-" Plugin 'stanangeloff/php.vim'
-Plugin 'arnaud-lb/vim-php-namespace'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
 
-Plugin 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plugin 'junegunn/fzf.vim'
+Plug 'vim-scripts/taglist.vim'
+Plug 'ludovicchabant/vim-gutentags'
 
-Plugin 'mileszs/ack.vim'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'spf13/vim-colors'
+Plug 'airblade/vim-gitgutter'
+Plug 'powerline/powerline'
+Plug 'mattn/emmet-vim'
 
-Plugin 'tpope/vim-dispatch'
-Plugin 'tpope/vim-projectionist'
-Plugin 'noahfrederick/vim-composer'
-Plugin 'noahfrederick/vim-laravel'
 
-Plugin 'alvan/vim-assistant'
+Plug 'w0rp/ale'
 
-Plugin 'ryanoasis/vim-devicons'
-" Plugin 'yuttie/comfortable-motion.vim'
-" Plugin 'vim-scripts/taglist.vim'
-" Plugin 'ludovicchabant/vim-gutentags'
-" Plugin 'hattya/vcvars.vim'
-Plugin 'will133/vim-dirdiff'
-Plugin 'ervandew/supertab'
-" Plugin 'lifepillar/vim-mucomplete'
-Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
-Plugin 'spf13/vim-colors'
-Plugin 'airblade/vim-gitgutter'
-Plugin 'powerline/powerline'
-Plugin 'mattn/emmet-vim'
-" Plugin 'scrooloose/syntastic', '3.0.0'
+Plug 'joonty/vdebug'
 
-Plugin 'w0rp/ale'
 
-Plugin 'joonty/vdebug'
-" Plugin 'StanAngeloff/php.vim'
-" Plugin 'shawncplus/phpcomplete.vim'
-" Plugin 'EvanDotPro/php_getset.vim'
-" Plugin 'mikehaertl/pdv-standalone'
-" Plugin 'SirVer/ultisnips'
-" Plugin 'honza/vim-snippets'
-" Plugin 'shougo/neocomplete.vim'
-" Plugin 'mbbill/code_complete'
-Plugin 'Shougo/vimproc', {
-      \ 'build' : {
-      \     'windows' : 'make -f make_mingw32.mak',
-      \     'cygwin' : 'make -f make_cygwin.mak',
-      \     'mac' : 'make -f make_mac.mak',
-      \     'unix' : 'make -f make_unix.mak',
-      \    },
-      \ }
-" Plugin 'Shougo/unite.vim'
-" Plugin 'm2mdas/phpcomplete-extended'
+Plug 'Shougo/vimproc'
+Plug 'Shougo/unite.vim'
+Plug 'm2mdas/phpcomplete-extended'
 
-" Plugin 'maralla/completor.vim'
+Plug 'maksimr/vim-jsbeautify'
 
-Plugin 'maksimr/vim-jsbeautify'
-
-Plugin 'christoomey/vim-tmux-navigator'
-
+Plug 'christoomey/vim-tmux-navigator'
