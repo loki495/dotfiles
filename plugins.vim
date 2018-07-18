@@ -33,3 +33,5 @@ Plug 'm2mdas/phpcomplete-extended'
 Plug 'maksimr/vim-jsbeautify'
 
 Plug 'christoomey/vim-tmux-navigator'
+
+Plug 'tpope/vim-surround'
