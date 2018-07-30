@@ -35,3 +35,4 @@ Plug 'maksimr/vim-jsbeautify'
 Plug 'christoomey/vim-tmux-navigator'
 
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-surround'
