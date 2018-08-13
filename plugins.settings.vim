@@ -113,10 +113,9 @@ let g:phpcomplete_index_composer_command = 'composer'
 "/
 "/ FZF
 "/
-nmap ; :Buffers<CR>
-nmap <Leader>t :Files<CR>
-nmap <Leader>r :Tags<CR>
-
+nmap ; :Files<CR>
+nmap <Leader>b :Buffers<CR>
+nmap <Leader>t :Tags<CR>
 
 
 "/
@@ -142,6 +141,7 @@ let g:UltiSnipsJumpBackwardTrigger="<tab>"
 "/
 nmap <Leader>1 :NERDTreeToggle<cr>
 let NERDTreeHijackNetrw = 1
+let NERDTreeChDirMode=0
 
 "/
 "/ Netrw

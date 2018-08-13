@@ -15,9 +15,9 @@ nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
 
-nmap <Leader>b :bu <C-I>
-nmap <Leader><Tab> :bn<cr>
-nmap <Leader><S-Tab> :bp<cr>
+" nmap <Leader>b :bu <C-I>
+" nmap <Leader><Tab> :bn<cr>
+" nmap <Leader><S-Tab> :bp<cr>
 " unmap! <C-e>
 imap <C-e> <Esc>e<Space>i
 imap <C-r> <C-o>b
@@ -30,7 +30,7 @@ nmap <Leader><space> :nohlsearch<cr>
 nmap <Leader>ev :tabnew $MYVIMRC<cr>
 nmap <Leader>ep :tabnew ~/.vim/plugins.vim<cr>
 
-nmap <LocalLeader>tt :Tlist<cr>
+" nmap <LocalLeader>tt :Tlist<cr>
 
 " simpler split navigation
 nmap <C-H> <C-W><C-H>
@@ -50,11 +50,11 @@ autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
 autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 
-autocmd BufWritePre *.php :%s/\s\+$//e
+autocmd BufWritePre *.php :%s/\(\|\s+\)$//e
 
 
 "-------Autocmd--------
-autocmd BufEnter * if bufname("") !~ "^\[A-Za-z0-9\]*://" | lcd %:p:h | endif
+" autocmd BufEnter * if bufname("") !~ "^\[A-Za-z0-9\]*://" | lcd %:p:h | endif
 
 autocmd  FileType  php set omnifunc=phpcomplete#CompletePHP
 " let g:SuperTabDefaultCompletionType = "<Tab>"

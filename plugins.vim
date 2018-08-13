@@ -20,11 +20,9 @@ Plug 'airblade/vim-gitgutter'
 Plug 'powerline/powerline'
 Plug 'mattn/emmet-vim'
 
-
 Plug 'w0rp/ale'
 
 Plug 'joonty/vdebug'
-
 
 Plug 'Shougo/vimproc'
 Plug 'Shougo/unite.vim'

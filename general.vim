@@ -1,8 +1,10 @@
 " General
 scriptencoding utf-8
 
+set noautochdir
+
 set tags+=tags,tags.vendor
-set autowriteall
+" set autowriteall
 set backspace=indent,eol,start
 set completeopt=menu,longest    " menu, menuone, longest and preview
 set complete=.,i,t,b,u
@@ -21,7 +23,7 @@ set directory=~/.vim/tmp
 set undodir=~/.vim/undo
 
 " formaroptions
-set formatoptions+=r            " auto-comment with Enter
+set formatoptions-=r            " no auto-comment with Enter
 set formatoptions-=o            " don't auto-comment with o or O
 set formatoptions-=t            " don't auto-wrap non-commented text
 silent! set formatoptions+=j    " let J handle comments if supported

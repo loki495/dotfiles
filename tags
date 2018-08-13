@@ -4,7 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-;	plugins.settings.vim	/^nmap ; :Buffers<CR>$/;"	m	language:Vim
+;	plugins.settings.vim	/^nmap ; :Files<CR>$/;"	m	language:Vim
 <C-H>	mappings.vim	/^nmap <C-H> <C-W><C-H>$/;"	m	language:Vim
 <C-J>	mappings.vim	/^nmap <C-J> <C-W><C-J>$/;"	m	language:Vim
 <C-L>	mappings.vim	/^nmap <C-L> <C-W><C-L>$/;"	m	language:Vim
@@ -15,18 +15,14 @@
 <Leader>.	plugins.settings.vim	/^nmap <Leader>. :History<cr>$/;"	m	language:Vim
 <Leader>1	plugins.settings.vim	/^nmap <Leader>1 :NERDTreeToggle<cr>$/;"	m	language:Vim
 <Leader><Leader>	mappings.vim	/^nnoremap <Leader><Leader> <C-^>$/;"	m	language:Vim
-<Leader><S-Tab>	mappings.vim	/^nmap <Leader><S-Tab> :bp<cr>$/;"	m	language:Vim
-<Leader><Tab>	mappings.vim	/^nmap <Leader><Tab> :bn<cr>$/;"	m	language:Vim
 <Leader><space>	mappings.vim	/^nmap <Leader><space> :nohlsearch<cr>$/;"	m	language:Vim
 <Leader>[	plugins.settings.vim	/^nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)$/;"	m	language:Vim
 <Leader>]	plugins.settings.vim	/^nmap <silent> <Leader>] <Plug>(ale_next_wrap)$/;"	m	language:Vim
-<Leader>b	mappings.vim	/^nmap <Leader>b :bu <C-I>$/;"	m	language:Vim
+<Leader>b	plugins.settings.vim	/^nmap <Leader>b :Buffers<CR>$/;"	m	language:Vim
 <Leader>ep	mappings.vim	/^nmap <Leader>ep :tabnew ~\/.vim\/plugins.vim<cr>$/;"	m	language:Vim
 <Leader>ev	mappings.vim	/^nmap <Leader>ev :tabnew $MYVIMRC<cr>$/;"	m	language:Vim
-<Leader>r	plugins.settings.vim	/^nmap <Leader>r :Tags<CR>$/;"	m	language:Vim
-<Leader>t	plugins.settings.vim	/^nmap <Leader>t :Files<CR>$/;"	m	language:Vim
+<Leader>t	plugins.settings.vim	/^nmap <Leader>t :Tags<CR>$/;"	m	language:Vim
 <Left>	mappings.vim	/^nnoremap <Left> :echoe "Use h"<CR>$/;"	m	language:Vim
-<LocalLeader>tt	mappings.vim	/^nmap <LocalLeader>tt :Tlist<cr>$/;"	m	language:Vim
 <Right>	mappings.vim	/^nnoremap <Right> :echoe "Use l"<CR>$/;"	m	language:Vim
 <Up>	mappings.vim	/^nnoremap <Up> :echoe "Use k"<CR>$/;"	m	language:Vim
 <leader>m	mappings.vim	/^nnoremap <leader>m :silent make!\\|redraw!\\|vert cw<cr> $/;"	m	language:Vim
@@ -47,6 +43,7 @@ LuciusLightLowContrast	lucius.vim	/^command! LuciusLightLowContrast call SetLuci
 LuciusWhite	lucius.vim	/^command! LuciusWhite call SetLucius("light", "normal", "high")$/;"	c	language:Vim
 LuciusWhiteHighContrast	lucius.vim	/^command! LuciusWhiteHighContrast call SetLucius("light", "high", "high")$/;"	c	language:Vim
 LuciusWhiteLowContrast	lucius.vim	/^command! LuciusWhiteLowContrast call SetLucius("light", "low", "high")$/;"	c	language:Vim
+NERDTreeChDirMode	plugins.settings.vim	/^let NERDTreeChDirMode=0$/;"	v	language:Vim
 NERDTreeHijackNetrw	plugins.settings.vim	/^let NERDTreeHijackNetrw = 1$/;"	v	language:Vim
 ProjectFiles	plugins.settings.vim	/^command! ProjectFiles execute 'Files' s:find_git_root()$/;"	c	language:Vim
 SetLucius	lucius.vim	/^function! SetLucius(style, contrast, contrast_bg)$/;"	f	language:Vim
