@@ -18,7 +18,6 @@ function! s:find_git_root()
 endfunction
 
 command! ProjectFiles execute 'Files' s:find_git_root()
-nmap <Leader>. :History<cr>
 
 
 " airline
@@ -117,6 +116,8 @@ nmap ; :Files<CR>
 nmap <Leader>b :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
+nmap <Leader>. :History<cr>
+nmap <Leader>, :Windows<cr>
 
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',

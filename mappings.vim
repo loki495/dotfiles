@@ -6,7 +6,7 @@
 cmap w!! w !sudo tee % >/dev/null
 
 " Switch between the last two files
-nnoremap <Leader><Leader> <C-^>
+" nnoremap <Leader><Leader> <C-^>
 
 " Get off my lawn
 nnoremap <Left> :echoe "Use h"<CR>

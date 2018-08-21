@@ -13,9 +13,9 @@
 <C-r>	mappings.vim	/^imap <C-r> <C-o>b$/;"	m	language:Vim
 <Down>	mappings.vim	/^nnoremap <Down> :echoe "Use j"<CR>$/;"	m	language:Vim
 <F4>	mappings.vim	/^map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>$/;"	m	language:Vim
+<Leader>,	plugins.settings.vim	/^nmap <Leader>, :Windows<cr>$/;"	m	language:Vim
 <Leader>.	plugins.settings.vim	/^nmap <Leader>. :History<cr>$/;"	m	language:Vim
 <Leader>1	plugins.settings.vim	/^nmap <Leader>1 :NERDTreeToggle<cr>$/;"	m	language:Vim
-<Leader><Leader>	mappings.vim	/^nnoremap <Leader><Leader> <C-^>$/;"	m	language:Vim
 <Leader><space>	mappings.vim	/^nmap <Leader><space> :nohlsearch<cr>$/;"	m	language:Vim
 <Leader>[	plugins.settings.vim	/^nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)$/;"	m	language:Vim
 <Leader>]	plugins.settings.vim	/^nmap <silent> <Leader>] <Plug>(ale_next_wrap)$/;"	m	language:Vim
