@@ -71,3 +71,21 @@ augroup END
 nnoremap <leader>m :silent make!\|redraw!\|vert cw<cr> 
 nnoremap <leader>r :silent make run\|redraw!<cr>
 
+"------ Functions ------
+function! SearchFromCursor()
+  let curline = getline('.')
+  call inputsave()
+  let search = input('Search pattern: ')
+  call inputrestore()
+
+  call inputsave()
+  let replace = input('Replace with: ')
+  call inputrestore()
+  
+  let str = ',$s~' . search . '~' . replace . '~gc'
+  redraw
+  execute str
+endfunction
+
+inoremap <Leader>A <C-o>:call SearchFromCursor()<cr>
+noremap <Leader>A <C-o>:call SearchFromCursor()<cr>

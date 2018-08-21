@@ -17,6 +17,8 @@
 <Leader>.	plugins.settings.vim	/^nmap <Leader>. :History<cr>$/;"	m	language:Vim
 <Leader>1	plugins.settings.vim	/^nmap <Leader>1 :NERDTreeToggle<cr>$/;"	m	language:Vim
 <Leader><space>	mappings.vim	/^nmap <Leader><space> :nohlsearch<cr>$/;"	m	language:Vim
+<Leader>A	mappings.vim	/^inoremap <Leader>A <C-o>:call SearchFromCursor()<cr>$/;"	m	language:Vim
+<Leader>A	mappings.vim	/^noremap <Leader>A <C-o>:call SearchFromCursor()<cr>$/;"	m	language:Vim
 <Leader>[	plugins.settings.vim	/^nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)$/;"	m	language:Vim
 <Leader>]	plugins.settings.vim	/^nmap <silent> <Leader>] <Plug>(ale_next_wrap)$/;"	m	language:Vim
 <Leader>b	plugins.settings.vim	/^nmap <Leader>b :Buffers<CR>$/;"	m	language:Vim
@@ -49,6 +51,7 @@ LuciusWhiteLowContrast	lucius.vim	/^command! LuciusWhiteLowContrast call SetLuci
 NERDTreeChDirMode	plugins.settings.vim	/^let NERDTreeChDirMode=0$/;"	v	language:Vim
 NERDTreeHijackNetrw	plugins.settings.vim	/^let NERDTreeHijackNetrw = 1$/;"	v	language:Vim
 ProjectFiles	plugins.settings.vim	/^command! ProjectFiles execute 'Files' s:find_git_root()$/;"	c	language:Vim
+SearchFromCursor	mappings.vim	/^function! SearchFromCursor()$/;"	f	language:Vim
 SetLucius	lucius.vim	/^function! SetLucius(style, contrast, contrast_bg)$/;"	f	language:Vim
 Tlist_Auto_Open	plugins.settings.vim	/^let Tlist_Auto_Open=0$/;"	v	language:Vim
 Tlist_Compact_Format	plugins.settings.vim	/^let Tlist_Compact_Format=0$/;"	v	language:Vim
