@@ -116,7 +116,15 @@ let g:phpcomplete_index_composer_command = 'composer'
 nmap ; :Files<CR>
 nmap <Leader>b :Buffers<CR>
 nmap <Leader>t :Tags<CR>
+nmap <Leader>l :Lines<CR>
 
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit' }
+
+
+let g:fzf_buffers_jump = 1
 
 "/
 "/ Supertab

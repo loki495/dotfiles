@@ -8,6 +8,7 @@
 <C-H>	mappings.vim	/^nmap <C-H> <C-W><C-H>$/;"	m	language:Vim
 <C-J>	mappings.vim	/^nmap <C-J> <C-W><C-J>$/;"	m	language:Vim
 <C-L>	mappings.vim	/^nmap <C-L> <C-W><C-L>$/;"	m	language:Vim
+<C-d>	mappings.vim	/^noremap <C-d> d\$$/;"	m	language:Vim
 <C-e>	mappings.vim	/^imap <C-e> <Esc>e<Space>i$/;"	m	language:Vim
 <C-r>	mappings.vim	/^imap <C-r> <C-o>b$/;"	m	language:Vim
 <Down>	mappings.vim	/^nnoremap <Down> :echoe "Use j"<CR>$/;"	m	language:Vim
@@ -21,6 +22,7 @@
 <Leader>b	plugins.settings.vim	/^nmap <Leader>b :Buffers<CR>$/;"	m	language:Vim
 <Leader>ep	mappings.vim	/^nmap <Leader>ep :tabnew ~\/.vim\/plugins.vim<cr>$/;"	m	language:Vim
 <Leader>ev	mappings.vim	/^nmap <Leader>ev :tabnew $MYVIMRC<cr>$/;"	m	language:Vim
+<Leader>l	plugins.settings.vim	/^nmap <Leader>l :Lines<CR>$/;"	m	language:Vim
 <Leader>t	plugins.settings.vim	/^nmap <Leader>t :Tags<CR>$/;"	m	language:Vim
 <Left>	mappings.vim	/^nnoremap <Left> :echoe "Use h"<CR>$/;"	m	language:Vim
 <Right>	mappings.vim	/^nnoremap <Right> :echoe "Use l"<CR>$/;"	m	language:Vim
@@ -30,6 +32,7 @@
 <tab>	plugins.settings.vim	/^inoremap <expr><tab> pumvisible() ? "\\<c-n>" : "\\<tab>"$/;"	m	language:Vim
 AddCterm	lucius.vim	/^function! s:AddCterm(name)$/;"	f	language:Vim
 AddSpCterm	lucius.vim	/^function! s:AddSpCterm(name)$/;"	f	language:Vim
+DD	mappings.vim	/^inoremap DD <C-o>d\$$/;"	m	language:Vim
 IPhpInsertUse	plugins.settings.vim	/^function! IPhpInsertUse()$/;"	f	language:Vim
 LuciusBlack	lucius.vim	/^command! LuciusBlack call SetLucius("dark", "normal", "high")$/;"	c	language:Vim
 LuciusBlackHighContrast	lucius.vim	/^command! LuciusBlackHighContrast call SetLucius("dark", "high", "high")$/;"	c	language:Vim
@@ -89,6 +92,8 @@ g:colors_name	lucius.vim	/^let g:colors_name="lucius"$/;"	v	language:Vim
 g:deoplete#enable_at_startup	mappings.vim	/^let g:deoplete#enable_at_startup = 1$/;"	v	language:Vim
 g:deoplete#enable_at_startup	plugins.settings.vim	/^let g:deoplete#enable_at_startup = 1$/;"	v	language:Vim
 g:deoplete#omni#input_patterns	plugins.settings.vim	/^  let g:deoplete#omni#input_patterns = {}$/;"	v	language:Vim
+g:fzf_action	plugins.settings.vim	/^let g:fzf_action = {$/;"	v	language:Vim
+g:fzf_buffers_jump	plugins.settings.vim	/^let g:fzf_buffers_jump = 1$/;"	v	language:Vim
 g:html_indent_tags	plugins.settings.vim	/^let g:html_indent_tags = 'li\\|p'$/;"	v	language:Vim
 g:netrw_altv	plugins.settings.vim	/^let g:netrw_altv=1$/;"	v	language:Vim
 g:netrw_browse_split	plugins.settings.vim	/^let g:netrw_browse_split = 3$/;"	v	language:Vim

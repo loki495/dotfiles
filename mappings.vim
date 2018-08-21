@@ -14,7 +14,8 @@ nnoremap <Right> :echoe "Use l"<CR>
 nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
-
+inoremap DD <C-o>d$
+noremap <C-d> d$
 " nmap <Leader>b :bu <C-I>
 " nmap <Leader><Tab> :bn<cr>
 " nmap <Leader><S-Tab> :bp<cr>
