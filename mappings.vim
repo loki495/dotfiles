@@ -71,6 +71,8 @@ augroup END
 nnoremap <leader>m :silent make!\|redraw!\|vert cw<cr> 
 nnoremap <leader>r :silent make run\|redraw!<cr>
 
+" Run file as PHP
+nnoremap <leader>pp :!$(which php) %<cr>
 "------ Functions ------
 function! SearchFromCursor()
   let curline = getline('.')
