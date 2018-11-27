@@ -43,6 +43,9 @@ map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>
 
 vnoremap p "_dP                      “ dont overwrite register when pasting
 
+nnoremap <Leader>] gt
+nnoremap <Leader>[ gT 
+
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
 match ExtraWhitespace /\s\+$/
@@ -51,7 +54,8 @@ autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
 autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 
-autocmd BufWritePre *.php :%s/\(\|\s+\)$//e
+autocmd BufWritePre *.php :%s/\(
+\|\s+\)$//e
 
 
 "-------Autocmd--------
