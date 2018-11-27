@@ -15,6 +15,6 @@ call plug#end()
 
 so ~/.vim/plugins.settings.vim
 
-so ~/.vim/mappings.vim
-
 so ~/.vim/general.vim
+
+so ~/.vim/mappings.vim
