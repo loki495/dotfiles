@@ -25,7 +25,7 @@ Plug 'w0rp/ale'
 
 Plug 'joonty/vdebug'
 
-Plug 'Shougo/vimproc'
+Plug 'Shougo/vimproc.vim'
 Plug 'Shougo/unite.vim'
 Plug 'm2mdas/phpcomplete-extended'
 
