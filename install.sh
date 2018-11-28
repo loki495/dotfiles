@@ -1,9 +1,12 @@
+CURRENT_DIR=`pwd`
 rm ~/.vimrc
 rm ~/.vim/plugins.settings.vim
 rm ~/.vim/general.vim
 rm ~/.vim/mappings.vim
 rm ~/.vim/plugins.vim
 rm ~/.vim/colors/lucius.vim
+rm -rf ~/.vim/plugins/
+rm -rf ~/.vim/plugged/
 mkdir ~/.vim/plugged
 mkdir ~/.vim/backup
 mkdir ~/.vim/undo
@@ -17,7 +20,9 @@ ln -s `pwd`/mappings.vim ~/.vim/
 ln -s `pwd`/lucius.vim ~/.vim/colors/
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-vim +PlugClean +PlugInstall +qall
-cd ~/.vim/plugged/vimproc
+cd ~/.vim/plugged
+git clone https://github.com/Shougo/vimproc.vim
+cd vimproc
 make
-cd -
+cd $CURRENT_DIR
+vim +PlugClean +PlugInstall +qall
