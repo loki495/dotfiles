@@ -10,7 +10,8 @@ Plug 'airblade/vim-rooter'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 
-Plug 'majutsushi/tagbar'
+" Plug 'majutsushi/tagbar'
+Plug 'vim-scripts/taglist'
 Plug 'ludovicchabant/vim-gutentags'
 
 Plug 'vim-airline/vim-airline'
