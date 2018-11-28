@@ -18,11 +18,11 @@ ln -s `pwd`/plugins.settings.vim ~/.vim/
 ln -s `pwd`/general.vim ~/.vim/
 ln -s `pwd`/mappings.vim ~/.vim/
 ln -s `pwd`/lucius.vim ~/.vim/colors/
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 cd ~/.vim/plugged
 git clone https://github.com/Shougo/vimproc.vim
-cd vimproc
+cd ~/.vim/plugged/vimproc.vim
 make
 cd $CURRENT_DIR
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 vim +PlugClean +PlugInstall +qall
