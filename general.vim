@@ -48,13 +48,21 @@ set tabstop=4                   " an indentation every four columns
 
 "--------Visuals---------
 
-set t_Co=256                           " Fix colors in the terminal
+
+"Informing the system that the Putty background is black
+set background=dark
+
+" set t_Co=256                           " Fix colors in the terminal
 syntax on                       " syntax highlighting
 
-hi ColorColumn guibg=#292929
+set termguicolors
+
+" hi ColorColumn guibg=#292929
 set guifont=Ubuntu\ Mono\ derivative\ Powerline         " Way better than monospace
 color lucius                    " Vim colorscheme
 LuciusDark
+" color paragold
+" color paragold-ora
 
 set winminheight=0              " windows can be 0 line high
 set hlsearch                    " highlight search terms
