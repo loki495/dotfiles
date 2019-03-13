@@ -6,7 +6,7 @@ set noautochdir
 set tags+=tags,tags.vendor
 " set autowriteall
 set backspace=indent,eol,start
-set completeopt=menu,longest    " menu, menuone, longest and preview
+set completeopt=longest,menuone
 set complete=.,i,t,b,u
 set cpoptions-=$                " cool trick to show what you're replacing
 set encoding=utf-8
@@ -22,7 +22,7 @@ set backupdir=~/.vim/backup
 set directory=~/.vim/tmp
 set undodir=~/.vim/undo
 
-" formaroptions
+" formatroptions
 set formatoptions-=r            " no auto-comment with Enter
 set formatoptions-=o            " don't auto-comment with o or O
 set formatoptions-=t            " don't auto-wrap non-commented text
@@ -72,5 +72,3 @@ set pumheight=10                " so the complete menu doesn't get too big
 
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
-
-
