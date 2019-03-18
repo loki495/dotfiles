@@ -102,12 +102,23 @@ function! ConditionalPairMap(open, close)
         return a:open
     else
         return a:open . a:close . repeat("\<left>", len(a:close))
-    endif 
+    endif
 endfunction
 
 inoremap <expr> ( ConditionalPairMap('(', ')')
 inoremap <expr> { ConditionalPairMap('{', '}')
 inoremap <expr> [ ConditionalPairMap('[', ']')
+inoremap <expr> < ConditionalPairMap('<', '>')
 
+inoremap <expr> > getline('.')[col('.')-1] == ">" ? "\<Right>" : ">"
 inoremap <expr> ) getline('.')[col('.')-1] == ")" ? "\<Right>" : ")"
 inoremap <expr> } getline('.')[col('.')-1] == "}" ? "\<Right>" : "}"
+
+" Jump to matching delimiters more easily.
+nnoremap <leader><Tab> %
+noremap <leader><Tab> %
+
+inoremap <C-k> <C-o>k
+inoremap <C-j> <C-o>j
+inoremap <C-h> <C-o>h
+inoremap <C-l> <C-o>l

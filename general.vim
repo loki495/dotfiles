@@ -3,7 +3,7 @@ scriptencoding utf-8
 
 set noautochdir
 
-set tags+=tags,tags.vendor
+set tags+=tags,tags.vendor,/
 " set autowriteall
 set backspace=indent,eol,start
 set completeopt=longest,menuone
