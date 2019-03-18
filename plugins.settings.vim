@@ -97,3 +97,6 @@ let g:SuperTabLongestHighlight = 1
 "/ PHPComplete
 "/
 autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
+
+let g:strip_whitespace_confirm=0
+let g:strip_whitespace_on_save = 1
