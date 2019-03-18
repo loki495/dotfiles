@@ -7,11 +7,13 @@ rm -f ~/.vim/plugins.vim
 rm -f ~/.vim/colors/lucius.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
+mkdir -p ~/bin
 mkdir -p ~/.vim/plugged
 mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
 mkdir -p ~/.vim/colors
+ln -s `pwd`/rg ~/bin/rg
 ln -s `pwd`/vimrc ~/.vimrc
 ln -s `pwd`/plugins.vim ~/.vim/
 ln -s `pwd`/plugins.settings.vim ~/.vim/

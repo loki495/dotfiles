@@ -19,11 +19,13 @@ call plug#begin('~/.vim/plugged')
 so ~/.vim/plugins.vim
 call plug#end()
 
-" filetype plugin indent on
-
 so ~/.vim/plugins.settings.vim
 
 so ~/.vim/general.vim
 
 so ~/.vim/mappings.vim
 
+" Local sourcing.
+if filereadable($HOME."/.vimrc.local")
+  source $HOME/.vimrc.after
+endif
