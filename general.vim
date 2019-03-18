@@ -55,8 +55,6 @@ set background=dark
 " set t_Co=256                           " Fix colors in the terminal
 syntax on                       " syntax highlighting
 
-set termguicolors
-
 " hi ColorColumn guibg=#292929
 set guifont=Ubuntu\ Mono\ derivative\ Powerline         " Way better than monospace
 color lucius                    " Vim colorscheme

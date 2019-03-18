@@ -10,9 +10,9 @@ Plug 'powerline/powerline'
 Plug 'w0rp/ale'
 
 Plug 'tpope/vim-surround'
+Plug 'ntpeters/vim-better-whitespace'
 
 Plug 'Chiel92/vim-autoformat'
-Plug 'skammer/vim-css-color', {'for': ['css', 'less', 'sass']}
 
 Plug 'ervandew/supertab'
 Plug 'shawncplus/phpcomplete.vim'
