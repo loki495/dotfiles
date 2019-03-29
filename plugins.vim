@@ -16,3 +16,5 @@ Plug 'Chiel92/vim-autoformat'
 
 Plug 'ervandew/supertab'
 Plug 'shawncplus/phpcomplete.vim'
+
+Plug 'jiangmiao/auto-pairs'

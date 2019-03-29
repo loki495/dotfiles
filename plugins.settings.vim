@@ -100,3 +100,10 @@ autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
 
 let g:strip_whitespace_confirm=0
 let g:strip_whitespace_on_save = 1
+
+"/
+"/ Auto-Pairs
+"/
+let g:AutoPairsFlyMode = 1
+let g:AutoPairsShortcutBackInsert = '<Leader>e'
+let g:AutoPairsShortcutJump = '<Leader>w'
