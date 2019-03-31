@@ -106,3 +106,5 @@ inoremap <C-l> <C-o>l
 
 inoremap <Leader>/ <esc>mxA;<esc>`xa
 nnoremap <Leader>/ <esc>mxA;<esc>
+
+nnoremap <Leader>0 0gt
