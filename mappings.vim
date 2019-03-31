@@ -119,3 +119,8 @@ function! CreateInPreview()
     execute 'silent !touch ' . b:netrw_curdir.'/'.l:filename
     redraw!
 endf
+
+" Switch to last-active tab
+au TabLeave * let g:lasttab = tabpagenr()
+nnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
+vnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
