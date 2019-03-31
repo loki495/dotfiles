@@ -107,4 +107,15 @@ inoremap <C-l> <C-o>l
 inoremap <Leader>/ <esc>mxA;<esc>`xa
 nnoremap <Leader>/ <esc>mxA;<esc>
 
-nnoremap <Leader>0 0gt
+nnoremap <Leader>0 1gt
+
+autocmd filetype netrw call Netrw_mappings()
+function! Netrw_mappings()
+    noremap <buffer>% :call CreateInPreview()<cr>
+endfunction
+
+function! CreateInPreview()
+    let l:filename = input("Please enter filename: ")
+    execute 'silent !touch ' . b:netrw_curdir.'/'.l:filename
+    redraw!
+endf

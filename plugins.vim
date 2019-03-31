@@ -18,3 +18,6 @@ Plug 'ervandew/supertab'
 Plug 'shawncplus/phpcomplete.vim'
 
 Plug 'jiangmiao/auto-pairs'
+
+Plug 'jwalton512/vim-blade'
+
