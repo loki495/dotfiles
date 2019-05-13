@@ -124,3 +124,30 @@ endf
 au TabLeave * let g:lasttab = tabpagenr()
 nnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
 vnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
+
+nnoremap <silent> n   n:call HLNext(0.4)<cr>
+nnoremap <silent> N   N:call HLNext(0.4)<cr>
+
+highlight WhiteOnRed ctermbg=red    guibg=red
+function! HLNext (blinktime)
+    let [bufnum, lnum, col, off] = getpos('.')
+    let matchlen = strlen(matchstr(strpart(getline('.'),col-1),@/))
+    let target_pat = '\c\%#\%('.@/.'\)'
+    let ring = matchadd('WhiteOnRed', target_pat, 101)
+    redraw
+    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
+    call matchdelete(ring)
+    redraw
+    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
+    let ring = matchadd('WhiteOnRed', target_pat, 101)
+    redraw
+    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
+    call matchdelete(ring)
+    redraw
+    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
+    let ring = matchadd('WhiteOnRed', target_pat, 101)
+    redraw
+    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
+    call matchdelete(ring)
+    redraw
+endfunction
