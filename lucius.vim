@@ -451,30 +451,30 @@ if s:style == "light"
 else
     hi CursorColumn                 guibg=#000000
     hi CursorLine                   guibg=#262626
-    hi IncSearch    guifg=bg
+    hi IncSearch    guifg=bg        guibg=#d7d75f
     hi MatchParen   guifg=fg        guibg=#87af00
-    hi Search       guifg=bg
+    hi Search       guifg=bg        guibg=#d7d75f
     hi Visual                       guibg=#005f87
     if s:contrast == "low"
         hi Cursor                       guibg=#5f87af
         hi CursorIM                     guibg=#5f87af
         hi Error        guifg=#d75f5f   guibg=#870000
-        hi IncSearch                    guibg=#00afaf
-        hi Search                       guibg=#d78700
+        hi IncSearch                    guibg=#d7d75f
+        hi Search                       guibg=#d7d75f
         hi Todo         guifg=#afaf00   guibg=#5f5f00
     elseif s:contrast == "high"
         hi Cursor                       guibg=#afd7ff
         hi CursorIM                     guibg=#afd7ff
         hi Error        guifg=#ffafaf   guibg=#af0000
-        hi IncSearch                    guibg=#87ffff
-        hi Search                       guibg=#ffaf5f
+        hi IncSearch                    guibg=#d7d75f
+        hi Search                       guibg=#d7d75f
         hi Todo         guifg=#ffff87   guibg=#87875f
     else
         hi Cursor                       guibg=#87afd7
         hi CursorIM                     guibg=#87afd7
         hi Error        guifg=#ff8787   guibg=#870000
-        hi IncSearch                    guibg=#5fd7d7
-        hi Search                       guibg=#d78700
+        hi IncSearch    guifg=#000000   guibg=#d7d75f
+        hi Search       guifg=#000000   guibg=#87afff
         hi Todo         guifg=#d7d75f   guibg=#5f5f00
     endif
 endif
@@ -530,7 +530,7 @@ hi TabLine      guifg=bg
 hi TabLineSel   guifg=fg
 hi WildMenu     guifg=fg
 if s:style == "light"
-    hi ColorColumn                  guibg=#e4e4e4
+    hi ColorColumn                  guibg=#eeeeee
     hi CursorLineNr guifg=#626262   guibg=#dadada
     hi FoldColumn                   guibg=#bcbcbc
     hi Folded                       guibg=#bcbcbc
@@ -539,7 +539,7 @@ if s:style == "light"
     hi SignColumn                   guibg=#d0d0d0
     hi StatusLineNC guifg=#dadada
     hi TabLineFill  guifg=#dadada
-    hi VertSplit    guifg=#e4e4e4
+    hi VertSplit    guifg=#eeeeee
     hi WildMenu                     guibg=#afd7ff
     if s:contrast == "low"
         hi FoldColumn   guifg=#808080

@@ -23,6 +23,6 @@ ln -s `pwd`/lucius.vim ~/.vim/colors/
 ln -s `pwd`/paragold-ora.vim ~/.vim/colors/
 ln -s `pwd`/paragold.vim ~/.vim/colors/
 cd $CURRENT_DIR
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 vim +PlugClean +'PlugInstall --sync' +qall
