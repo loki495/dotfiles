@@ -1,5 +1,6 @@
 " se
 
+set termguicolors
 
 let mapleader = ','
 
