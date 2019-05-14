@@ -151,3 +151,5 @@ function! HLNext (blinktime)
     call matchdelete(ring)
     redraw
 endfunction
+
+nnoremap `` :set invnumber<cr>
