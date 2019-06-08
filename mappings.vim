@@ -14,6 +14,8 @@ nnoremap <Right> :echoe "Use l"<CR>
 nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
+nnoremap <Leader>o R<cr><esc>d0
+
 imap <C-e> <Esc>e<Space>i
 
 iabbrev cdatal <![CDATA[]]><Left><Left><Left>
