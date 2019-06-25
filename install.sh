@@ -27,6 +27,9 @@ curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 vim +PlugClean +'PlugInstall --sync' +qall
 
+YUM_CMD=$(which yum)
+APT_GET_CMD=$(which apt-get)
+
 if [[ ! -z $YUM_CMD ]]; then
     sudo yum install fonts-powerline
 elif [[ ! -z $APT_GET_CMD ]]; then
