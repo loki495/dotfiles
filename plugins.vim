@@ -12,6 +12,7 @@ Plug 'tpope/vim-surround'
 Plug 'ntpeters/vim-better-whitespace'
 
 Plug 'Chiel92/vim-autoformat'
+Plug 'thaerkh/vim-indentguides'
 
 Plug 'ervandew/supertab'
 Plug 'shawncplus/phpcomplete.vim'
