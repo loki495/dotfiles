@@ -14,6 +14,8 @@ endif
 let g:airline_symbols.space = "\ua0"
 let g:airline_powerline_fonts = 1
 
+set listchars=trail:·,precedes:«,extends:»
+
 
 " unicode symbols
 " let g:airline_left_sep = ''
