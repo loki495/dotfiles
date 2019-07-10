@@ -75,7 +75,7 @@ nmap <Leader>b :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
 nmap <Leader>. :History<cr>
-nmap <Leader>, :Windows<cr>
+nmap <Leader>, :Rg<cr>
 
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
