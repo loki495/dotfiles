@@ -31,9 +31,13 @@ YUM_CMD=$(which yum)
 APT_GET_CMD=$(which apt-get)
 
 if [[ ! -z $YUM_CMD ]]; then
-    sudo yum install fonts-powerline
+    sudo yum install fonts-powerline -y
+    sudo snap install ripgrep --classic
+    sudo snap alias ripgrep.rg rg
 elif [[ ! -z $APT_GET_CMD ]]; then
-    sudo apt-get install fonts-powerline
+    sudo apt-get install fonts-powerline -y
+    sudo snap install ripgrep --classic
+    sudo snap alias ripgrep.rg rg
 else
     echo "error can't install package $PACKAGE"
     exit 1;
