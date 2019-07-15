@@ -6,7 +6,7 @@
 
 set foldmethod=indent
 " set foldnestmax=10
-set nofoldenable
+" set nofoldenable
 set foldlevel=2
 
 hi Folded guibg=#000000 guifg=#505050
