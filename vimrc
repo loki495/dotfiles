@@ -20,13 +20,13 @@ call plug#begin('~/.vim/plugged')
 so ~/.vim/plugins.vim
 call plug#end()
 
-so ~/.vim/plugins.settings.vim
-
 so ~/.vim/general.vim
 
 so ~/.vim/mappings.vim
 
+so ~/.vim/plugins.settings.vim
+
 " Local sourcing.
 if filereadable($HOME."/.vimrc.local")
-  source $HOME/.vimrc.after
+  source $HOME/.vimrc.local
 endif
