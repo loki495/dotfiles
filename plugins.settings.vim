@@ -129,3 +129,18 @@ let g:AutoPairsShortcutJump = '<Leader>w'
 
 let g:airline#extensions#tagbar#enabled = 1
 let g:airline#extensions#tagbar#flags = 'f'  " show full tag hierarchy
+
+" Creating a mapping to turn it on and off:
+map <leader>h :RainbowLevelsToggle<cr>
+
+hi! RainbowLevel0 ctermbg=240 guibg=#333333
+hi! RainbowLevel1 ctermbg=239 guibg=#333300
+hi! RainbowLevel2 ctermbg=238 guibg=#0e1e0e
+hi! RainbowLevel3 ctermbg=237 guibg=#3a3a3a
+hi! RainbowLevel4 ctermbg=236 guibg=#303030
+hi! RainbowLevel5 ctermbg=235 guibg=#262626
+hi! RainbowLevel6 ctermbg=234 guibg=#1c1c1c
+hi! RainbowLevel7 ctermbg=233 guibg=#121212
+hi! RainbowLevel8 ctermbg=232 guibg=#080808
+
+au FileType javascript,python,php,xml,yaml,c,cpp,h,tpl :RainbowLevelsOn
