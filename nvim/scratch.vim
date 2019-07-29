@@ -41,3 +41,27 @@ hi phpStringDouble guifg=#45ff44
 
 hi phpComment guifg=#999999 guibg=NONE
 hi phpDocTags guifg=#ffadad guibg=NONE
+
+" hi Pmenu guibg=#005599 guifg=#f7f5a2
+" PmenuSel PmenuThumb PmenuSbar
+
+hi CoCWarningSign guibg=#888800 guifg=#ffffff
+hi CoCWarningVirtualText guibg=#888800 guifg=#ffffff
+hi CoCWarningLine guibg=#888800 guifg=#ffffff
+hi CoCWarningHighlight guibg=#aa0000 guifg=#FFFFFF gui=bold,underline
+hi CoCWarningFloat guibg=#888800 guifg=#ffffff
+hi CoCInfoSign guibg=#000088 guifg=#ffffff
+hi CoCInfoVirtualText guibg=#000088 guifg=#ffffff
+hi CoCInfoLine guibg=#000088 guifg=#ffffff
+hi CoCInfoHighlight guibg=#aa0000 guifg=#FFFFFF gui=bold,underline
+hi CoCInfoFloat guibg=#000088 guifg=#ffffff
+hi CoCHintSign guibg=#008800 guifg=#ffffff
+hi CoCHintVirtualText guibg=#008800 guifg=#ffffff
+hi CoCHintLine guibg=#008800 guifg=#ffffff
+hi CoCHintHighlight guibg=#aa0000 guifg=#FFFFFF gui=bold,underline
+hi CoCHintFloat guibg=#008800 guifg=#ffffff
+hi CoCErrorSign guibg=#880000 guifg=#ffffff
+hi CoCErrorVirtualText guibg=#880000 guifg=#ffffff
+hi CoCErrorLine guibg=#880000 guifg=#ffffff
+hi CoCErrorHighlight guibg=#aa0000 guifg=#FFFFFF gui=bold,underline
+hi CoCErrorFloat guibg=#880000 guifg=#ffffff

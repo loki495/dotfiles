@@ -42,8 +42,8 @@ set listchars=trail:·,precedes:«,extends:»
 " let g:airline_symbols.linenr = ''
 
 " Set this. Airline will handle the rest.
-let g:airline#extensions#ale#enabled = 1
-let g:airline#extensions#tabline#formatter = 'unique_tail_improved'
+" let g:airline#extensions#ale#enabled = 1
+" let g:airline#extensions#tabline#formatter = 'unique_tail_improved'
 
 
 
@@ -56,8 +56,8 @@ let g:ackprg = 'ag --nogroup --nocolor --column'
 "/
 "/ ALE - Lint engine
 "/
-let g:ale_sign_column_always = 1
-let g:ale_completion_enabled = 1
+" let g:ale_sign_column_always = 1
+" let g:ale_completion_enabled = 1
 
 " nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
 " nmap <silent> <Leader>] <Plug>(ale_next_wrap)
