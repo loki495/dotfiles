@@ -69,6 +69,3 @@ set pumheight=10                " so the complete menu doesn't get too big
 
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
-
-hi Pmenu ctermbg=NONE guibg=#005599 guifg=#f7f5a2
-" PmenuSel PmenuThumb PmenuSbar
