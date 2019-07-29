@@ -1,9 +1,5 @@
 "------Mappings----------
 
-" Emmet-vim
-
-" map <C-B> :FufBuffer<CR>
-
 set foldmethod=indent
 " set foldnestmax=10
 " set nofoldenable
@@ -32,8 +28,6 @@ iabbrev coutl cout << __LINE__ << " - " << __FILE__ << endl <<x<< endl;<Esc><S-f
 
 nmap <Leader><space> :nohlsearch<cr>
 nmap <Leader>ev :tabnew $MYVIMRC<cr>
-nmap <Leader>ep :tabnew ~/.vim/plugins.vim<cr>
-
 
 " simpler split navigation
 nmap <C-H> <C-W><C-H>
@@ -64,6 +58,7 @@ autocmd BufWritePre *.php :%s/\s+$//e
 
 augroup autosourcing
     autocmd!
+    autocmd BufWritePost init.vim source %
     autocmd BufWritePost .vimrc source %
     autocmd BufWritePost *.vim source %
 augroup END
@@ -148,18 +143,6 @@ function! HLNext (blinktime)
     exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
     call matchdelete(ring)
     redraw
-    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
-    let ring = matchadd('WhiteOnRed', target_pat, 101)
-    redraw
-    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
-    call matchdelete(ring)
-    redraw
-    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
-    let ring = matchadd('WhiteOnRed', target_pat, 101)
-    redraw
-    exec 'sleep ' . float2nr(a:blinktime * 150) . 'm'
-    call matchdelete(ring)
-    redraw
 endfunction
 
 nnoremap `` :set invnumber<cr>
@@ -174,3 +157,4 @@ function! <SID>SynStack()
 endfunc
 
 nnoremap <Leader>y :TagbarToggle<cr>
+
