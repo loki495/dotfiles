@@ -3,6 +3,8 @@ scriptencoding utf-8
 
 set noautochdir
 
+set scl=no
+
 set tags+=tags,tags.vendor,/
 " set autowriteall
 set backspace=indent,eol,start
@@ -18,9 +20,9 @@ set mouse-=a                    " automatically disable mouse usage
 " Undo/Tmp/Backup
 set undofile
 set backup
-set backupdir=~/.vim/backup
-set directory=~/.vim/tmp
-set undodir=~/.vim/undo
+set backupdir=~/.config/nvim/backup
+set directory=~/.config/nvim/tmp
+set undodir=~/.config/nvim/undo
 
 " formatroptions
 set formatoptions-=r            " no auto-comment with Enter
@@ -48,19 +50,9 @@ set tabstop=4                   " an indentation every four columns
 
 "--------Visuals---------
 
-
-"Informing the system that the Putty background is black
-set background=dark
-
-" set t_Co=256                           " Fix colors in the terminal
 syntax on                       " syntax highlighting
 
-" hi ColorColumn guibg=#292929
 set guifont=Ubuntu\ Mono\ derivative\ Powerline         " Way better than monospace
-"
-" color paragold
-" color paragold-ora
-
 set winminheight=0              " windows can be 0 line high
 set hlsearch                    " highlight search terms
 set number                      " line numbers on
@@ -78,5 +70,5 @@ set pumheight=10                " so the complete menu doesn't get too big
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
 
-color lucius
-LuciusDark
+hi Pmenu ctermbg=NONE guibg=#005599 guifg=#f7f5a2
+" PmenuSel PmenuThumb PmenuSbar

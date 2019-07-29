@@ -1,6 +1,7 @@
 "-------Plugins----------
 
-" airline
+
+"" airline
 let g:airline_theme='murmur'
 let g:airline_powerline_fonts = 1
 let g:Powerline_symbols='unicode'
@@ -15,11 +16,6 @@ let g:airline_symbols.space = "\ua0"
 let g:airline_powerline_fonts = 1
 
 set listchars=trail:·,precedes:«,extends:»
-
-let g:airline#extensions#coc#enabled = 1
-let airline#extensions#coc#error_symbol = 'E:'
-let airline#extensions#coc#warning_symbol = 'W:'
-let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
 
 
 " unicode symbols
@@ -87,26 +83,9 @@ let g:fzf_action = {
   \ 'ctrl-x': 'split',
   \ 'ctrl-v': 'vsplit' }
 
+let g:fzf_layout = { 'window': '-tabnew' }
 
 let g:fzf_buffers_jump = 1
-
-let g:fzf_layout = { 'down': '~40%' }
-
-let g:fzf_colors =
-\ { 'fg':      ['fg', 'Normal'],
-  \ 'bg':      ['bg', 'Normal'],
-  \ 'hl':      ['fg', 'Comment'],
-  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
-  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
-  \ 'hl+':     ['fg', 'Statement'],
-  \ 'info':    ['fg', 'PreProc'],
-  \ 'border':  ['fg', 'Ignore'],
-  \ 'prompt':  ['fg', 'Conditional'],
-  \ 'pointer': ['fg', 'Exception'],
-  \ 'marker':  ['fg', 'Keyword'],
-  \ 'spinner': ['fg', 'Label'],
-  \ 'header':  ['fg', 'Comment'] }
-
 
 "/
 "/ Netrw
@@ -119,15 +98,15 @@ let g:netrw_browse_split = 3
 "/
 "/ SuperTab
 "/
-let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
-let g:SuperTabCompletionContexts = "['s:ContextText']"
-let g:SuperTabLongestEnhanced = 1
-let g:SuperTabLongestHighlight = 1
+"let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
+"let g:SuperTabCompletionContexts = "['s:ContextText']"
+"let g:SuperTabLongestEnhanced = 1
+"let g:SuperTabLongestHighlight = 1
 
 "/
 "/ PHPComplete
 "/
-autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
+"autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
 
 let g:strip_whitespace_confirm=0
 let g:strip_whitespace_on_save = 1
@@ -166,4 +145,22 @@ hi! RainbowLevel6 ctermbg=234 guibg=#1c1c1c
 hi! RainbowLevel7 ctermbg=233 guibg=#121212
 hi! RainbowLevel8 ctermbg=232 guibg=#080808
 
-" au FileType javascript,python,php,xml,yaml,c,cpp,h,tpl :RainbowLevelsOn
+au FileType javascript,python,php,xml,yaml,c,cpp,h,tpl :RainbowLevelsOn
+
+nmap ; :Files<CR>
+nmap <Leader>b :Buffers<CR>
+nmap <Leader>t :Tags<CR>
+nmap <Leader>l :Lines<CR>
+nmap <Leader>. :History<cr>
+nmap <Leader>, :Rg<cr>
+
+let g:fzf_layout = { 'window': '-tabnew' }
+
+
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit' }
+
+
+let g:fzf_buffers_jump = 1

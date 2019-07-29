@@ -15,7 +15,6 @@ let g:ale_fixers = {
 \}
 let g:ale_fix_on_save = 1
 
-
 call plug#begin('~/.vim/plugged')
 so ~/.vim/plugins.vim
 call plug#end()
