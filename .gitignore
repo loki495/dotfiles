@@ -1,3 +1,5 @@
 .old
 .log
 tags
+nvim/squashfs-root
+nvim/nvim.appimage
