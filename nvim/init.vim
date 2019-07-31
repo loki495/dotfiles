@@ -11,7 +11,7 @@ call plug#end()
 
 so ~/dotfiles/nvim/scratch.vim
 
-" so ~/dotfiles/nvim/general.vim
+so ~/dotfiles/nvim/general.vim
 
 so ~/dotfiles/nvim/mappings.vim
 
