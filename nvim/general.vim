@@ -45,6 +45,7 @@ set expandtab                   " tabs are spaces, not tabs
 set shiftwidth=4                " use indents of 4 spaces
 set softtabstop=4               " let backspace delete indent
 set tabstop=4                   " an indentation every four columns
+set smarttab
 
 
 

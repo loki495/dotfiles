@@ -51,6 +51,12 @@ autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 
 autocmd BufWritePre *.php :%s/\s+$//e
+autocmd BufWritePre *.css :%s/\s+$//e
+autocmd BufWritePre *.tpl :%s/\s+$//e
+autocmd BufWritePre *.js :%s/\s+$//e
+autocmd BufWritePre *.c :%s/\s+$//e
+autocmd BufWritePre *.cpp :%s/\s+$//e
+autocmd BufWritePre *.h :%s/\s+$//e
 
 
 "-------Autocmd--------
@@ -133,7 +139,7 @@ vnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
 nnoremap <silent> n   n:call HLNext(0.4)<cr>
 nnoremap <silent> N   N:call HLNext(0.4)<cr>
 
-highlight WhiteOnRed ctermbg=red    guibg=red
+highlight WhiteOnRed guibg=#ff0000 guifg=#FFFFFF
 function! HLNext (blinktime)
     let [bufnum, lnum, col, off] = getpos('.')
     let matchlen = strlen(matchstr(strpart(getline('.'),col-1),@/))
