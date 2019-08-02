@@ -1,6 +1,6 @@
 rm nvim.appimage* -f
 curl -sL install-node.now.sh/lts | sudo bash -s -- -y
-wget https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+wget https://github.com/neovim/neovim/releases/download/latest/nvim.appimage
 curl -sfLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 mkdir ~/.config/nvim/backup
 mkdir ~/.config/nvim/undo
