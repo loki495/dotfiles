@@ -166,12 +166,19 @@ let g:fzf_action = {
 let g:fzf_buffers_jump = 1
 
 function! s:check_back_space() abort
-      let col = col('.') - 1
-      return !col || getline('.')[col - 1]  =~ '\s'
-    endfunction
+    let col = col('.') - 1
+    return !col || getline('.')[col - 1]  =~ '\s'
+endfunction
 
-    inoremap <silent><expr> <TAB>
-		  \ pumvisible() ? "\<C-n>" :
-		  \ <SID>check_back_space() ? "\<TAB>" :
-		  \ coc#refresh()
+inoremap <silent><expr> <TAB>
+            \ pumvisible() ? "\<C-n>" :
+            \ <SID>check_back_space() ? "\<TAB>" :
+            \ coc#refresh()
+
+let g:php_cs_fixer_path = "~/dotfiles/nvim/php-cs-fixer.phar" " define the path to the php-cs-fixer.phar
+
+
+let g:php_cs_fixer_enable_default_mapping = 1
+
+autocmd BufWritePost *.php silent! call PhpCsFixerFixFile()
 

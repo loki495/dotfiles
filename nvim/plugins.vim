@@ -12,3 +12,5 @@ Plug 'tpope/vim-surround'
 " Plug 'Chiel92/vim-autoformat'
 " Plug 'ntpeters/vim-better-whitespace'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+Plug 'stephpy/vim-php-cs-fixer'
