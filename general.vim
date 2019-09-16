@@ -78,5 +78,6 @@ set pumheight=10                " so the complete menu doesn't get too big
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
 
-color lucius
-LuciusDark
+"color lucius
+"LuciusDark
+color scratch
