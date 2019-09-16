@@ -5,6 +5,7 @@ rm -f ~/.vim/general.vim
 rm -f ~/.vim/mappings.vim
 rm -f ~/.vim/plugins.vim
 rm -f ~/.vim/colors/lucius.vim
+rm -f ~/.vim/colors/scratch.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
 mkdir -p ~/bin
@@ -20,6 +21,7 @@ ln -s `pwd`/plugins.settings.vim ~/.vim/
 ln -s `pwd`/general.vim ~/.vim/
 ln -s `pwd`/mappings.vim ~/.vim/
 ln -s `pwd`/lucius.vim ~/.vim/colors/
+ln -s `pwd`/scratch.vim ~/.vim/colors/
 ln -s `pwd`/paragold-ora.vim ~/.vim/colors/
 ln -s `pwd`/paragold.vim ~/.vim/colors/
 cd $CURRENT_DIR

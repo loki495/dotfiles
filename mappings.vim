@@ -27,7 +27,7 @@ nnoremap <Leader>o R<cr><esc>d0
 imap <C-e> <Esc>e<Space>i
 
 iabbrev cdatal <![CDATA[]]><Left><Left><Left>
-iabbrev echol echo '<pre>'.__LINE__.' - '.__FILE__."\n";$e = new \Exception();print_r($e->getTraceAsString());echol"\n";print_r();exit;<Esc><S-f>)i
+iabbrev echol echo '<pre>'.__LINE__.' - '.__FILE__."\n";$e = new \Exception();print_r($e->getTraceAsString());echo"\n";print_r();exit;<Esc><S-f>)i
 iabbrev coutl cout << __LINE__ << " - " << __FILE__ << endl <<x<< endl;<Esc><S-f>xxi
 
 nmap <Leader><space> :nohlsearch<cr>
@@ -174,3 +174,6 @@ function! <SID>SynStack()
 endfunc
 
 nnoremap <Leader>y :TagbarToggle<cr>
+
+nnoremap <C-d> "_d
+nnoremap <C-D> "_D
