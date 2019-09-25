@@ -74,10 +74,14 @@ hi TabLineSel guifg=#333333 guibg=#d4c274
 hi LineNr guifg=#656532
 hi CursorLineNr guifg=#ffff99
 
+syntax keyword myword HELP containedin=phpComment,phpRegion contained
+highlight myword guibg=red
+
 
 " syn cluster cusFuncGroup  contains=customFuncAndres
 " syn match customFuncCluster       "*"   contains=@cusFunc
 syn match customFuncAndres /\v[[:alpha:]_.]+\ze(\s?\()/ contained
 hi def link customFuncAndres Function
+
 
 " hi customFuncAndres guibg=#ffffff guifg=#00ffff
