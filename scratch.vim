@@ -11,17 +11,14 @@ set background=dark
 " hi def link tCustomFunc  Function
 " hi def link tCustomClass Function
 
-syn match customFuncAndres /\v[[:alpha:]_.]+\ze(\s?\()/ contained
-hi customFuncAndres guibg=#ffffff guifg=#00ff00
-
-hi def link customFuncAndres phpFunctions
-
 
 set t_Co=256
 
 hi Normal guibg=#1f1f1f guifg=#c4c294
 hi CursorLine guibg=#000000 cterm=NONE
-hi CursorColumn guibg=#000000 guifg=#000000
+" hi CursorColumn guibg=#000000
+
+hi Type guifg=#6f81ff
 
 hi vimGroup guifg=#ffff77
 hi hiVimGroup guifg=#ff4400
@@ -42,6 +39,7 @@ hi phpStringSingle guifg=#d5ff50
 hi phpStringDouble guifg=#85ff44
 hi phpComment guifg=#999999 guibg=NONE
 hi phpDocTags guifg=#ffadad guibg=NONE
+hi phpDefine guifg=#6f81ff
 
 hi Pmenu guibg=#005599 guifg=#f7f5a2
 " PmenuSel PmenuThumb PmenuSbar
@@ -75,3 +73,11 @@ hi TabLineSel guifg=#333333 guibg=#d4c274
 
 hi LineNr guifg=#656532
 hi CursorLineNr guifg=#ffff99
+
+
+" syn cluster cusFuncGroup  contains=customFuncAndres
+" syn match customFuncCluster       "*"   contains=@cusFunc
+syn match customFuncAndres /\v[[:alpha:]_.]+\ze(\s?\()/ contained
+hi def link customFuncAndres Function
+
+" hi customFuncAndres guibg=#ffffff guifg=#00ffff
