@@ -19,11 +19,11 @@ call plug#begin('~/.vim/plugged')
 so ~/.vim/plugins.vim
 call plug#end()
 
-so ~/.vim/general.vim
-
 so ~/.vim/mappings.vim
 
 so ~/.vim/plugins.settings.vim
+
+so ~/.vim/general.vim
 
 " Local sourcing.
 if filereadable($HOME."/.vimrc.local")

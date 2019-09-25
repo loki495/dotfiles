@@ -61,38 +61,37 @@ autocmd BufWritePre *.php :%s/\s+$//e
 " Restore cursor position, window position, and last search after running a
 " command.
 function! Preserve(command)
-  " Save the last search.
-  let search = @/
+    " Save the last search.
+    let search = @/
 
-  " Save the current cursor position.
-  let cursor_position = getpos('.')
+    " Save the current cursor position.
+    let cursor_position = getpos('.')
 
-  " Save the current window position.
-  normal! H
-  let window_position = getpos('.')
-  call setpos('.', cursor_position)
+    " Save the current window position.
+    normal! H
+    let window_position = getpos('.')
+    call setpos('.', cursor_position)
 
-  " Execute the command.
-  execute a:command
+    " Execute the command.
+    execute a:command
 
-  " Restore the last search.
-  let @/ = search
+    " Restore the last search.
+    let @/ = search
 
-  " Restore the previous window position.
-  call setpos('.', window_position)
-  normal! zt
+    " Restore the previous window position.
+    call setpos('.', window_position)
+    normal! zt
 
-  " Restore the previous cursor position.
-  call setpos('.', cursor_position)
+    " Restore the previous cursor position.
+    call setpos('.', cursor_position)
 endfunction
 
 " Re-indent the whole buffer.
 function! Indent()
-  call Preserve('normal gg=G')
+    call Preserve('normal gg=G')
 endfunction
 
-autocmd CursorMovedI <buffer> call Indent()
-
+" autocmd CursorMovedI <buffer> call Indent()
 
 "-------Autocmd--------
 " autocmd BufEnter * if bufname("") !~ "^\[A-Za-z0-9\]*://" | lcd %:p:h | endif
@@ -108,18 +107,18 @@ nnoremap <leader>r :silent make run\|redraw!<cr>
 
 "------ Functions ------
 function! SearchFromCursor()
-  let curline = getline('.')
-  call inputsave()
-  let search = input('Search pattern: ')
-  call inputrestore()
+    let curline = getline('.')
+    call inputsave()
+    let search = input('Search pattern: ')
+    call inputrestore()
 
-  call inputsave()
-  let replace = input('Replace with: ')
-  call inputrestore()
+    call inputsave()
+    let replace = input('Replace with: ')
+    call inputrestore()
 
-  let str = ',$s~' . search . '~' . replace . '~gc'
-  redraw
-  execute str
+    let str = ',$s~' . search . '~' . replace . '~gc'
+    redraw
+    execute str
 endfunction
 
 inoremap <Leader>A <C-o>:call SearchFromCursor()<cr>
@@ -199,15 +198,6 @@ endfunction
 
 nnoremap `` :set invnumber<cr>
 
-" Show syntax highlighting groups for word under cursor
-nmap <C-S-P> :call <SID>SynStack()<CR>
-function! <SID>SynStack()
-  if !exists("*synstack")
-    return
-  endif
-  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
-endfunc
-
 nnoremap <Leader>y :TagbarToggle<cr>
 
 nnoremap <C-d> "_d
@@ -215,22 +205,24 @@ nnoremap <C-D> "_D
 
 " Show syntax highlighting groups for word under cursor
 function! <SID>SynStack()
-  if !exists("*synstack")
-    return
-  endif
-  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+    if !exists("*synstack")
+        return
+    endif
+
+    echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+    " for id in synstack(line("."), col(".")) echo synIDattr(id, "name") endfor
 endfunc
-nnoremap <C-l> :call <SID>SynStack()<CR>
+nnoremap <C-p> :call <SID>SynStack()<CR>
 
 " Toggle ALE quick list
 noremap <Leader>q :call QFixToggle()<CR>
 
 function! QFixToggle()
-  if exists("g:qfix_win")
-    cclose
-    unlet g:qfix_win
-  else
-    copen 10
-    let g:qfix_win = bufnr("$")
-  endif
+    if exists("g:qfix_win")
+        cclose
+        unlet g:qfix_win
+    else
+        copen 10
+        let g:qfix_win = bufnr("$")
+    endif
 endfunction
