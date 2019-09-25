@@ -1,44 +1,45 @@
+sy on
+syntax reset
 set background=dark
-if version > 580
-	hi clear
-	if exists("syntax_on")
-		syntax reset
-	endif
-endif
 
 " Highlight Class and Function names
-syn match    tCustomParen    "(" contains=tParen
-syn match    tCustomFunc     "\w\+\s*(" contains=tCustomParen
-syn match    tCustomScope    "::"
-syn match    tCustomClass    "\w\+\s*::" contains=tCustomScope
+" syn match    tCustomParen    "(" contains=tParen
+" syn match    tCustomFunc     "\w\+\s*(" contains=tCustomParen
+" syn match    tCustomScope    "::"
+" syn match    tCustomClass    "\w\+\s*::" contains=tCustomScope
 
-hi def link tCustomFunc  Function
-hi def link tCustomClass Function
+" hi def link tCustomFunc  Function
+" hi def link tCustomClass Function
+
+syn match customFuncAndres /\v[[:alpha:]_.]+\ze(\s?\()/ contained
+hi customFuncAndres guibg=#ffffff guifg=#00ff00
+
+hi def link customFuncAndres phpFunctions
+
 
 set t_Co=256
 
-hi Normal guibg=#242324 guifg=#d4c274
+hi Normal guibg=#1f1f1f guifg=#c4c294
 hi CursorLine guibg=#000000 cterm=NONE
-hi CursorColumn guibg=#000000
+hi CursorColumn guibg=#000000 guifg=#000000
 
-hi vimGroup guifg=#ffff00
+hi vimGroup guifg=#ffff77
 hi hiVimGroup guifg=#ff4400
 hi vimCommand guifg=#00bb99
-hi vimHighlight guifg=#009999
-hi Search guibg=#ad0303 guifg=#e6cb7e
+hi vimHighlight guifg=#00f999
+hi Search guibg=#9ff353 guifg=#000000
 hi IncSearch guibg=#ad0303 guifg=#e6cb7e
 
 hi IndentGuideDraw guibg=NONE cterm=NONE ctermbg=NONE ctermfg=NONE
 hi SpecialKey guibg=NONE cterm=NONE ctermbg=NONE ctermfg=NONE
 
-hi phpStructure guifg=#fff1fa
-hi phpInclude guifg=#3ff1fa
-hi Statement guifg=#d4c274
-hi Function guifg=#ffffff
+hi phpStructure guifg=#ff9695
+hi phpInclude guifg=#ff919a
+hi Statement guifg=#f4f274
+hi Function guifg=#ff9695
 hi phpIdentifier guifg=#35a0d7
-hi phpStringSingle guifg=#d5ff00
-hi phpStringDouble guifg=#45ff44
-
+hi phpStringSingle guifg=#d5ff50
+hi phpStringDouble guifg=#85ff44
 hi phpComment guifg=#999999 guibg=NONE
 hi phpDocTags guifg=#ffadad guibg=NONE
 
@@ -72,4 +73,5 @@ hi TabLineFill guifg=#000000 guibg=#000000
 hi TabLine guifg=#d4c274 guibg=#333333 gui=NONE
 hi TabLineSel guifg=#333333 guibg=#d4c274
 
-
+hi LineNr guifg=#656532
+hi CursorLineNr guifg=#ffff99

@@ -212,3 +212,25 @@ nnoremap <Leader>y :TagbarToggle<cr>
 
 nnoremap <C-d> "_d
 nnoremap <C-D> "_D
+
+" Show syntax highlighting groups for word under cursor
+function! <SID>SynStack()
+  if !exists("*synstack")
+    return
+  endif
+  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
+nnoremap <C-l> :call <SID>SynStack()<CR>
+
+" Toggle ALE quick list
+noremap <Leader>q :call QFixToggle()<CR>
+
+function! QFixToggle()
+  if exists("g:qfix_win")
+    cclose
+    unlet g:qfix_win
+  else
+    copen 10
+    let g:qfix_win = bufnr("$")
+  endif
+endfunction

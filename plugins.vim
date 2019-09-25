@@ -14,10 +14,11 @@ Plug 'tpope/vim-surround'
 Plug 'ntpeters/vim-better-whitespace'
 
 Plug 'Chiel92/vim-autoformat'
-Plug 'nathanaelkane/vim-indent-guides'
+" Plug 'nathanaelkane/vim-indent-guides'
+Plug 'Yggdroot/indentLine'
 
 Plug 'ervandew/supertab'
-Plug 'shawncplus/phpcomplete.vim'
+" Plug 'shawncplus/phpcomplete.vim'
 Plug 'majutsushi/tagbar'
 
 Plug 'jiangmiao/auto-pairs'
