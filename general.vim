@@ -4,6 +4,7 @@ scriptencoding utf-8
 set noautochdir
 
 set tags+=tags,tags.vendor,/
+
 " set autowriteall
 set backspace=indent,eol,start
 set completeopt=longest,menuone
@@ -48,7 +49,6 @@ set tabstop=4                   " an indentation every four columns
 
 "--------Visuals---------
 
-
 "Informing the system that the Putty background is black
 set background=dark
 
@@ -74,6 +74,7 @@ set linespace=15                " no extra spaces between rows
 set scrolljump=5                " lines to scroll when cursor leaves screen
 set showmatch                   " show matching brackets/parenthesis
 set pumheight=10                " so the complete menu doesn't get too big
+set scl=no
 
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.

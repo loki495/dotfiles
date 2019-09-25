@@ -49,9 +49,6 @@ let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
 let g:airline#extensions#ale#enabled = 1
 let g:airline#extensions#tabline#formatter = 'unique_tail_improved'
 
-
-
-
 "/
 "/ Ag
 "/
@@ -62,6 +59,18 @@ let g:ackprg = 'ag --nogroup --nocolor --column'
 "/
 let g:ale_sign_column_always = 1
 let g:ale_completion_enabled = 1
+
+let g:ale_set_quickfix = 1
+let g:ale_set_loclist = 0
+let g:ale_open_list = 1
+" let g:ale_set_quickfix = 0
+
+"/
+"/ IndentLine
+"/
+let g:indentLine_color_term = 239
+let g:indentLine_char_list = ['|', '¦', '┆', '┊']
+let g:indentLine_enabled = 1
 
 " nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
 " nmap <silent> <Leader>] <Plug>(ale_next_wrap)
@@ -86,7 +95,6 @@ let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-x': 'split',
   \ 'ctrl-v': 'vsplit' }
-
 
 let g:fzf_buffers_jump = 1
 
@@ -127,7 +135,7 @@ let g:SuperTabLongestHighlight = 1
 "/
 "/ PHPComplete
 "/
-autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
+" autocmd FileType php setlocal omnifunc=phpcomplete#CompletePHP
 
 let g:strip_whitespace_confirm=0
 let g:strip_whitespace_on_save = 1
