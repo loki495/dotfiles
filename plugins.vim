@@ -6,6 +6,8 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'spf13/vim-colors'
 Plug 'airblade/vim-gitgutter'
 
+Plug 'junegunn/seoul256.vim'
+
 Plug 'thiagoalessio/rainbow_levels.vim'
 
 Plug 'w0rp/ale'
