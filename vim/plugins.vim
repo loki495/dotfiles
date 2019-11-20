@@ -17,8 +17,9 @@ Plug 'blueyed/vim-diminactive'
 Plug 'hotoo/highlight-cursor-word'
 " Plug 'wellle/context.vim'
 
-" Plug 'w0rp/ale'
-Plug 'rhysd/vim-clang-format'
+Plug 'psliwka/vim-smoothie'
+
+Plug 'w0rp/ale'
 
 " http://www.futurile.net/2016/03/19/vim-surround-plugin-tutorial/
 Plug 'tpope/vim-surround'
