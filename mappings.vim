@@ -126,9 +126,6 @@ noremap <C-a> :"ad<CR>
 
 cmap w!! w !sudo tee % >/dev/null
 
-nnoremap <Leader>] gt
-nnoremap <Leader>[ gT
-
 " Run file as PHP
 inoremap <Leader>p :!php %<cr>
 noremap <Leader>p :!php %<cr>
