@@ -81,4 +81,7 @@ set wildmode=list:longest       " ,full " command <Tab> completion, list matches
 
 "color lucius
 "LuciusDark
-color scratch
+"color scratch
+autocmd ColorScheme janah highlight Normal ctermbg=235
+colorscheme janah
+

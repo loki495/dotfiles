@@ -45,9 +45,6 @@ map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>
 
 vnoremap p "_dP                      “ dont overwrite register when pasting
 
-nnoremap <Leader>] gt
-nnoremap <Leader>[ gT
-
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
 " match ExtraWhitespace /\s\+$/
@@ -301,3 +298,7 @@ command! FZFMru call fzf#run({
 \  'down':    '40%'})
 
 nnoremap <Leader>k :FZFMru<cr>
+
+nnoremap <A-[> gt
+nnoremap <A-]> gT
+
