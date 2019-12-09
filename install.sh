@@ -22,8 +22,13 @@ ln -s `pwd`/general.vim ~/.vim/
 ln -s `pwd`/mappings.vim ~/.vim/
 ln -s `pwd`/lucius.vim ~/.vim/colors/
 ln -s `pwd`/scratch.vim ~/.vim/colors/
-ln -s `pwd`/paragold-ora.vim ~/.vim/colors/
 ln -s `pwd`/paragold.vim ~/.vim/colors/
+ln -s `pwd`/janah.vim ~/.vim/colors/
+ln -s `pwd`/lucius.vim ~/.config/nvim/colors/
+ln -s `pwd`/scratch.vim ~/.config/nvim/colors/
+ln -s `pwd`/paragold-ora.vim ~/.config/nvim/colors/
+ln -s `pwd`/paragold.vim ~/.config/nvim/colors/
+ln -s `pwd`/janah.vim ~/.config/nvim/colors/
 cd $CURRENT_DIR
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
