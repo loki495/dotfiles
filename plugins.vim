@@ -19,6 +19,7 @@ Plug 'ntpeters/vim-better-whitespace'
 Plug 'Chiel92/vim-autoformat'
 " Plug 'nathanaelkane/vim-indent-guides'
 Plug 'Yggdroot/indentLine'
+Plug '2072/PHP-Indenting-for-VIm'
 
 Plug 'ervandew/supertab'
 " Plug 'shawncplus/phpcomplete.vim'
