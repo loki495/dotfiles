@@ -8,6 +8,7 @@ rm -f ~/.vim/colors/lucius.vim
 rm -f ~/.vim/colors/scratch.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
+rm -rf ~/.vim/colors/*.vim
 mkdir -p ~/bin
 mkdir -p ~/.vim/plugged
 mkdir -p ~/.vim/backup
@@ -16,19 +17,9 @@ mkdir -p ~/.vim/tmp
 mkdir -p ~/.vim/colors
 ln -s `pwd`/rg ~/bin/rg
 ln -s `pwd`/vimrc ~/.vimrc
-ln -s `pwd`/plugins.vim ~/.vim/
-ln -s `pwd`/plugins.settings.vim ~/.vim/
-ln -s `pwd`/general.vim ~/.vim/
-ln -s `pwd`/mappings.vim ~/.vim/
-ln -s `pwd`/lucius.vim ~/.vim/colors/
-ln -s `pwd`/scratch.vim ~/.vim/colors/
-ln -s `pwd`/paragold.vim ~/.vim/colors/
-ln -s `pwd`/janah.vim ~/.vim/colors/
-ln -s `pwd`/lucius.vim ~/.config/nvim/colors/
-ln -s `pwd`/scratch.vim ~/.config/nvim/colors/
-ln -s `pwd`/paragold-ora.vim ~/.config/nvim/colors/
-ln -s `pwd`/paragold.vim ~/.config/nvim/colors/
-ln -s `pwd`/janah.vim ~/.config/nvim/colors/
+cp --symbolic-link `pwd`/colors/*.vim ~/.vim/colors
+touch ~/.vimrc.local
+
 cd $CURRENT_DIR
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
