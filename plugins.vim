@@ -29,3 +29,4 @@ Plug 'majutsushi/tagbar'
 Plug 'jiangmiao/auto-pairs'
 
 Plug 'jwalton512/vim-blade'
+Plug 'posva/vim-vue'
