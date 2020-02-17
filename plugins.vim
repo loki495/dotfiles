@@ -20,6 +20,7 @@ Plug 'Chiel92/vim-autoformat'
 " Plug 'nathanaelkane/vim-indent-guides'
 Plug 'Yggdroot/indentLine'
 Plug '2072/PHP-Indenting-for-VIm'
+Plug 'rayburgemeestre/phpfolding.vim'
 
 Plug 'ervandew/supertab'
 " Plug 'shawncplus/phpcomplete.vim'
