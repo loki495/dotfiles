@@ -17,3 +17,4 @@ so ~/dotfiles/nvim/general.vim
 
 so ~/dotfiles/nvim/mappings.vim
 
+source $HOME/.vimrc.local
