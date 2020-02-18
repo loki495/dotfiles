@@ -9,7 +9,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'junegunn/seoul256.vim'
 
 Plug 'thiagoalessio/rainbow_levels.vim'
-Plug 'wellle/context.vim'
+" Plug 'wellle/context.vim'
 
 Plug 'w0rp/ale'
 
