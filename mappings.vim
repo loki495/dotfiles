@@ -23,6 +23,7 @@ nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
 nnoremap <Leader>o R<cr><esc>d0
+nnoremap <Leader>v :set invpaste paste?<CR>
 
 imap <C-e> <Esc>e<Space>i
 
@@ -298,4 +299,3 @@ nnoremap <Leader>k :FZFMru<cr>
 
 nnoremap <A-[> gt
 nnoremap <A-]> gT
-
