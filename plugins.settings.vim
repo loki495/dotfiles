@@ -1,54 +1,5 @@
 "-------Plugins----------
 
-" airline
-let g:airline_theme='murmur'
-let g:airline_powerline_fonts = 1
-let g:Powerline_symbols='unicode'
-
-let g:html_indent_tags = 'li\|p'
-
-if !exists('g:airline_symbols')
-    let g:airline_symbols = {}
-endif
-
-let g:airline_symbols.space = "\ua0"
-let g:airline_powerline_fonts = 1
-
-set listchars=trail:·,precedes:«,extends:»
-
-let g:airline#extensions#coc#enabled = 1
-let airline#extensions#coc#error_symbol = 'E:'
-let airline#extensions#coc#warning_symbol = 'W:'
-let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
-
-
-" unicode symbols
-" let g:airline_left_sep = ''
-" let g:airline_left_sep = ''
-" let g:airline_right_sep = ''
-" let g:airline_right_sep = ''
-" let g:airline_symbols.linenr = ''
-" let g:airline_symbols.linenr = ''
-" let g:airline_symbols.linenr = ''
-" let g:airline_symbols.branch = ''
-" let g:airline_symbols.paste = 'ρ'
-" let g:airline_symbols.paste = 'Þ'
-" let g:airline_symbols.paste = ''
-" let g:airline_symbols.whitespace = 'Ξ'
-
-" airline symbols
-" let g:airline_left_sep = ''
-" let g:airline_left_alt_sep = ''
-" let g:airline_right_sep = ''
-" let g:airline_right_alt_sep = ''
-" let g:airline_symbols.branch = ''
-" let g:airline_symbols.readonly = ''
-" let g:airline_symbols.linenr = ''
-
-" Set this. Airline will handle the rest.
-let g:airline#extensions#ale#enabled = 1
-let g:airline#extensions#tabline#formatter = 'unique_tail_improved'
-
 "/
 "/ Ag
 "/
@@ -63,6 +14,12 @@ let g:ale_completion_enabled = 1
 let g:ale_set_quickfix = 1
 let g:ale_set_loclist = 0
 let g:ale_open_list = 1
+nmap <silent> <leader>] :ALENext<cr>
+nmap <silent> <leader>[ :ALEPrevious<cr>
+
+" nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
+" nmap <silent> <Leader>] <Plug>(ale_next_wrap)
+
 " let g:ale_set_quickfix = 0
 
 "/
@@ -71,9 +28,6 @@ let g:ale_open_list = 1
 let g:indentLine_color_term = 239
 let g:indentLine_char_list = ['|', '¦', '┆', '┊']
 let g:indentLine_enabled = 1
-
-" nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
-" nmap <silent> <Leader>] <Plug>(ale_next_wrap)
 
 "/
 "/ Powerline
@@ -84,8 +38,8 @@ let g:Powerline_colorscheme = 'murmur' " Powerline colorscheme
 "/ FZF
 "/
 
-nmap ; :Files<CR>
-nmap <Leader>b :Buffers<CR>
+nmap <Leader>; :Files<CR>
+nmap <Leader>' :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
 nmap <Leader>. :History<cr>
@@ -147,21 +101,9 @@ let g:AutoPairsFlyMode = 1
 let g:AutoPairsShortcutBackInsert = '<Leader>e'
 let g:AutoPairsShortcutJump = '<Leader>w'
 
-" function GetFooText()
-  " let line = search('^class', 'ncbW')
-  " if line
-    " return '' . matchstr(getline(line), '^class \k\+')
-  " endif
-  " return 'No Class'
-" endfunction
-
-" call airline#parts#define_function('foo', 'GetFooText')
-" let g:airline_section_z = airline#section#create_right(['ffenc','foo'])
-
-let g:airline#extensions#tagbar#enabled = 1
-let g:airline#extensions#tagbar#flags = 'f'  " show full tag hierarchy
-
-" Creating a mapping to turn it on and off:
+"/
+"/ RainbowLevels
+"/
 map <leader>h :RainbowLevelsToggle<cr>
 
 hi! RainbowLevel0 ctermbg=240 guibg=#333333
@@ -174,4 +116,60 @@ hi! RainbowLevel6 ctermbg=234 guibg=#1c1c1c
 hi! RainbowLevel7 ctermbg=233 guibg=#121212
 hi! RainbowLevel8 ctermbg=232 guibg=#080808
 
-" au FileType javascript,python,php,xml,yaml,c,cpp,h,tpl :RainbowLevelsOn
+
+"      \         'tagbar': ' %{tagbar#currenttagtype("%s ", "")} %{tagbar#currenttag("[%s] ","", "p")}',
+let g:lightline = {
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ], [ 'filename', ], [ 'tagbar' ] ]
+      \ },
+      \ 'component': {
+      \         'tagbar': '%{tagbar#currenttag("[%s] ","", "p")}',
+      \ },
+      \ 'component_function': {
+      \   'modified': 'LightLineModified',
+      \   'readonly': 'LightLineReadonly',
+      \   'filename': 'LightLineFilename',
+      \   'fileformat': 'LightLineFileformat',
+      \   'filetype': 'LightLineFiletype',
+      \   'fileencoding': 'LightLineFileencoding',
+      \   'mode': 'LightLineMode'}
+      \ }
+function! LightLineModified()
+  return &ft =~ 'help' ? '' : &modified ? '+' : &modifiable ? '' : '-'
+endfunction
+
+function! LightLineReadonly()
+  return &ft !~? 'help' && &readonly ? 'RO' : ''
+endfunction
+
+function! LightLineFilename()
+  let fname = expand('%:p')
+  return fname == '__Tagbar__' ? g:lightline.fname :
+        \ ('' != LightLineReadonly() ? LightLineReadonly() . ' ' : '') .
+        \ ('' != fname ? fname : '[No Name]') .
+        \ ('' != LightLineModified() ? ' ' . LightLineModified() : '')
+endfunction
+
+function! LightLineFileformat()
+  return winwidth(0) > 70 ? &fileformat : ''
+endfunction
+
+function! LightLineFiletype()
+  return winwidth(0) > 70 ? (strlen(&filetype) ? &filetype : 'no ft') : ''
+endfunction
+
+function! LightLineFileencoding()
+  return winwidth(0) > 70 ? (strlen(&fenc) ? &fenc : &enc) : ''
+endfunction
+
+function! LightLineMode()
+  let fname = expand('%:t')
+  return fname == '__Tagbar__' ? 'Tagbar' :
+        \ winwidth(0) > 60 ? lightline#mode() : ''
+endfunction
+let g:tagbar_status_func = 'TagbarStatusFunc'
+
+function! TagbarStatusFunc(current, sort, fname, ...) abort
+    let g:lightline.fname = a:fname
+  return lightline#statusline(0)
+endfunction
