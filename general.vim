@@ -5,7 +5,6 @@ set noautochdir
 
 set tags+=tags,tags.vendor,/
 
-" set autowriteall
 set backspace=indent,eol,start
 set completeopt=longest,menuone
 set complete=.,i,t,b,u
@@ -52,18 +51,15 @@ set tabstop=4                   " an indentation every four columns
 "Informing the system that the Putty background is black
 set background=dark
 
-" set t_Co=256                           " Fix colors in the terminal
+set t_Co=256                           " Fix colors in the terminal
 syntax on                       " syntax highlighting
 
-" hi ColorColumn guibg=#292929
 set guifont=Ubuntu\ Mono\ derivative\ Powerline         " Way better than monospace
-"
-" color paragold
-" color paragold-ora
 
 set winminheight=0              " windows can be 0 line high
 set hlsearch                    " highlight search terms
 set number                      " line numbers on
+set relativenumber
 set numberwidth=5
 set cursorline
 set colorcolumn=
@@ -79,8 +75,9 @@ set scl=no
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
 
-"color lucius
-"LuciusDark
-"color scratch
 autocmd ColorScheme janah highlight Normal ctermbg=235
 colorscheme gruvbox
+
+set listchars=trail:·,precedes:«,extends:»
+
+set noshowmode

@@ -5,8 +5,6 @@
 " map <C-B> :FufBuffer<CR>
 
 set foldmethod=indent
-" set foldnestmax=10
-" set nofoldenable
 set foldlevel=2
 
 hi Folded guibg=#000000 guifg=#505050
@@ -48,7 +46,6 @@ vnoremap p "_dP                      “ dont overwrite register when pasting
 
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
-" match ExtraWhitespace /\s\+$/
 
 autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
 autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
@@ -89,10 +86,7 @@ function! Indent()
     call Preserve('normal gg=G')
 endfunction
 
-" autocmd CursorMovedI <buffer> call Indent()
-
 "-------Autocmd--------
-" autocmd BufEnter * if bufname("") !~ "^\[A-Za-z0-9\]*://" | lcd %:p:h | endif
 
 augroup autosourcing
     autocmd!
@@ -211,7 +205,6 @@ function! <SID>SynStack()
 \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name")
 endfunc
 
-" nnoremap <C-p> :call <SID>SynStack()<CR>
 
 " Toggle ALE quick list
 noremap <Leader>q :call QFixToggle()<CR>
@@ -297,5 +290,5 @@ command! FZFMru call fzf#run({
 
 nnoremap <Leader>k :FZFMru<cr>
 
-nnoremap <A-[> gt
-nnoremap <A-]> gT
+nnoremap <C-[> gt
+nnoremap <C-]> gT
