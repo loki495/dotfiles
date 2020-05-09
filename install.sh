@@ -1,4 +1,11 @@
 CURRENT_DIR=`pwd`
+
+# BASH
+mv ~/.bashrc ~/.bashrc.old
+ln -s `pwd`/bash/bashrc ~/.bashrc
+echo "BASH done"
+
+# VIM
 rm -f ~/.vimrc
 rm -f ~/.vim/plugins.settings.vim
 rm -f ~/.vim/general.vim
@@ -15,9 +22,9 @@ mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
 mkdir -p ~/.vim/colors
-ln -s `pwd`/rg ~/bin/rg
-ln -s `pwd`/vimrc ~/.vimrc
-cp --symbolic-link `pwd`/colors/*.vim ~/.vim/colors
+ln -s `pwd`/bin/rg ~/bin/rg
+ln -s `pwd`/vim/vimrc ~/.vimrc
+cp --symbolic-link `pwd`/vim/colors/*.vim ~/.vim/colors
 touch ~/.vimrc.local
 
 cd $CURRENT_DIR
@@ -28,16 +35,20 @@ vim +'PlugClean!' +'PlugInstall --sync' +qall
 YUM_CMD=$(which yum)
 APT_GET_CMD=$(which apt-get)
 
-if [[ ! -z $YUM_CMD ]]; then
-    sudo yum install fonts-powerline -y
-    sudo snap install ripgrep --classic
-    sudo snap alias ripgrep.rg rg
-elif [[ ! -z $APT_GET_CMD ]]; then
-    sudo apt-get install fonts-powerline -y
-    sudo snap install ripgrep --classic
-    sudo snap alias ripgrep.rg rg
-else
-    echo "error can't install package $PACKAGE"
-    exit 1;
-fi
-echo "DONE setting up vim..."
+# if [[ ! -z $YUM_CMD ]]; then
+#    sudo yum install fonts-powerline -y
+#    sudo snap install ripgrep --classic
+#    sudo snap alias ripgrep.rg rg
+#elif [[ ! -z $APT_GET_CMD ]]; then
+#    sudo apt-get install fonts-powerline -y
+#    sudo snap install ripgrep --classic
+#    sudo snap alias ripgrep.rg rg
+#else
+#    echo "error can't install package $PACKAGE"
+#    exit 1;
+#fi
+
+echo "VIM done"
+
+echo "DONE"
+
