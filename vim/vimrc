@@ -17,13 +17,13 @@ let g:ale_fixers = {
 let g:ale_fix_on_save = 1
 
 call plug#begin('~/.vim/plugged')
-so ~/dotfiles/plugins.vim
+so ~/dotfiles/vim/plugins.vim
 call plug#end()
 
-so ~/dotfiles/mappings.vim
+so ~/dotfiles/vim/mappings.vim
 
-so ~/dotfiles/plugins.settings.vim
+so ~/dotfiles/vim/plugins.settings.vim
 
-so ~/dotfiles/general.vim
+so ~/dotfiles/vim/general.vim
 
-source $HOME/.vimrc.local
+source ~/.vimrc.local
