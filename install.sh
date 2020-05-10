@@ -1,8 +1,11 @@
-CURRENT_DIR=`pwd`
+# Absolute path to this script. /home/user/bin/foo.sh
+SCRIPT=$(readlink -f $0)
+# Absolute path this script is in. /home/user/bin
+SCRIPTPATH=`dirname $SCRIPT`
 
 # BASH
 mv ~/.bashrc ~/.bashrc.old
-ln -s `pwd`/bash/bashrc ~/.bashrc
+ln -s $SCRIPTPATH/bash/bashrc ~/.bashrc
 echo "BASH done"
 
 # VIM
@@ -22,9 +25,10 @@ mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
 mkdir -p ~/.vim/colors
-ln -s `pwd`/bin/rg ~/bin/rg
-ln -s `pwd`/vim/vimrc ~/.vimrc
-cp --symbolic-link `pwd`/vim/colors/*.vim ~/.vim/colors
+rm rf ~/bin/rg
+ln -s $SCRIPTPATH/dotfiles/bin/rg ~/bin/rg
+ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
+cp --symbolic-link $SCRIPTPATH/vim/colors/*.vim ~/.vim/colors
 touch ~/.vimrc.local
 
 cd $CURRENT_DIR
