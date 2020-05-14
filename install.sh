@@ -18,20 +18,18 @@ rm -f ~/.vim/colors/lucius.vim
 rm -f ~/.vim/colors/scratch.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
-rm -rf ~/.vim/colors/*.vim
+rm -rf ~/.vim/colors
 mkdir -p ~/bin
 mkdir -p ~/.vim/plugged
 mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
-mkdir -p ~/.vim/colors
 rm rf ~/bin/rg
 ln -s $SCRIPTPATH/dotfiles/bin/rg ~/bin/rg
 ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
-cp --symbolic-link $SCRIPTPATH/vim/colors/*.vim ~/.vim/colors
+ln -s $SCRIPTPATH/vim/colors ~/.vim/colors
 touch ~/.vimrc.local
 
-cd $CURRENT_DIR
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 vim +'PlugClean!' +'PlugInstall --sync' +qall

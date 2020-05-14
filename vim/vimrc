@@ -26,4 +26,6 @@ so ~/dotfiles/vim/plugins.settings.vim
 
 so ~/dotfiles/vim/general.vim
 
+so ~/dotfiles/vim/colors/ifdef.vim
+
 source ~/.vimrc.local

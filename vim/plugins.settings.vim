@@ -25,14 +25,11 @@ nmap <silent> <leader>[ :ALEPrevious<cr>
 "/
 "/ IndentLine
 "/
-let g:indentLine_color_term = 239
-let g:indentLine_char_list = ['|', '¦', '┆', '┊']
-let g:indentLine_enabled = 1
+let g:indentLine_color_term = 29
+let g:indentLine_bgcolor_term = 202
 
-"/
-"/ Powerline
-"/
-let g:Powerline_colorscheme = 'murmur' " Powerline colorscheme
+let g:indentLine_char_list = ['|', '|', '|', '┊']
+let g:indentLine_enabled = 1
 
 "/
 "/ FZF
@@ -43,7 +40,7 @@ nmap <Leader>' :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
 nmap <Leader>. :History<cr>
-nmap <Leader>, :Rg<cr>
+nmap <Leader>a :Rg<cr>
 
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
