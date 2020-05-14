@@ -1,5 +1,6 @@
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
+Plug 'laher/fuzzymenu.vim'
 
 " Plug 'vim-airline/vim-airline'
 " Plug 'vim-airline/vim-airline-themes'

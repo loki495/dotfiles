@@ -5,6 +5,10 @@ set noautochdir
 
 set tags+=tags,tags.vendor,/
 
+set notimeout          " don't timeout on mappings
+set ttimeout           " do timeout on terminal key codes
+set timeoutlen=100
+
 set backspace=indent,eol,start
 set completeopt=longest,menuone
 set complete=.,i,t,b,u

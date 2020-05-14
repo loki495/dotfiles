@@ -151,8 +151,10 @@ function phpserver() {
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-PATH=$HOME/.cargo/bin:$PATH
+PATH=$HOME/.cargo/bin:$HOME/bin:$PATH
 
 #if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
 #  exec tmux
 #fi
+
+TERMINALBG="#000000"
