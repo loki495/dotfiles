@@ -11,6 +11,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'junegunn/seoul256.vim'
 
 Plug 'thiagoalessio/rainbow_levels.vim'
+Plug 'blueyed/vim-diminactive'
 " Plug 'wellle/context.vim'
 
 Plug 'w0rp/ale'
@@ -23,6 +24,8 @@ Plug 'Chiel92/vim-autoformat'
 Plug 'Yggdroot/indentLine'
 Plug '2072/PHP-Indenting-for-VIm'
 Plug 'rayburgemeestre/phpfolding.vim'
+
+Plug 'tpope/vim-fugitive'
 
 Plug 'ervandew/supertab'
 " Plug 'shawncplus/phpcomplete.vim'
