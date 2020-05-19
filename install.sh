@@ -18,13 +18,13 @@ rm -f ~/.vim/colors/lucius.vim
 rm -f ~/.vim/colors/scratch.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
-rm -rf ~/.vim/colors
+rm -rf ~/.vim/colors/
 mkdir -p ~/bin
 mkdir -p ~/.vim/plugged
 mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
-rm rf ~/bin/rg
+rm -f ~/bin/rg
 ln -s $SCRIPTPATH/dotfiles/bin/rg ~/bin/rg
 ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
 ln -s $SCRIPTPATH/vim/colors ~/.vim/colors
