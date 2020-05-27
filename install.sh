@@ -18,7 +18,7 @@ rm -f ~/.vim/colors/lucius.vim
 rm -f ~/.vim/colors/scratch.vim
 rm -rf ~/.vim/plugins/
 rm -rf ~/.vim/plugged/
-rm -rf ~/.vim/colors/
+unlink ~/.vim/colors/ 2>/dev/null
 mkdir -p ~/bin
 mkdir -p ~/.vim/plugged
 mkdir -p ~/.vim/backup
@@ -29,7 +29,7 @@ rm -f ~/bin/vim-mappings
 ln -s $SCRIPTPATH/bin/rg ~/bin/rg
 ln -s $SCRIPTPATH/vim/vim-mappings ~/bin/vim-mappings
 ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
-ln -s $SCRIPTPATH/vim/colors ~/.vim/colors
+ln -s $SCRIPTPATH/vim/colors/ ~/.vim/colors
 touch ~/.vimrc.local
 chmod 777 ~/bin/vim-mappings
 chmod 777 ~/bin/rg
