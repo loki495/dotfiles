@@ -25,11 +25,14 @@ mkdir -p ~/.vim/backup
 mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
 rm -f ~/bin/rg
+rm -f ~/bin/vim-mappings
 ln -s $SCRIPTPATH/dotfiles/bin/rg ~/bin/rg
 ln -s $SCRIPTPATH/dotfiles/vim/vim-mappings ~/bin/vim-mappings
 ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
 ln -s $SCRIPTPATH/vim/colors ~/.vim/colors
 touch ~/.vimrc.local
+chmod 777 ~/bin/vim-mappings
+chmod 777 ~/bin/rg
 
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
