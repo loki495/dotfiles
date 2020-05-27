@@ -148,8 +148,8 @@ endf
 
 " Switch to last-active tab
 au TabLeave * let g:lasttab = tabpagenr()
-nnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>    "# [Ctl-l]    toggle last tab
-vnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
+nnoremap <silent> <c-u> :exe "tabn ".g:lasttab<cr>    "# [Ctl-u]    toggle last tab
+vnoremap <silent> <c-u> :exe "tabn ".g:lasttab<cr>
 
 nnoremap <silent> n   n:call HLNext(0.4)<cr>
 nnoremap <silent> N   N:call HLNext(0.4)<cr>
@@ -301,7 +301,7 @@ nnoremap <Leader>= :set lazyredraw<cr>gg=G<C-o><C-o>    "# [Leader-=]    indent 
 inoremap <Leader>= <esc>:set lazyredraw<cr>magg=G`aa
 
 " search for camelCase or snake_case word delimiters, motions with n-N
-noremap <C-w> mx/[A-Z_]<cr>`x         "# [Ctl-w]    search for camelCase and snake_case delimiters, to use with motion n/N
+noremap <Leader>c mx/[A-Z_]<cr>`x         "# [Leader-c]    search for camelCase and snake_case delimiters, to use with motion n/N
 
 " close tab on ctl-q
 nnoremap <C-x> :q<cr>  "# [Ctl-x]    close tab
