@@ -1,13 +1,10 @@
 "------Mappings----------
 
 " Emmet-vim
+" asdsadsasa
 
 " map <C-B> :FufBuffer<CR>
 
-set foldmethod=indent
-set foldlevel=2
-
-hi Folded guibg=#000000 guifg=#505050
 
 cmap w!! w !sudo tee % >/dev/null
 
@@ -20,12 +17,12 @@ nnoremap <Right> :echoe "Use l"<CR>
 nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
-nnoremap <Leader>o R<cr><esc>d0
-nnoremap <Leader>v :set invpaste paste?<CR>
+nnoremap <Leader>o R<cr><esc>d0                 "# [Leader-o]    Split line at cursor
+nnoremap <Leader>v :set invpaste paste?<CR>     "# [Leader-v]    Toggle paste
 
-imap <C-e> <Esc>e<Space>i
+imap <C-e> <Esc>e<Space>i                       "# [Ctl-e]    End of word in INSERT MODE
 
-iabbrev cdatal <![CDATA[]]><Left><Left><Left>
+iabbrev cdatal <![CDATA[]]><Left><Left><Left>   "# cdatal    Add CDATA wrappers
 iabbrev echol echo '<pre>'.__LINE__.' - '.__FILE__."\n";$e = new \Exception();print_r($e->getTraceAsString());echo"\n";print_r();exit;<Esc><S-f>)i
 iabbrev coutl cout << __LINE__ << " - " << __FILE__ << endl <<x<< endl;<Esc><S-f>xxi
 
@@ -47,7 +44,7 @@ vnoremap p "_dP                      “ dont overwrite register when pasting
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
 
-autocmd BufRead * :%s/\t/    /ge
+" autocmd BufRead * :%s/\t/    /ge
 autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
 autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
@@ -123,7 +120,7 @@ noremap <C-a> :"ad<CR>
 cmap w!! w !sudo tee % >/dev/null
 
 " Run file as PHP
-inoremap <Leader>p :!php %<cr>
+inoremap <Leader>p :!php %<cr> "# [Leader-p]    run PHP file
 noremap <Leader>p :!php %<cr>
 
 "/ CTRL_Backspace delete from cursor to beginning of word
@@ -133,15 +130,10 @@ inoremap  <Esc><Right>dbi
 nnoremap <leader><Tab> %
 noremap <leader><Tab> %
 
-inoremap <C-k> <C-o>k
-inoremap <C-j> <C-o>j
-inoremap <C-h> <C-o>h
-inoremap <C-l> <C-o>l
-
-inoremap <Leader>/ <esc>mxA;<esc>`xa
+inoremap <Leader>/ <esc>mxA;<esc>`xa "# [Leader-/]    add semi-colon at end of line
 nnoremap <Leader>/ <esc>mxA;<esc>
 
-nnoremap <Leader>0 1gt
+nnoremap <Leader>0 1gt     "# [Leader-0]    go to first tab
 
 autocmd filetype netrw call Netrw_mappings()
 function! Netrw_mappings()
@@ -156,7 +148,7 @@ endf
 
 " Switch to last-active tab
 au TabLeave * let g:lasttab = tabpagenr()
-nnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
+nnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>    "# [Ctl-l]    toggle last tab
 vnoremap <silent> <c-l> :exe "tabn ".g:lasttab<cr>
 
 nnoremap <silent> n   n:call HLNext(0.4)<cr>
@@ -190,8 +182,8 @@ nnoremap `` :set invnumber<cr>
 
 nnoremap <Leader>y :TagbarToggle<cr>
 
-nnoremap <C-d> "_d
-nnoremap <C-D> "_D
+nnoremap <C-d> "_d          "# [Ctrl-d]    delete char without overwriting default register
+nnoremap <C-D> "_D          "# [Ctrl-d]    delete rest of line without overwriting default register
 
 " Show syntax highlighting groups for word under cursor
 function! <SID>SynStack()
@@ -208,7 +200,7 @@ endfunc
 
 
 " Toggle ALE quick list
-noremap <Leader>q :call QFixToggle()<CR>
+noremap <Leader>q :call QFixToggle()<CR>      "# [Leader-q]    toggle quickfix window
 
 function! QFixToggle()
     if exists("g:qfix_win")
@@ -291,10 +283,28 @@ command! FZFMru call fzf#run({
 
 nnoremap <Leader>k :FZFMru<cr>
 
+function! s:DiffWithSaved()               "# [:diffwithsaved]    show buffer differences with last saved version
+    let filetype=&ft
+    diffthis
+    vnew | r # | normal! 1Gdd
+    diffthis
+    exe "setlocal bt=nofile bh=wipe nobl noswf ro ft=" . filetype
+endfunction
+com! DiffSaved call s:DiffWithSaved()
+
 " move between tabs
-nnoremap <C-[> gT
-nnoremap <C-]> gt
+nnoremap <C-[> gT    "# [Ctl-[]    move to previous tab
+nnoremap <C-]> gt    "# [Ctl-]]    move to next tab
 
 " indent whole file
-nnoremap <Leader>= :set lazyredraw<cr>gg=G<C-o><C-o>
+nnoremap <Leader>= :set lazyredraw<cr>gg=G<C-o><C-o>    "# [Leader-=]    indent whole file
 inoremap <Leader>= <esc>:set lazyredraw<cr>magg=G`aa
+
+" search for camelCase or snake_case word delimiters, motions with n-N
+noremap <C-w> mx/[A-Z_]<cr>`x         "# [Ctl-w]    search for camelCase and snake_case delimiters, to use with motion n/N
+
+" close tab on ctl-q
+nnoremap <C-x> :q<cr>  "# [Ctl-x]    close tab
+
+" show all current mappings (in this file)
+nnoremap <C-m> :tabnew\|read !vim-mappings<cr>:setlocal buftype=nofile<cr>:setlocal bufhidden=hide<cr>:setlocal noswapfile<cr>
