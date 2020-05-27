@@ -26,6 +26,7 @@ mkdir -p ~/.vim/undo
 mkdir -p ~/.vim/tmp
 rm -f ~/bin/rg
 ln -s $SCRIPTPATH/dotfiles/bin/rg ~/bin/rg
+ln -s $SCRIPTPATH/dotfiles/vim/vim-mappings ~/bin/vim-mappings
 ln -s $SCRIPTPATH/vim/vimrc ~/.vimrc
 ln -s $SCRIPTPATH/vim/colors ~/.vim/colors
 touch ~/.vimrc.local

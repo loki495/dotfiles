@@ -9,6 +9,7 @@ set notimeout          " don't timeout on mappings
 set ttimeout           " do timeout on terminal key codes
 set timeoutlen=100
 
+set nostartofline
 set backspace=indent,eol,start
 set completeopt=longest,menuone
 set complete=.,i,t,b,u
@@ -85,3 +86,8 @@ colorscheme gruvbox
 set listchars=trail:·,precedes:«,extends:»
 
 set noshowmode
+
+set foldmethod=indent
+set foldlevel=2
+
+hi Folded guibg=#000000 guifg=#505050

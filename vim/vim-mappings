@@ -1,0 +1,2 @@
+#!/bin/bash
+grep -o \"#.* vim/mappings.vim | awk -F '"# ' '{ print $2;  }' | awk -F '    ' '{ $1=sprintf("%-20s",$1)  } 1'
