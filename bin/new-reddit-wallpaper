@@ -1,0 +1,4 @@
+#!/bin/bash
+notify-send "Getting new wallpaper from reddit"
+wallpaper-reddit --lottery --random EarthPorn futureporn spaceporn FractalPorn ExposurePorn WeatherPorn wallpapers CityPorn SkyPorn multiwall offensive_wallpapers wallpaper nocontext_wallpapers
+notify-send "New wallpaper set"
