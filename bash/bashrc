@@ -158,3 +158,5 @@ PATH=$HOME/.cargo/bin:$HOME/bin:$PATH
 #fi
 
 TERMINALBG="#000000"
+
+source ~/.config/restic/restic.conf
