@@ -308,3 +308,18 @@ nnoremap <C-x> :q<cr>  "# [Ctl-x]    close tab
 
 " show all current mappings (in this file)
 nnoremap <C-m> :tabnew\|read !vim-mappings<cr>:setlocal buftype=nofile<cr>:setlocal bufhidden=hide<cr>:setlocal noswapfile<cr>
+
+" autosave delay, cursorhold trigger, default: 4000ms
+setl updatetime=50
+
+" highlight the word under cursor (CursorMoved is inperformant)
+highlight WordUnderCursor ctermbg=233 cterm=none gui=none
+autocmd CursorHold * call HighlightCursorWord()
+function! HighlightCursorWord()
+    " if hlsearch is active, don't overwrite it!
+    let search = getreg('/')
+    let cword = expand('<cword>')
+    if match(cword, search) == -1
+        exe printf('match WordUnderCursor /\V\<%s\>/', escape(cword, '/\'))
+    endif
+endfunction
