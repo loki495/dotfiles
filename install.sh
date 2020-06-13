@@ -57,3 +57,8 @@ vim +'PlugClean!' +'PlugInstall --sync' +qall
 echo "VIM done"
 
 echo "DONE"
+
+# sudo apt install libncursesw5-dev pkg-config
+# git clone https://github.com/mawww/kakoune.git && cd kakoune/src
+# make
+# PREFIX=$HOME/.local make install
