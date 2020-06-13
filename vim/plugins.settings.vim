@@ -35,7 +35,7 @@ let g:indentLine_enabled = 1
 "/ FZF
 "/
 
-nmap <Leader>; :Files<CR>
+nmap <Leader>; :GFiles --exclude-standard --others --cached<CR>
 nmap <Leader>' :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
