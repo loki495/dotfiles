@@ -2,6 +2,8 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+export LANG=en_US.UTF-8
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
@@ -104,11 +106,7 @@ fi
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 export EDITOR=vim
-
-# some more ls aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
+export VISUAL=vim
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
@@ -160,3 +158,17 @@ PATH=$HOME/.cargo/bin:$HOME/bin:$PATH
 TERMINALBG="#000000"
 
 source ~/.config/restic/restic.conf
+export PATH="$PATH:$HOME/.config/composer/vendor/bin:$HOME/dotfiles/bin"
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'alias ls='ls --color=auto'
+alias la='ls -A'
+alias findf='find . -type f'
+alias findd='find . -type d'
+alias rm='rm -i'
+alias ..='cd ..'
+alias cd..='cd ..'
+
+
