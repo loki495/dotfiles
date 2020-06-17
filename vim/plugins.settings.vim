@@ -51,6 +51,7 @@ nmap <Leader>a :Rg<cr>
 
 let g:fzf_action = {
   \ 'return': 'tab split',
+  \ 'ctrl-e': 'e',
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-x': 'split',
   \ 'ctrl-v': 'vsplit' }
