@@ -17,6 +17,12 @@ let g:ale_open_list = 1
 nmap <silent> <leader>] :ALENext<cr>
 nmap <silent> <leader>[ :ALEPrevious<cr>
 
+let g:ale_php_phpcs_executable='~/dotfiles/bin/phpcs'
+let g:ale_php_phpcbf_executable='~/dotfiles/bin/phpcbf'
+let g:ale_fixers = {'php': ['phpcbf']}
+let g:ale_fix_on_save = 1
+
+
 " nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
 " nmap <silent> <Leader>] <Plug>(ale_next_wrap)
 
@@ -36,6 +42,7 @@ let g:indentLine_enabled = 1
 "/
 
 nmap <Leader>; :GFiles --exclude-standard --others --cached<CR>
+nmap <Leader>f :Files<CR>
 nmap <Leader>' :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
@@ -43,6 +50,7 @@ nmap <Leader>. :History<cr>
 nmap <Leader>a :Rg<cr>
 
 let g:fzf_action = {
+  \ 'return': 'tab split',
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-x': 'split',
   \ 'ctrl-v': 'vsplit' }
