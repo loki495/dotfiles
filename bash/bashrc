@@ -165,10 +165,25 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'alias ls='ls --color=auto'
 alias la='ls -A'
-alias findf='find . -type f'
-alias findd='find . -type d'
 alias rm='rm -i'
 alias ..='cd ..'
 alias cd..='cd ..'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias findd='find . -type d'
 
+unset -f findf
+unset findf
+function findf() {
+    path=$1
+    keywords=$2
+    shift
+    shift
 
+    if [ $# -lt 2 ]; then
+        echo "Usage: findf <path> <keywords> <extra (optional)>";
+    else
+        find $path -type f $@ -exec grep -Hn $keywords {} --color=always \; 
+    fi
+}
