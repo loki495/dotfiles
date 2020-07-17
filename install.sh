@@ -36,7 +36,8 @@ chmod 777 ~/bin/rg
 
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
-vim +'PlugClean!' +'PlugInstall --sync' +qall
+# vim +'PlugClean!' +'PlugInstall --sync' +qall
+vim +'PlugInstall --sync' +qall &> /dev/null
 
 # YUM_CMD=$(which yum)
 # APT_GET_CMD=$(which apt-get)
