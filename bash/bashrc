@@ -184,6 +184,8 @@ function findf() {
     if [ $# -lt 2 ]; then
         echo "Usage: findf <path> <keywords> <extra (optional)>";
     else
-        find $path -type f $@ -exec grep -Hn $keywords {} --color=always \; 
+        find $path -type f $@ -exec grep -Hn $keywords {} --color=always \;
     fi
 }
+
+set -o vi
