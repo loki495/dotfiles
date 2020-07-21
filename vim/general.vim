@@ -75,19 +75,19 @@ set linespace=15                " no extra spaces between rows
 set scrolljump=5                " lines to scroll when cursor leaves screen
 set showmatch                   " show matching brackets/parenthesis
 set pumheight=10                " so the complete menu doesn't get too big
-set scl=no
+silent! set scl=no
 
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
 
-autocmd ColorScheme janah highlight Normal ctermbg=235
 silent! colorscheme gruvbox
 
 set listchars=trail:·,precedes:«,extends:»
 
 set noshowmode
+" hi Folded guibg=#000000 guifg=#505050
 
-set foldmethod=indent
-set foldlevel=2
-
-hi Folded guibg=#000000 guifg=#505050
+" set foldmethod=syntax
+set foldlevel=0
+set foldlevelstart=100
+set nofoldenable

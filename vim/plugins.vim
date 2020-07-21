@@ -12,6 +12,7 @@ Plug 'junegunn/seoul256.vim'
 
 Plug 'thiagoalessio/rainbow_levels.vim'
 Plug 'blueyed/vim-diminactive'
+Plug 'hotoo/highlight-cursor-word'
 " Plug 'wellle/context.vim'
 
 Plug 'w0rp/ale'
@@ -31,7 +32,7 @@ Plug 'ervandew/supertab'
 " Plug 'shawncplus/phpcomplete.vim'
 Plug 'majutsushi/tagbar'
 
-Plug 'jiangmiao/auto-pairs'
+" Plug 'jiangmiao/auto-pairs'
 
 Plug 'jwalton512/vim-blade'
 Plug 'posva/vim-vue'

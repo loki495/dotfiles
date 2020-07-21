@@ -314,7 +314,7 @@ setl updatetime=50
 
 " highlight the word under cursor (CursorMoved is inperformant)
 highlight WordUnderCursor ctermbg=233 cterm=none gui=none
-autocmd CursorHold * call HighlightCursorWord()
+autocmd CursorMoved,CursorHold * call HighlightCursorWord()
 function! HighlightCursorWord()
     " if hlsearch is active, don't overwrite it!
     let search = getreg('/')
