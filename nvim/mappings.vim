@@ -1,9 +1,9 @@
 "------Mappings----------
 
-set foldmethod=indent
+" set foldmethod=indent
 " set foldnestmax=10
 " set nofoldenable
-set foldlevel=2
+" set foldlevel=2
 
 hi Folded guibg=#000000 guifg=#505050
 

@@ -31,8 +31,8 @@ let g:ale_fix_on_save = 1
 "/
 "/ IndentLine
 "/
-let g:indentLine_color_term = 29
-let g:indentLine_bgcolor_term = 202
+        let g:indentLine_color_term = 29
+let g:indentLine_bgcolor_term = 230
 
 let g:indentLine_char_list = ['|', '|', '|', '┊']
 let g:indentLine_enabled = 1
@@ -101,13 +101,6 @@ let g:strip_whitespace_confirm=0
 let g:strip_whitespace_on_save = 1
 
 "/
-"/ Auto-Pairs
-"/
-let g:AutoPairsFlyMode = 1
-let g:AutoPairsShortcutBackInsert = '<Leader>e'
-let g:AutoPairsShortcutJump = '<Leader>w'
-
-"/
 "/ RainbowLevels
 "/
 map <leader>h :RainbowLevelsToggle<cr>
@@ -123,13 +116,13 @@ hi! RainbowLevel7 ctermbg=233 guibg=#121212
 hi! RainbowLevel8 ctermbg=232 guibg=#080808
 
 
-"      \         'tagbar': ' %{tagbar#currenttagtype("%s ", "")} %{tagbar#currenttag("[%s] ","", "p")}',
+"\         'tagbar': '%{tagbar#currenttag("[%s] ","", "p")}',
 let g:lightline = {
       \ 'active': {
       \   'left': [ [ 'mode', 'paste' ], [ 'filename', ], [ 'tagbar' ] ]
       \ },
       \ 'component': {
-      \         'tagbar': '%{tagbar#currenttag("[%s] ","", "p")}',
+      \         'tagbar': ' %{tagbar#currenttagtype("%s ", "")} %{tagbar#currenttag("[%s] ","", "p")}',
       \ },
       \ 'component_function': {
       \   'modified': 'LightLineModified',
