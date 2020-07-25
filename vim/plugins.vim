@@ -17,6 +17,7 @@ Plug 'hotoo/highlight-cursor-word'
 
 Plug 'w0rp/ale'
 
+" http://www.futurile.net/2016/03/19/vim-surround-plugin-tutorial/
 Plug 'tpope/vim-surround'
 Plug 'ntpeters/vim-better-whitespace'
 
