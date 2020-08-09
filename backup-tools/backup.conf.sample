@@ -1,0 +1,28 @@
+# vi: ft=bash
+SITE_HTTPS=1
+SITE_DOMAIN=seafoodcoverwest.com
+SITE_TYPE=wordpress
+
+LOCAL_BASE=`pwd`
+LOCAL_PATH=public_html
+
+SSH_HOST=66.117.15.34
+SSH_PORT=2222
+SSH_USER=seafoodcoverwest
+SSH_BASE_PATH=/
+SSH_PATH=public_html
+
+MYCNF_PATH=/home/seafoodcoverwest
+MYSQL_USER=seafoodcoverwest_onlinebusiness
+MYSQL_PASSWORD=getfound78#
+MYSQL_DATABASE=seafoodcoverwest_onlinebusiness
+
+MYSQLDUMP_FILE=seafoodcoverwest_onlinebusiness.sql.gz
+
+WP_OPTION_TABLE=wp_option
+SITE_LINK=SeafoodCoverWestminster.Com
+
+declare -a POST_SQL=(
+                     "UPDATE wp_options SET option_value = REPLACE(option_value, (SELECT option_value FROM (select option_value,option_name from wp_options) as m WHERE m.option_name = 'site_link'),'$SITE_LINK') WHERE option_name = 'about_get_found_desc'"
+                     "UPDATE wp_options SET option_value = '$SITE_LINK' WHERE option_name = 'site_link'"
+)
