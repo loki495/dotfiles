@@ -1,0 +1,11 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/common
+
+check_mycnf
+
+echo "Getting mysql backup"
+OPTIONS="--databases $MYSQL_DATABASE --user=$MYSQL_USER --default-character-set=utf8 --opt --single-transaction --routines --triggers --events --add-drop-database --add-drop-table --complete-insert --tz-utc"
+
+run_ssh mysqldump  $OPTIONS  | gzip -9 > $MYSQLDUMP_FILE

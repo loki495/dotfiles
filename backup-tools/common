@@ -1,0 +1,128 @@
+# vi: ft=bash
+
+#Black        0;30     Dark Gray     1;30
+#Red          0;31     Light Red     1;31
+#Green        0;32     Light Green   1;32
+#Brown/Orange 0;33     Yellow        1;33
+#Blue         0;34     Light Blue    1;34
+#Purple       0;35     Light Purple  1;35
+#Cyan         0;36     Light Cyan    1;36
+#Light Gray   0;37     White         1;37
+
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo_info() {
+    echo -e "${BLUE}${@}${NC}"
+}
+echo_success() {
+    echo -e "${GREEN}${@}${NC}"
+}
+echo_error() {
+    echo -e "${RED}${@}${NC}"
+}
+
+CONF_FILE=
+DEFAULT_CONF="backup.conf"
+SCRIPT_NAME=`basename "$0"`
+SSH_PORT=
+LAST_RESULT=
+
+try_default_config() {
+    echo "Trying default config path..."
+    if [ -f "$DEFAULT_CONF" ]
+    then
+        CONF_FILE="`pwd`/$DEFAULT_CONF"
+    else
+        echo_error "No default configuration file (backup.conf)"
+        usage
+        exit
+    fi
+}
+
+if [ $# -eq 0 ]
+then
+    try_default_config
+else
+    if [[ "$1" == *.conf ]]
+    then
+        CONF_FILE="`pwd`/$DEFAULT_CONF"
+    else
+        try_default_config
+    fi
+fi
+
+echo_info "Using $CONF_FILE"
+source $CONF_FILE
+
+if [ -z ${SSH_HOST+x} ]
+then
+    echo_error "Error: No SSH_HOST value set"
+    exit
+fi
+
+if [ -z ${MYSQL_USER+x} ]
+then
+    echo_error "Error: No MYSQL_USER value set"
+    exit
+fi
+
+if [ -z ${MYSQL_DATABASE+x} ]
+then
+    echo_error "Error: No MYSQL_DATABASE value set"
+    exit
+fi
+
+echo_success "SSH Host found: $SSH_HOST"
+
+PORT_OVERRIDE=
+re='^[0-9]+$'
+if [[ $SSH_PORT =~ $re ]] ;
+then
+# SSH > 0
+    echo_success "SSH Port found: $SSH_PORT"
+    PORT_OVERRIDE=" -p $SSH_PORT"
+else
+    echo_error "SSH No port found... continuing..."
+fi
+
+if [ -z ${SSH_USER+x} ]
+then
+    SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE"
+else
+    SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE"
+fi
+
+run_ssh_silent() {
+    echo_info $SSH_BASE $@
+    $SSH_BASE $@ 2>&1 > /dev/null
+    RESULT=$?
+    return $RESULT
+}
+run_ssh() {
+    echo_info $SSH_BASE $@
+    $SSH_BASE $@
+    RESULT=$?
+    return $RESULT
+}
+
+check_mycnf() {
+    run_ssh "ls -lha ${MYCNF_PATH}/.my.cnf && grep [mysqldump] ${MYCNF_PATH}/.my.cnf && grep [mysql] ${MYCNF_PATH}/.my.cnf"
+    LAST_RESULT=$?
+
+    if [ $LAST_RESULT -gt 0 ]
+    then
+        echo_error "No ~/.my.cfg with [mysqldump] found"
+        TOUCH="touch ${MYCNF_PATH}/.my.cnf"
+        ECHO1="echo \"[mysqldump]\" >> ${MYCNF_PATH}/.my.cnf"
+        ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/.my.cnf"
+        ECHO5="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5"
+    else
+        echo_success ".my.cnf found"
+    fi
+}

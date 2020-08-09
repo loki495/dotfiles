@@ -1,0 +1,119 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/common
+
+cd $LOCAL_BASE
+if [ -z ${LOCAL_BASE+x} ]
+then
+    echo "Error: No LOCAL_BASE value set"
+    exit
+fi
+,
+if [ -z ${LOCAL_PATH+x} ]
+then
+    echo "Error: No LOCAL_PATH value set"
+    exit
+fi
+
+echo -e "${GREEN}" "SSH Host: $SSH_HOST" "${NC}"
+echo -e "${GREEN}" "SSH Port: $SSH_PORT" "${NC}"
+echo -e "${GREEN}" "SSH User: $SSH_USER" "${NC}"
+echo -e "${GREEN}" "SSH Path: $SSH_PATH" "${NC}"
+echo -e "${GREEN}" "Local Base: $LOCAL_BASE" "${NC}"
+echo -e "${GREEN}" "Local Path: $LOCAL_PATH" "${NC}"
+
+#SSH_LOG=ssh.log
+#SSH_PORT=2222
+#SSH_USER=chinocleaning
+#SSH_PATH=public_html
+
+check_gitignore() {
+    # check gitignore
+    echo -e "${GREEN}" "Checking for .gitignore" "${NC}"
+    ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    cd '"$SSH_PATH"'
+    ls -lha .gitignore'
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}" "NO .gitignore" "${NC}"
+        scp -P $SSH_PORT /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_PATH
+        echo -e "${GREEN} "$CMD "${NC}"
+        exit;
+    else
+        echo -e "${GREEN}" ".gitignore found" "${NC}"
+    fi
+}
+
+check_git_repo() {
+
+    # check git repo
+    echo -e "${GREEN}" "Checking for valid repo on $SSH_PATH" "${NC}"
+    ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    cd '"$SSH_PATH"'
+    ls -lha .git'
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}" "GIT REPO NOT FOUND" "${NC}"
+
+        # git repo create
+        echo -e "${GREEN}" "Creating initial commit" "${NC}"
+        ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+        cd '"$SSH_PATH"'
+        git init'
+
+        COMMIT_MESSAGE="Initial Commit"
+    else
+        echo -e "${GREEN}" "GIT REPO FOUND" "${NC}"
+
+        COMMIT_MESSAGE="BACKUP FOR "`date +"%m/%d/%Y"`
+    fi
+}
+
+git_commit() {
+
+    ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    git config --global user.name'
+    ls -lh $LOCAL_PATH 2>&1 > /dev/null
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}" "No Global user name / email set. Setting..." "${NC}"
+        ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+        git config --global user.name "Andres Crucitti"
+        git config --global user.email "dasc495@gmail"'
+    fi
+
+    #git commit
+    ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    cd '"$SSH_PATH"'
+    git add .
+    git commit -m "'"$COMMIT_MESSAGE"'"'
+    echo -e "${GREEN}" "Commit created" "${NC}"
+
+}
+
+git_pull() {
+    echo -e "${GREEN}" "Checking for local repo" "${NC}"
+    pwd
+    ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}" "No local found, cloning repo into $LOCAL_PATH" "${NC}"
+        SSH_FULLPATH=`ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_PATH"'; pwd'`
+        git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
+    else
+        echo -e "${GREEN}" "Local git found... pulling latest commit" "${NC}"
+        cd $LOCAL_PATH
+        git pull
+    fi
+}
+
+check_gitignore
+check_git_repo
+git_commit
+git_pull
+
+echo -e "${GREEN}" "Done" "${NC}"
+echo ""
