@@ -160,7 +160,6 @@ PATH=$HOME/.cargo/bin:$HOME/bin:$PATH
 
 TERMINALBG="#000000"
 
-source ~/.config/restic/restic.conf
 export PATH="$PATH:$HOME/.config/composer/vendor/bin:$HOME/dotfiles/bin"
 
 # some more ls aliases
@@ -196,3 +195,5 @@ set -o vi
 function set_term_title() {
     echo -e "\e]0;$1\a"
 }
+
+source ~/.bashrc.local
