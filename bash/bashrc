@@ -196,4 +196,4 @@ function set_term_title() {
     echo -e "\e]0;$1\a"
 }
 
-source ~/.bashrc.local
+[ -f ~/.bashrc.local ] && source ~/.bashrc.local
