@@ -57,6 +57,13 @@ fi
 echo_info "Using $CONF_FILE"
 source $CONF_FILE
 
+if [ -z ${NO_SSH+x} ]
+then
+    echo_info "Checking basic SSH connectivity"
+else
+    return
+fi
+
 if [ -z ${SSH_HOST+x} ]
 then
     echo_error "Error: No SSH_HOST value set"
