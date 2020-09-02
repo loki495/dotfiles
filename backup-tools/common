@@ -15,13 +15,13 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 echo_info() {
-    echo -e "${BLUE}${@}${NC}"
+    >&2 echo -e "${BLUE}${@}${NC}"
 }
 echo_success() {
-    echo -e "${GREEN}${@}${NC}"
+    >&2 echo -e "${GREEN}${@}${NC}"
 }
 echo_error() {
-    echo -e "${RED}${@}${NC}"
+    >&2 echo -e "${RED}${@}${NC}"
 }
 
 CONF_FILE=
@@ -109,7 +109,7 @@ run_ssh() {
 }
 
 check_mycnf() {
-    run_ssh "ls -lha ${MYCNF_PATH}/.my.cnf && grep [mysqldump] ${MYCNF_PATH}/.my.cnf && grep [mysql] ${MYCNF_PATH}/.my.cnf"
+    run_ssh_silent "ls -lha ${MYCNF_PATH}/.my.cnf && grep [mysqldump] ${MYCNF_PATH}/.my.cnf && grep [mysql] ${MYCNF_PATH}/.my.cnf"
     LAST_RESULT=$?
 
     if [ $LAST_RESULT -gt 0 ]

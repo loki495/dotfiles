@@ -160,7 +160,7 @@ PATH=$HOME/.cargo/bin:$HOME/bin:$PATH
 
 TERMINALBG="#000000"
 
-export PATH="$PATH:$HOME/.config/composer/vendor/bin:$HOME/dotfiles/bin"
+export PATH="$PATH:$HOME/.config/composer/vendor/bin:$HOME/dotfiles/backup-tools:$HOME/dotfiles/bin"
 
 # some more ls aliases
 alias ll='ls -alF'
