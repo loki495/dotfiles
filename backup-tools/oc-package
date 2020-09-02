@@ -1,0 +1,58 @@
+#!/bin/bash
+
+NO_SSH=1
+DIRNAME="${0%/*}"
+source $DIRNAME/common
+
+usage() {
+    echo "Usage:"
+    echo "      oc-package (pull|push) <package-name>"
+}
+
+if [ $# -lt 2 ]
+then
+    usage
+    exit
+fi
+
+ACTION="$1"
+PACKAGE_NAME="$2"
+echo_info "PACKAGE NAME: $PACKAGE_NAME"
+
+PACKAGE_FILE=`realpath ./packages/$PACKAGE_NAME.pkg`
+# echo_info "PACKAGE FILE LIST: $PACKAGE_FILE"
+
+check_package_file_exists() {
+    if [ -f "$PACKAGE_FILE" ]
+    then
+        echo_success "Package file list found"
+    else
+        echo_error "Package file list NOT found"
+        echo_info "  ./packages/$PACKAGE_NAME.pkg must be a list of files to package based off LOCAL_PATH"
+        exit
+    fi
+}
+
+create_tar_file() {
+    PACKAGE_DIR="`realpath packages/`/$PACKAGE_NAME"
+    mkdir -p $PACKAGE_DIR
+    cd $LOCAL_PATH
+    PACKAGE_OUTPUT=`realpath $PACKAGE_DIR/$PACKAGE_NAME.tar.gz`
+    CMD="tar czf $PACKAGE_OUTPUT -T $PACKAGE_FILE"
+
+    echo_info $CMD
+    `$CMD 2>&1 > /dev/null`
+}
+
+check_package_file_exists
+
+if [ "$ACTION" = "pull" ]
+then
+    echo_info "Creating package file"
+    create_tar_file
+fi
+
+if [ "$ACTION" = "push" ]
+then
+    echo_info "Pushing package file"
+fi
