@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIRNAME="${0%/*}"
-source $DIRNAME/common
+source $DIRNAME/../bash/lib/common
 
 usage() {
     echo "Usage:"
