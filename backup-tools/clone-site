@@ -1,11 +1,13 @@
 #!/bin/bash
 
 DIRNAME="${0%/*}"
+LOCAL_CODE_PATH=""
+
 source $DIRNAME/../bash/lib/common
 
 usage() {
     echo "Usage:"
-    echo "      clone-site [<conf-path>] <sql_path> <code_path>}"
+    echo "      clone-site <conf-path> <sql_gz_path> <code_folder_path>}"
 }
 
 if [ $# -lt 3 ]
@@ -19,14 +21,16 @@ then
     SQL_PATH=`realpath $2`
     CODE_PATH=`realpath $3`
 else
-    SQL_PATH=`realpath $1`
-    CODE_PATH=`realpath $2`
+    echo_error "No local conf file!"
 fi
 
 echo
 
 process_local_code() {
-    rm -rf "./$LOCAL_PATH"
+    if [ -z ${LOCAL_PATH+x} ]
+    then
+        rm -rf "./$LOCAL_PATH"
+    fi
 
     LOCAL_CODE_PATH="${LOCAL_BASE}/${LOCAL_PATH}"
     echo_info "CODE PATH: $CODE_PATH"
@@ -45,7 +49,7 @@ process_local_code() {
     if [[ $SITE_TYPE == 'wordpress' ]]
     then
         echo "Fixing WordPress wp-config.php"
-        sed -i "/DB_NAME/s/$OLD_DB_NAME/$MYSQL_DATABASE/g" $LOCAL_CODE_PATH/wp-config.php
+        sed -i "/DB_NAME/s/,\s*'.*'/, '$MYSQL_DATABASE'/g" $LOCAL_CODE_PATH/wp-config.php
         sed -i "/DB_USER/s/,\s*'.*'/, '$MYSQL_USER'/g" $LOCAL_CODE_PATH/wp-config.php
         sed -i "/DB_PASSWORD/s/,\s*'.*'/, '$MYSQL_PASSWORD'/g" $LOCAL_CODE_PATH/wp-config.php
         echo "Done fixing"
@@ -53,8 +57,15 @@ process_local_code() {
 }
 
 process_local_sql() {
-    rm -f "./${TMP_SQL_NAME}"
-    rm -f "./${MYSQL_DATABASE}.sql.gz"
+    if [ -z ${TMP_SQL_NAME+x} ]
+    then
+        rm -f "./${TMP_SQL_NAME}"
+    fi
+
+    if [ -z ${MYSQL_DATABASE+x} ]
+    then
+        rm -f "./${MYSQL_DATABASE}.sql.gz"
+    fi
 
     OLD_DB_NAME=`basename $SQL_PATH | awk -F '.' '{ print $1}'`
 
@@ -84,7 +95,7 @@ process_local_sql() {
     mv $TMP_SQL_NAME $MYSQL_DATABASE.sql
     gzip -9 $MYSQL_DATABASE.sql
 
-    echo "Database SQL file fixed and renamed"
+    echo "Database SQL file fixed and renamed ($OLD_DB_NAME -> $MYSQL_DATABASE"
 }
 
 upload_and_process_sql() {
@@ -101,8 +112,9 @@ upload_and_process_sql() {
         echo_success "done"
     fi
 
-    run_ssh "cd tmp && gunzip -f $MYSQL_DATABASE.sql.gz && mysql < $MYSQL_DATABASE.sql"
+    run_ssh "cd tmp && gunzip -f $MYSQL_DATABASE.sql.gz && mysql $MYSQL_DATABASE < $MYSQL_DATABASE.sql"
     run_ssh "rm tmp/$MYSQL_DATABASE.sql"
+
     echo "Done processing sql"
 
     if [[ $SITE_TYPE == 'wordpress' ]]
@@ -122,7 +134,17 @@ upload_and_process_sql() {
 
 upload_code() {
     echo "Starting code upload"
-    rsync -e "ssh -p $SSH_PORT" -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH
+
+    TMP_DIR=`mktemp -dup tmp | sed "s/^tmp\//tmp\/public_html./"`
+    run_ssh_silent "mv $SSH_PATH $TMP_DIR"
+
+    PORT_STR=""
+    if [ -n "$SSH_PORT" ]
+    then
+        PORT_STR="-e \"ssh -p $SSH_PORT\""
+    fi
+    echo "rsync $PORT_STR  -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH"
+    rsync $PORT_STR -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH
 }
 
 process_post_sql() {
