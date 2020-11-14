@@ -200,10 +200,13 @@ alias gb='git log --all --graph --decorate --oneline'
 alias ga='git add'
 alias gap='git add -p'
 alias gac='git add .; git commit -v'
+alias gpl='git pull'
+alias gph='git push'
 alias gpr='git pull --rebase'
 alias gri='git rebase -i'
 alias gc='git commit -v'
 alias gca='git commit -av'
+alias gsqd='git-summary -qd'
 alias findd='find . -type d'
 
 unset -f findf
