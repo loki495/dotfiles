@@ -42,20 +42,22 @@ try_default_config() {
     fi
 }
 
-if [ $# -eq 0 ]
+if [ -z ${NEEDS_CONF+x} ]
 then
-    try_default_config
-else
-    if [[ "$1" == *.conf ]]
+    if [ $# -eq 0 ]
     then
-        CONF_FILE="`pwd`/$DEFAULT_CONF"
-    else
         try_default_config
+    else
+        if [[ "$1" == *.conf ]]
+        then
+            CONF_FILE="`pwd`/$DEFAULT_CONF"
+        else
+            try_default_config
+        fi
     fi
+    echo_info "Using $CONF_FILE"
+    source $CONF_FILE
 fi
-
-echo_info "Using $CONF_FILE"
-source $CONF_FILE
 
 if [ -z ${NO_SSH+x} ]
 then
