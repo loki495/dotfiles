@@ -1,0 +1,93 @@
+#!/bin/bash
+
+NO_SSH=1
+DIRNAME="${0%/*}"
+NEEDS_CONF=0
+source $DIRNAME/../bash/lib/common
+
+usage() {
+    echo "Usage:"
+    echo "      oc-copy <package-name> <from-root> <from-admin> <local-admin>"
+}
+
+if [ $# -lt 4 ]
+then
+    usage
+    exit
+fi
+
+PACKAGE_NAME="$1"
+echo_info "PACKAGE NAME: $PACKAGE_NAME"
+
+
+FROM_ROOT="$2"
+FROM_ADMIN="$3"
+
+TO_ADMIN="$4"
+
+echo "ROOT: $FROM_ROOT"
+echo "FROM_ADMIN: $FROM_ADMIN"
+echo "TO_ADMIN: $TO_ADMIN"
+echo
+
+
+copy_files() {
+
+    if [ $# -eq 4 ]
+    then
+        TO_DIR=$4
+    else
+        TO_DIR=$3
+    fi
+    TO_DIR="`pwd`/$TO_DIR"
+
+    FROM_DIR=$1/$3
+    #echo "$FROM_DIR -> $TO_DIR"
+
+    #echo "find \"$FROM_DIR\" -type f \( -iname \"$2.php\" -o -iname \"$2.tpl\" -o -iname \"$2.xml\" \)"
+
+    for file in `find "$FROM_DIR" -type f \( -iname "$2.php" -o -iname "$2.tpl" -o -iname "$2.xml" \)`
+    do
+        FROM_LEN=`echo $1 | wc -m`
+        FROM=$file
+        TO="`pwd``echo $FROM | cut -b $FROM_LEN-`"
+        TO_DIR=`dirname $TO`
+
+        #echo "FROM: $FROM"
+        #echo "FROM_LEN: $FROM_LEN"
+        #echo "--------------------------"
+        echo "FROM: $FROM"
+        echo "TO: $TO"
+        echo "TO_DIR: $TO_DIR"
+
+        mkdir -p "$TO_DIR"
+        cp "$FROM" "$TO"
+
+        echo "--------------------------"
+    done;
+}
+
+copy_catalog() {
+    echo_info "Catalog:"
+    copy_files "$FROM_ROOT" "$PACKAGE_NAME" "catalog"
+}
+
+copy_admin() {
+    echo_info "Admin:"
+    copy_files "$FROM_ROOT" "$PACKAGE_NAME" "$FROM_ADMIN" "$TO_ADMIN"
+}
+
+copy_vqmod() {
+    echo_info "VQMOD:"
+    copy_files "$FROM_ROOT" "$PACKAGE_NAME" "vqmod/xml"
+}
+
+echo_info "==================="
+copy_catalog
+echo_info "==================="
+copy_admin
+echo_info "==================="
+copy_vqmod
+echo_info "==================="
+
+echo_success "DONE"
