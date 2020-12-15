@@ -197,9 +197,9 @@ alias gs='git status'
 alias gss='git status -s'
 alias gl='git log'
 alias gb='git log --all --graph --decorate --oneline'
-alias ga='git add'
+alias ga='git add --verbose'
 alias gap='git add -p'
-alias gac='git add .; git commit -v'
+alias gac='git add --verbose .; git commit -v'
 alias gpl='git pull'
 alias gph='git push'
 alias gpr='git pull --rebase'
@@ -208,6 +208,14 @@ alias gc='git commit -v'
 alias gca='git commit -av'
 alias gsqd='git-summary -qd'
 alias findd='find . -type d'
+
+unset -f gapp
+unset gapp
+function gapp() {
+    DIR=$1
+    git add --verbose $DIR > .git.add.progress.txt & percent=0; while [ $percent -le 99 ]; do num1=$(cat .git.add.progress.txt | wc -l); num2=$(find . -type f -not -path "$DIR/.git/*" | wc -l); percent=$((num1*100 / (num2 - 3))); echo $percent"%"; sleep 1; done; rm .git.add.progress.txt
+
+}
 
 unset -f findf
 unset findf
