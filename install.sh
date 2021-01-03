@@ -8,6 +8,10 @@ mv ~/.bashrc ~/.bashrc.old
 ln -s $SCRIPTPATH/bash/bashrc ~/.bashrc
 echo "BASH done"
 
+mv ~/.gitconfig ~/.gitconfig.old
+ln -s $SCRIPTPATH/git/.gitconfig ~/.gitconfig
+echo "GIT done"
+
 # VIM
 rm -f ~/.vimrc
 rm -f ~/.vim/plugins.settings.vim
