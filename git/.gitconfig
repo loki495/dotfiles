@@ -1,0 +1,18 @@
+[user]
+	email = dasc495@gmail.com
+	name = Andres Crucitti
+[url "git@github.com:"]
+    insteadOf = https://github.com/
+[http]
+	sslVerify = false
+[core]
+	quotepath = false
+	commitGraph = true
+[gc]
+	writeCommitGraph = true
+[receive]
+	denyCurrentBranch = updateInstead
+[alias]
+    conflicts = diff --name-only --diff-filter=U
+
+
