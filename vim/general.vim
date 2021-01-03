@@ -91,3 +91,5 @@ set noshowmode
 set foldlevel=0
 set foldlevelstart=100
 set nofoldenable
+
+set diffopt+=vertical
