@@ -323,3 +323,5 @@ function! HighlightCursorWord()
         exe printf('match WordUnderCursor /\V\<%s\>/', escape(cword, '/\'))
     endif
 endfunction
+
+nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>
