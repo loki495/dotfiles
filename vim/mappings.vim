@@ -324,4 +324,13 @@ function! HighlightCursorWord()
     endif
 endfunction
 
+"
+" fix syntax highlighting
+syntax sync fromstart
+au BufEnter *.* :syntax sync fromstart
+
 nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>
+
+" close all folds except current
+nnoremap <leader>zv :normal mazMzv`a<CR>
+
