@@ -88,6 +88,7 @@ echo_success "SSH Host found: $SSH_HOST"
 
 PORT_OVERRIDE=
 re='^[0-9]+$'
+
 if [[ $SSH_PORT =~ $re ]] ;
 then
 # SSH > 0
@@ -97,11 +98,20 @@ else
     echo_error "SSH No port found... continuing..."
 fi
 
+SSH_KEY_OVERRIDE=
+if [ -z ${SSH_KEY+x} ]
+then
+    echo_error "SSH No key found... continuing..."
+else
+    echo_success "SSH Key found: $SSH_KEY"
+    SSH_KEY_OVERRIDE=" -i $SSH_KEY"
+fi
+
 if [ -z ${SSH_USER+x} ]
 then
-    SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE"
+    SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE "
 else
-    SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE"
+    SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE"
 fi
 
 run_ssh_silent() {
