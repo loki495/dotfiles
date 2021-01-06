@@ -5,6 +5,8 @@
 
 " map <C-B> :FufBuffer<CR>
 
+" show all current mappings (in this file)
+nnoremap <C-n> :tabnew\|read !vim-mappings<cr>:setlocal buftype=nofile<cr>:setlocal bufhidden=hide<cr>:setlocal noswapfile<cr>
 
 cmap w!! w !sudo tee % >/dev/null
 
@@ -306,9 +308,6 @@ noremap <Leader>c mx/[A-Z_]<cr>`x         "# [Leader-c]    search for camelCase 
 " close tab on ctl-q
 nnoremap <C-x> :q<cr>  "# [Ctl-x]    close tab
 
-" show all current mappings (in this file)
-nnoremap <C-n> :tabnew\|read !vim-mappings<cr>:setlocal buftype=nofile<cr>:setlocal bufhidden=hide<cr>:setlocal noswapfile<cr>
-
 " autosave delay, cursorhold trigger, default: 4000ms
 setl updatetime=50
 
@@ -324,4 +323,12 @@ function! HighlightCursorWord()
     endif
 endfunction
 
-nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>
+"
+" fix syntax highlighting
+syntax sync fromstart
+au BufEnter *.* :syntax sync fromstart
+
+nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>   "# [U]    Fix syntax highlighting
+
+nnoremap <leader>zv :normal mazMzv`a<CR>    "# [Leader-zv]    Close all folds except current
+
