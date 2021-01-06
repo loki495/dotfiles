@@ -331,4 +331,3 @@ au BufEnter *.* :syntax sync fromstart
 nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>   "# [U]    Fix syntax highlighting
 
 nnoremap <leader>zv :normal mazMzv`a<CR>    "# [Leader-zv]    Close all folds except current
-
