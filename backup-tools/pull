@@ -18,15 +18,11 @@ fi
 
 echo -e "${GREEN}" "SSH Host: $SSH_HOST" "${NC}"
 echo -e "${GREEN}" "SSH Port: $SSH_PORT" "${NC}"
+echo -e "${GREEN}" "SSH Key:  $SSH_KEY" "${NC}"
 echo -e "${GREEN}" "SSH User: $SSH_USER" "${NC}"
 echo -e "${GREEN}" "SSH Path: $SSH_PATH" "${NC}"
 echo -e "${GREEN}" "Local Base: $LOCAL_BASE" "${NC}"
 echo -e "${GREEN}" "Local Path: $LOCAL_PATH" "${NC}"
-
-#SSH_LOG=ssh.log
-#SSH_PORT=2222
-#SSH_USER=chinocleaning
-#SSH_PATH=public_html
 
 check_gitignore() {
     # check gitignore
@@ -100,8 +96,15 @@ git_pull() {
     ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
     if [ $? -ne 0 ]
     then
+        if [ -z $SSH_KEY ]
+        then
+            SSH_KEY_OVERRIDE="-i $SSH_KEY"
+        else
+            SSH_KEY_OVERRIDE=""
+        fi
+
         echo -e "${GREEN}" "No local found, cloning repo into $LOCAL_PATH" "${NC}"
-        SSH_FULLPATH=`ssh -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_PATH"'; pwd'`
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_PATH"'; pwd'`
         git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}" "Local git found... pulling latest commit" "${NC}"
@@ -112,7 +115,7 @@ git_pull() {
 
 check_gitignore
 check_git_repo
-git_commit
+# git_commit
 git_pull
 
 echo -e "${GREEN}" "Done" "${NC}"
