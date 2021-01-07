@@ -18,9 +18,9 @@ fi
 
 if [ -z $SSH_KEY ]
 then
-    SSH_KEY_OVERRIDE="-i $SSH_KEY"
-else
     SSH_KEY_OVERRIDE=""
+else
+    SSH_KEY_OVERRIDE="-i $SSH_KEY"
 fi
 
 echo -e "${GREEN}" "SSH Host: $SSH_HOST" "${NC}"
@@ -35,13 +35,13 @@ check_gitignore() {
     # check gitignore
     echo -e "${GREEN}" "Checking for .gitignore" "${NC}"
     ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-    cd '"$SSH_PATH"'
+    cd '"$SSH_BASE_PATH$SSH_PATH"'
     ls -lha .gitignore'
 
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}" "NO .gitignore" "${NC}"
-        scp $SSH_KEY_OVERRIDE -P $SSH_PORT /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_PATH
+        scp $SSH_KEY_OVERRIDE -P $SSH_PORT /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
         echo -e "${GREEN} "$CMD "${NC}"
         exit;
     else
@@ -52,9 +52,9 @@ check_gitignore() {
 check_git_repo() {
 
     # check git repo
-    echo -e "${GREEN}" "Checking for valid repo on $SSH_PATH" "${NC}"
+    echo -e "${GREEN}" "Checking for valid repo on $SSH_BASE_PATH$SSH_PATH" "${NC}"
     ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-    cd '"$SSH_PATH"'
+    cd '"$SSH_BASE_PATH$SSH_PATH"'
     ls -lha .git'
 
     if [ $? -ne 0 ]
@@ -64,7 +64,7 @@ check_git_repo() {
         # git repo create
         echo -e "${GREEN}" "Creating initial commit" "${NC}"
         ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-        cd '"$SSH_PATH"'
+        cd '"$SSH_BASE_PATH$SSH_PATH"'
         git init'
 
         COMMIT_MESSAGE="Initial Commit"
@@ -90,7 +90,7 @@ git_commit() {
 
     #git commit
     ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-    cd '"$SSH_PATH"'
+    cd '"$SSH_BASE_PATH$SSH_PATH"'
     git add .
     git commit -m "'"$COMMIT_MESSAGE"'"'
     echo -e "${GREEN}" "Commit created" "${NC}"
@@ -103,12 +103,19 @@ git_pull() {
     ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
     if [ $? -ne 0 ]
     then
+        if [ -z $SSH_KEY ]
+        then
+            SSH_KEY_OVERRIDE="-i $SSH_KEY"
+        else
+            SSH_KEY_OVERRIDE=""
+        fi
+
         echo -e "${GREEN}" "No local found, cloning repo into $LOCAL_PATH" "${NC}"
-        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_PATH"'; pwd'`
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
         git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}" "Local git found... pulling latest commit" "${NC}"
-        cd $LOCAL_PATH
+        cd $SSH_BASE_PATH$LOCAL_PATH
         git pull
     fi
 }
