@@ -103,13 +103,6 @@ git_pull() {
     ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
     if [ $? -ne 0 ]
     then
-        if [ -z $SSH_KEY ]
-        then
-            SSH_KEY_OVERRIDE="-i $SSH_KEY"
-        else
-            SSH_KEY_OVERRIDE=""
-        fi
-
         echo -e "${GREEN}" "No local found, cloning repo into $LOCAL_PATH" "${NC}"
         SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
         git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
