@@ -65,7 +65,7 @@ check_git_repo() {
         echo -e "${GREEN}" "Creating initial commit" "${NC}"
         ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
         cd '"$SSH_BASE_PATH$SSH_PATH"'
-        git init'
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git init'
 
         COMMIT_MESSAGE="Initial Commit"
     else
@@ -78,21 +78,21 @@ check_git_repo() {
 git_commit() {
 
     ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-    git config --global user.name'
+    GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.name'
     ls -lh $LOCAL_PATH 2>&1 > /dev/null
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}" "No Global user name / email set. Setting..." "${NC}"
         ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
-        git config --global user.name "Andres Crucitti"
-        git config --global user.email "dasc495@gmail"'
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.name "Andres Crucitti"
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.email "dasc495@gmail"'
     fi
 
     #git commit
     ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
     cd '"$SSH_BASE_PATH$SSH_PATH"'
-    git add .
-    git commit -m "'"$COMMIT_MESSAGE"'"'
+    GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git add .
+    GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git commit -m "'"$COMMIT_MESSAGE"'"'
     echo -e "${GREEN}" "Commit created" "${NC}"
 
 }
@@ -105,11 +105,11 @@ git_pull() {
     then
         echo -e "${GREEN}" "No local found, cloning repo into $LOCAL_PATH" "${NC}"
         SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
-        git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}" "Local git found... pulling latest commit" "${NC}"
         cd $SSH_BASE_PATH$LOCAL_PATH
-        git pull
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
     fi
 }
 
