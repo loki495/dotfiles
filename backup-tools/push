@@ -1,0 +1,57 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/common
+source $DIRNAME/common-git
+
+cd $LOCAL_BASE
+if [ -z "${LOCAL_BASE+x}" ]
+then
+    echo "Error: No LOCAL_BASE value set"
+    exit
+fi
+
+if [ -z "${LOCAL_PATH+x}" ]
+then
+    echo "Error: No LOCAL_PATH value set"
+    exit
+fi
+
+if [ -z "${SSH_KEY// }" ]
+then
+    SSH_KEY_OVERRIDE=""
+else
+    SSH_KEY_OVERRIDE="-i $SSH_KEY"
+fi
+
+rsync_push() {
+    echo "Starting code upload"
+
+    PORT_STR=""
+    if [ -n "$SSH_PORT" ]
+    then
+        PORT_STR=(-e "ssh $SSH_KEY_OVERRIDE -p $SSH_PORT")
+    fi
+
+    LOCAL_CODE_PATH="${LOCAL_BASE}/${LOCAL_PATH}"
+    echo_info "LOCAL CODE PATH: $LOCAL_CODE_PATH"
+
+    ls $LOCAL_CODE_PATH > /dev/null
+    LAST_RESULT=$?
+
+    if [ $LAST_RESULT -gt 0 ] || [ "$LOCAL_CODE_PATH" = "$LOCAL_BASE/" ]
+    then
+        echo_error "Can't copy from $LOCAL_CODE_PATH (non existent, or same as LOCAL_BASE)"
+        exit
+    fi
+
+    rsync "${PORT_STR[@]}" -vazuhrci --ignore-existing --progress --exclude '.git' $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH | grep ^\<
+}
+
+check_gitignore
+check_git_repo
+git_commit "Pre-push on "`date '+%F'`
+rsync_push
+
+echo -e "${GREEN}" "Done" "${NC}"
+echo ""
