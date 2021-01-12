@@ -85,7 +85,7 @@ process_local_sql() {
 
     if [[ "$TMP_SQL_NAME" == *.sql.gz ]]
     then
-        gunzip $TMP_SQL_NAME
+        gunzip -f $TMP_SQL_NAME
         TMP_SQL_NAME=${TMP_SQL_NAME::-3}
     fi
 
@@ -93,14 +93,14 @@ process_local_sql() {
     sed -i "s/\`$OLD_DB_NAME\`/\`$MYSQL_DATABASE\`/g" $TMP_SQL_NAME
 
     mv $TMP_SQL_NAME $MYSQL_DATABASE.sql
-    gzip -9 $MYSQL_DATABASE.sql
+    gzip -f --rsyncable -9 $MYSQL_DATABASE.sql
 
     echo "Database SQL file fixed and renamed ($OLD_DB_NAME -> $MYSQL_DATABASE"
 }
 
 upload_and_process_sql() {
     echo "Uploading sql file"
-    rsync -e "ssh -p $SSH_PORT" -vazuhr $MYSQL_DATABASE.sql.gz $SSH_USER@$SSH_HOST:tmp
+    rsync -e "ssh $SSH_KEY_OVERRIDE -p $SSH_PORT" -vazuhr $MYSQL_DATABASE.sql.gz $SSH_USER@$SSH_HOST:${SSH_BASE_PATH}tmp
     LAST_RESULT=$?
 
     if [ $LAST_RESULT -gt 0 ]
@@ -109,11 +109,11 @@ upload_and_process_sql() {
         perror $LAST_RESULT
         exit 1
     else
-        echo_success "done"
+        echo_success "done rsyncing file"
     fi
 
-    run_ssh "cd tmp && gunzip -f $MYSQL_DATABASE.sql.gz && mysql $MYSQL_DATABASE < $MYSQL_DATABASE.sql"
-    run_ssh "rm tmp/$MYSQL_DATABASE.sql"
+    run_ssh "cd ${SSH_BASE_PATH}tmp && gunzip -f $MYSQL_DATABASE.sql.gz && mysql $MYSQL_DATABASE < $MYSQL_DATABASE.sql"
+    run_ssh "rm ${SSH_BASE_PATH}tmp/$MYSQL_DATABASE.sql"
 
     echo "Done processing sql"
 
@@ -136,15 +136,15 @@ upload_code() {
     echo "Starting code upload"
 
     TMP_DIR=`mktemp -dup tmp | sed "s/^tmp\//tmp\/public_html./"`
-    run_ssh_silent "mv $SSH_PATH $TMP_DIR"
+    run_ssh_silent "mv $SSH_PATH $TMP_DIR > /dev/null"
 
     PORT_STR=""
     if [ -n "$SSH_PORT" ]
     then
-        PORT_STR="-e \"ssh -p $SSH_PORT\""
+        PORT_STR=(-e "ssh $SSH_KEY_OVERRIDE -p $SSH_PORT")
     fi
-    echo "rsync $PORT_STR  -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH"
-    rsync $PORT_STR -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH
+
+    rsync "${PORT_STR[@]}" -vazuhr --progress $LOCAL_CODE_PATH $SSH_USER@$SSH_HOST:$SSH_BASE_PATH
 }
 
 process_post_sql() {
