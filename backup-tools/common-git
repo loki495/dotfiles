@@ -131,6 +131,18 @@ git_pull() {
         echo -e "${GREEN}Local git found...${NC}"
         cd $LOCAL_BASE/$LOCAL_PATH
 
+		CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
+		if [ "$CURRENT_BRANCH" != "master" ]
+		then
+			CHANGES_PENDING=$(git status --porcelain)
+
+			if [ ! -z "${CHANGES_PENDING// }" ]
+			then
+				git stash
+			fi
+			git checkout master
+		fi
+
         CHANGES_PENDING=$(git status --porcelain)
 
         if [ -z "${CHANGES_PENDING// }" ]
@@ -149,5 +161,12 @@ git_pull() {
 
         echo -e "${GREEN}Pulling latest commit${NC}"
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
+
+        if [ "$CURRENT_BRANCH" != "master" ]
+        then
+            echo "Switching back to $CURRENT_BRANCH"
+            git checkout $CURRENT_BRANCH
+            git rebase master
+        fi
     fi
 }
