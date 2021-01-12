@@ -42,7 +42,7 @@ try_default_config() {
     fi
 }
 
-if [ -z ${NEEDS_CONF+x} ]
+if [ -z "${NEEDS_CONF// }" ]
 then
     if [ $# -eq 0 ]
     then
@@ -59,26 +59,26 @@ then
     source $CONF_FILE
 fi
 
-if [ -z ${NO_SSH+x} ]
+if [ -z "${NO_SSH// }" ]
 then
     echo_info "Checking basic SSH connectivity"
 else
     return
 fi
 
-if [ -z ${SSH_HOST+x} ]
+if [ -z "${SSH_HOST// }" ]
 then
     echo_error "Error: No SSH_HOST value set"
     exit
 fi
 
-if [ -z ${MYSQL_USER+x} ]
+if [ -z "${MYSQL_USER// }" ]
 then
     echo_error "Error: No MYSQL_USER value set"
     exit
 fi
 
-if [ -z ${MYSQL_DATABASE+x} ]
+if [ -z "${MYSQL_DATABASE// }" ]
 then
     echo_error "Error: No MYSQL_DATABASE value set"
     exit
@@ -99,7 +99,7 @@ else
 fi
 
 SSH_KEY_OVERRIDE=
-if [ -z ${SSH_KEY+x} ]
+if [ -z "${SSH_KEY// }" ]
 then
     echo_error "SSH No key found... continuing..."
 else
@@ -107,7 +107,7 @@ else
     SSH_KEY_OVERRIDE=" -i $SSH_KEY"
 fi
 
-if [ -z ${SSH_USER+x} ]
+if [ -z "${SSH_USER// }" ]
 then
     SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE "
 else

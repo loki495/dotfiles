@@ -2,21 +2,22 @@
 
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/common
+source $DIRNAME/../backup-tools/common-git
 
 cd $LOCAL_BASE
-if [ -z ${LOCAL_BASE+x} ]
+if [ -z "${LOCAL_BASE+x}" ]
 then
     echo "Error: No LOCAL_BASE value set"
     exit
 fi
-,
-if [ -z ${LOCAL_PATH+x} ]
+
+if [ -z "${LOCAL_PATH+x}" ]
 then
     echo "Error: No LOCAL_PATH value set"
     exit
 fi
 
-if [ -z $SSH_KEY ]
+if [ -z "${SSH_KEY// }" ]
 then
     SSH_KEY_OVERRIDE=""
 else
