@@ -1,0 +1,30 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/common
+source $DIRNAME/../backup-tools/common-git
+
+cd $LOCAL_BASE
+if [ -z "${LOCAL_BASE+x}" ]
+then
+    echo "Error: No LOCAL_BASE value set"
+    exit
+fi
+
+if [ -z "${LOCAL_PATH+x}" ]
+then
+    echo "Error: No LOCAL_PATH value set"
+    exit
+fi
+
+if [ -z "${SSH_KEY// }" ]
+then
+    SSH_KEY_OVERRIDE=""
+else
+    SSH_KEY_OVERRIDE="-i $SSH_KEY"
+fi
+
+check_htaccess_blocking_git
+
+echo -e "${GREEN}Done${NC}"
+echo ""

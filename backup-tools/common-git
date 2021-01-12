@@ -1,5 +1,24 @@
 # vi: ft=bash
 
+
+check_htaccess_blocking_git() {
+    # check .htaccess
+    echo -e "${GREEN}Checking for code in $SSH_BASE_PATH$SSH_PATH/.htaccess${NC}"
+    RESULT=$(ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
+    cd '"$SSH_BASE_PATH$SSH_PATH"'
+    cat .htaccess | grep "RedirectMatch 404 /\\\\.git"')
+
+    echo_info "Result: $RESULT"
+
+    if [ -z "${RESULT// }" ]
+    then
+        echo "Not found, adding..."
+        run_ssh "echo \"RedirectMatch 404 /\\.git\" >> \"$SSH_BASE_PATH$SSH_PATH/.htaccess\""
+    else
+        echo "Found, nothing to do..."
+    fi
+}
+
 check_gitignore() {
     # check gitignore
     echo -e "${GREEN}Checking for .gitignore${NC}"
