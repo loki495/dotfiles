@@ -139,8 +139,9 @@ check_mycnf() {
         ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/.my.cnf"
         ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
         ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO5="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
-        run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5"
+        ECHO5="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        ECHO6="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5 && $ECHO6"
     else
         echo_success ".my.cnf found"
     fi
