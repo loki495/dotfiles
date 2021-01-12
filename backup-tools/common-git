@@ -22,14 +22,14 @@ check_htaccess_blocking_git() {
 check_gitignore() {
     # check gitignore
     echo -e "${GREEN}Checking for .gitignore${NC}"
-    ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
     cd '"$SSH_BASE_PATH$SSH_PATH"'
     ls -lha .gitignore'
 
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}NO .gitignore${NC}"
-        scp $SSH_KEY_OVERRIDE -P $SSH_PORT /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
+        scp $SSH_KEY_OVERRIDE $PORT_OVERRIDE /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
         echo -e "${GREEN}$CMD ${NC}"
     else
         echo -e "${GREEN}.gitignore found${NC}"
@@ -40,7 +40,7 @@ check_git_repo() {
 
     # check git repo
     echo -e "${GREEN}Checking for valid repo on $SSH_BASE_PATH$SSH_PATH${NC}"
-    ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
     cd '"$SSH_BASE_PATH$SSH_PATH"'
     ls -lha .git'
 
@@ -50,7 +50,7 @@ check_git_repo() {
 
         # git repo create
         echo -e "${GREEN}Creating initial commit${NC}"
-        ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+        ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
         cd '"$SSH_BASE_PATH$SSH_PATH"'
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git init'
 
@@ -69,12 +69,12 @@ git_commit() {
         COMMIT_MESSAGE="$1"
     fi
 
-    ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
     GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.name'
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}No Global user name / email set. Setting...${NC}"
-        ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+        ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.name "Andres Crucitti"
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git config --global user.email "dasc495@gmail"'
     fi
@@ -94,7 +94,7 @@ git_commit() {
     fi
 
     #git commit
-    ssh $SSH_KEY_OVERRIDE -t -p $SSH_PORT $SSH_USER@$SSH_HOST -t '
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
     cd '"$SSH_BASE_PATH$SSH_PATH"'
     GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git add .
     GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git commit -m "'"$COMMIT_MESSAGE"'"'
@@ -109,7 +109,7 @@ git_clean_local() {
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}No local found, cloning repo into $LOCAL_PATH${NC}"
-        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}Local git found... pulling latest commit${NC}"
@@ -125,7 +125,7 @@ git_pull() {
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}No local found, cloning repo into $LOCAL_PATH${NC}"
-        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE -p $SSH_PORT $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t 'cd '"$SSH_BASE_PATH$SSH_PATH"'; pwd'`
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}Local git found...${NC}"
