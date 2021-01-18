@@ -82,7 +82,7 @@ git_commit() {
     #check git status
 
     echo_info "Checking git status"
-    CHANGES_PENDING=$(run_ssh "cd $SSH_PASE_PATH$SSH_PATH && git status --porcelain")
+    CHANGES_PENDING=$(run_ssh "cd $SSH_BASE_PATH$SSH_PATH && git status --porcelain")
 
     if [ -z "${CHANGES_PENDING// }" ]
     then
