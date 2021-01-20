@@ -18,6 +18,7 @@ let g:ale_fix_on_save = 1
 
 call plug#begin('~/.vim/plugged')
 so ~/dotfiles/vim/plugins.vim
+so ~/.vim.plugins.local
 call plug#end()
 
 so ~/dotfiles/vim/plugins.settings.vim
