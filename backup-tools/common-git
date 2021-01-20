@@ -166,7 +166,7 @@ git_pull() {
         then
             echo "Switching back to $CURRENT_BRANCH"
             git checkout $CURRENT_BRANCH
-            GIT_EDITOR=true git rebase master
+            GIT_EDITOR=true git rebase master -Xours
         fi
     fi
 }
