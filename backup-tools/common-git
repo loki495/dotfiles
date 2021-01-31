@@ -162,7 +162,7 @@ git_pull() {
         fi
 
         echo -e "${GREEN}Pulling latest commit${NC}"
-        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
+        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
 
         if [ "$CURRENT_BRANCH" != "master" ]
         then
