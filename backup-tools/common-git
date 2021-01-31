@@ -67,6 +67,8 @@ git_commit() {
     if [[ ! -z "${1// }" ]]
     then
         COMMIT_MESSAGE="$1"
+    else
+        COMMIT_MESSAGE="Auto-commit - "`date +"%m/%d/%Y"`
     fi
 
     ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t '
