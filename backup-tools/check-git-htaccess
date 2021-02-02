@@ -2,7 +2,7 @@
 
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/common
-source $DIRNAME/../backup-tools/common-git
+source $DIRNAME/common-git
 
 cd $LOCAL_BASE
 if [ -z "${LOCAL_BASE+x}" ]
