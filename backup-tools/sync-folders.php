@@ -43,6 +43,8 @@ $descriptorspec = [
 ];
 
 foreach ($rsync_folders as $paths) {
+    if (!trim($paths)) continue;
+
     list($remote_path, $local_path) = explode('=',$paths);
     $remote_path = trim($remote_path,'[] \'');
     $remote_full_path = "$ssh_base_path/$ssh_path/$remote_path";
