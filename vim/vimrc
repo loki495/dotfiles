@@ -16,9 +16,11 @@ let g:ale_fixers = {
 \}
 let g:ale_fix_on_save = 1
 
+so ~/dotfiles/vim/functions.vim
+
 call plug#begin('~/.vim/plugged')
-so ~/dotfiles/vim/plugins.vim
-so ~/.vim.plugins.local
+source ~/dotfiles/vim/plugins.vim
+call SourceIfExists("~/.vim.plugins.local")
 call plug#end()
 
 so ~/dotfiles/vim/plugins.settings.vim
@@ -29,4 +31,4 @@ so ~/dotfiles/vim/colors/ifdef.vim
 
 so ~/dotfiles/vim/mappings.vim
 
-source ~/.vimrc.local
+call SourceIfExists("~/.vimrc.local")
