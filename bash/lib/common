@@ -1,7 +1,7 @@
 # vi: ft=bash
 
-DIRNAME="${0%/*}"
-source $DIRNAME/echos
+COMMON_DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $COMMON_DIRNAME/echos
 
 CONF_FILE=
 DEFAULT_CONF="backup.conf"
