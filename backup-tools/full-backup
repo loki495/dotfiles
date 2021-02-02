@@ -37,7 +37,7 @@ echo_info "GIT Pull"
 pull
 
 echo_info "Sync Folders"
-sync-folders
+$(which php) ~/dotfiles/backup-tools/sync-folders.php
 
 popd
 
