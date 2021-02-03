@@ -24,8 +24,8 @@ else
     SSH_KEY_OVERRIDE="-i $SSH_KEY"
 fi
 
-check_gitignore
 check_git_repo
+check_gitignore
 git_commit
 git_pull
 
