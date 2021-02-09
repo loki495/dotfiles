@@ -31,10 +31,10 @@ else
 fi
 
 echo_info "Database Backup"
-mysqlbk
+$DIRNAME/mysqlbk
 
 echo_info "GIT Pull"
-pull
+$DIRNAME/pull
 
 echo_info "Sync Folders"
 $(which php) ~/dotfiles/backup-tools/sync-folders.php
