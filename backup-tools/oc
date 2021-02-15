@@ -1,0 +1,30 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+
+if [ "$#" -lt 2 ]
+then
+    echo "Usage: oc <package-name> <output-file> [admin-folder]"
+fi
+
+PACKAGE_NAME=$1
+OUTPUT_FILE=$2
+
+ADMIN_FOLDER="admin"
+
+if [ ! -z "${3// }" ]
+then
+    ADMIN_FOLDER=$3
+fi
+
+echo_info "Combining into package..."
+find "$ADMIN_FOLDER" -name "$PACKAGE_NAME.php" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find "$ADMIN_FOLDER" -name "$PACKAGE_NAME.tpl" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find catalog -name "$PACKAGE_NAME.tpl" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find catalog -name "$PACKAGE_NAME.php" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find vqmod/xml -name "$PACKAGE_NAME.xml" -exec tar -uvf $OUTPUT_FILE.tar {} \; 
+echo_info "Compressing output..."
+gzip "$OUTPUT_FILE.tar" -f
+echo_success "DONE"
+echo_info "Result: $OUTPUT_FILE.tar.gz"
