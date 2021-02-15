@@ -11,34 +11,90 @@ popd () {
     command popd "$@" > /dev/null
 }
 
-if [ -z "${1// }" ]
+LOG_DIR=""
+
+PROCESS_SUBFOLDERS=0
+
+BASE_FOLDER=()
+while [[ $# -gt 0 ]]
+do
+	key="$1"
+
+	case $key in
+		--process-subfolders)
+			PROCESS_SUBFOLDERS=1
+			shift # past argument
+			;;
+		--log-dir)
+			LOG_DIR=$2
+			shift
+			shift # past argument
+			;;
+		*)    # unknown option
+			BASE_FOLDER+=("$1") # save it in an array for later
+			shift # past argument
+			;;
+	esac
+done
+set -- "${BASE_FOLDER[@]}" # restore positional parameters
+
+usage () {
+	echo "Usage: full-backup <path-to-root-folder>"
+	exit
+}
+
+process_folder () {
+
+	pushd .
+
+	echo_info "Processing folder: $1"
+
+	LOG_FILE=
+	if [ ! -z "${LOG_DIR// }" ]
+	then
+		LOG_FILE="$LOG_DIR/"
+		LOG_FILE+=`basename $1`
+		LOG_FILE+=".log"
+		LOG_FILE=`realpath $LOG_FILE`
+
+		echo "" > $LOG_FILE
+		exec &>"$LOG_FILE"
+	fi
+
+	echo `date`
+
+	if [ -d "$1" ]
+	then
+		ROOT_PATH=`realpath $1`
+		cd $ROOT_PATH
+		echo_info "Processing: $ROOT_PATH"
+	else
+		echo_error "Directory \"$1\" does not exist. Aborting"
+		popd
+		return
+	fi
+
+	echo_info "Database Backup"
+	$DIRNAME/mysqlbk
+
+	echo_info "GIT Pull"
+	$DIRNAME/pull
+
+	echo_info "Sync Folders"
+	$(which php) ~/dotfiles/backup-tools/sync-folders.php
+
+	popd
+}
+
+if [ $PROCESS_SUBFOLDERS -gt 0 ]
 then
-    echo "Usage: full-backup <path-to-root-folder>"
-    exit
+	echo_info "Processing subfolders of $GREEN$BASE_FOLDER"
+	BASE_FOLDER=`find "$BASE_FOLDER" -maxdepth 1 -mindepth 1 -type d`
 fi
 
-pushd .
-
-if [ -d "$1" ]
-then
-    ROOT_PATH=`realpath $1`
-    cd $ROOT_PATH
-    echo_info "Root: `pwd`"
-else
-    echo_error "Directory \"$1\" does not exist. Aborting"
-    popd
-    exit
-fi
-
-echo_info "Database Backup"
-$DIRNAME/mysqlbk
-
-echo_info "GIT Pull"
-$DIRNAME/pull
-
-echo_info "Sync Folders"
-$(which php) ~/dotfiles/backup-tools/sync-folders.php
-
-popd
-
+for folder in $BASE_FOLDER
+do
+	process_folder $folder
+    exec &>/dev/tty
+done
 
