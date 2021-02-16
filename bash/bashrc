@@ -209,6 +209,7 @@ alias gca='git commit -av'
 alias gsqd='git-summary -qd'
 alias findd='find . -type d'
 alias sync-folders='php ~/dotfiles/backup-tools/sync-folders.php'
+alias gd='git diff'
 
 unset -f findf
 unset findf
