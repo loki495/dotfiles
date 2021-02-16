@@ -43,10 +43,10 @@ let g:indentLine_enabled = 1
 
 nmap <Leader>; :GFiles --exclude-standard --others --cached<CR>
 nmap <Leader>f :Files<CR>
-nmap <Leader>' :Buffers<CR>
+nmap <Leader>b :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 nmap <Leader>l :Lines<CR>
-nmap <Leader>. :History<cr>
+nmap <Leader>H :History<cr>
 nmap <Leader>a :Rg<cr>
 
 let g:fzf_action = {
@@ -172,3 +172,6 @@ function! TagbarStatusFunc(current, sort, fname, ...) abort
     let g:lightline.fname = a:fname
   return lightline#statusline(0)
 endfunction
+
+" Vim Fugitive
+nmap <leader>gs :G<CR>
