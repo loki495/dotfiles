@@ -331,3 +331,14 @@ au BufEnter *.* :syntax sync fromstart
 nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>   "# [U]    Fix syntax highlighting
 
 nnoremap <leader>zv :normal mazMzv`a<CR>    "# [Leader-zv]    Close all folds except current
+
+command! Tn -complete=file tabnew
+noremap <leader>gf :tabnew <cfile><cr>
+
+function Dos2Unix()
+    silent! %s/^M//g
+    silent! %s///g
+    normal gg
+endfunction
+
+au BufReadPost * silent! call Dos2Unix()
