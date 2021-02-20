@@ -12,15 +12,28 @@ source $ECHOS_DIRNAME/colors
 #Cyan         0;36     Light Cyan    1;36
 #Light Gray   0;37     White         1;37
 
+if [ -z $SILENT_ECHOS ]
+then
+    SILENT_ECHOS=0
+fi
+
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 echo_info() {
+    if [ $SILENT_ECHOS -gt 0 ]
+    then
+        return
+    fi
     >&2 echo -e "${BLUE}${@}${NC}"
 }
 echo_success() {
+    if [ $SILENT_ECHOS -gt 0 ]
+    then
+        return
+    fi
     >&2 echo -e "${GREEN}${@}${NC}"
 }
 echo_error() {
