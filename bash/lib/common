@@ -12,7 +12,7 @@ SSH_PORT=
 LAST_RESULT=
 
 try_default_config() {
-    echo "Trying default config path..."
+    echo_info "Trying default config path..."
     if [ -f "$DEFAULT_CONF" ]
     then
         CONF_FILE="`pwd`/$DEFAULT_CONF"
