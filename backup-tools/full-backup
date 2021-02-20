@@ -2,14 +2,7 @@
 
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/echos
-
-pushd () {
-    command pushd "$@" > /dev/null
-}
-
-popd () {
-    command popd "$@" > /dev/null
-}
+source $DIRNAME/../bash/lib/pushdpopd
 
 LOG_DIR=""
 
