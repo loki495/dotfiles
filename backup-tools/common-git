@@ -190,14 +190,15 @@ check_if_master_is_behind() {
 	LOCAL=$(git rev-parse @)
 	REMOTE=$(git rev-parse "$UPSTREAM")
 	BASE=$(git merge-base @ "$UPSTREAM")
+    CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
 
 	if [ $LOCAL = $REMOTE ]; then
-		echo "Up-to-date"
+		echo "$CURRENT_BRANCH: Up-to-date"
 	elif [ $LOCAL = $BASE ]; then
-		echo "Need to pull"
+		echo "$CURRENT_BRANCH: Need to pull"
 	elif [ $REMOTE = $BASE ]; then
-		echo "Need to push"
+		echo "$CURRENT_BRANCH: Need to push"
 	else
-		echo "Diverged"
+		echo "$CURRENT_BRANCH: Diverged"
 	fi
 }
