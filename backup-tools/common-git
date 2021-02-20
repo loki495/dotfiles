@@ -1,4 +1,6 @@
-# vi: ft=bash
+# vim: set filetype=sh :
+
+
 
 GIT_COMMAND="git"
 
