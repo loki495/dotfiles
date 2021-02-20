@@ -93,3 +93,6 @@ set foldlevelstart=100
 set nofoldenable
 
 set diffopt+=vertical
+
+set modeline
+set modelines=5
