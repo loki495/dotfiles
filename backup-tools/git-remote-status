@@ -1,0 +1,44 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/common
+source $DIRNAME/common-git
+
+cd $LOCAL_BASE
+if [ -z "${LOCAL_BASE+x}" ]
+then
+    echo "Error: No LOCAL_BASE value set"
+    exit
+fi
+
+if [ -z "${LOCAL_PATH+x}" ]
+then
+    echo "Error: No LOCAL_PATH value set"
+    exit
+fi
+
+if [ -z "${SSH_KEY// }" ]
+then
+    SSH_KEY_OVERRIDE=""
+else
+    SSH_KEY_OVERRIDE="-i $SSH_KEY"
+fi
+
+pushd .
+
+cd $LOCAL_PATH
+
+CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
+if [ "$CURRENT_BRANCH" != "master" ]
+then
+    git checkout master
+fi
+
+check_if_master_is_behind
+
+if [ "$CURRENT_BRANCH" != "master" ]
+then
+    git checkout "$CURRENT_BRANCH"
+fi
+
+popd
