@@ -1,0 +1,11 @@
+Bash
+- move config stuff out of common
+
+Backup Tools:
+- condense oc stuff
+- clearer output for check_* and git-remote-status
+- cleaner echos and colors
+- updated backup.conf.sample
+
+Vim:
+- modeline not working? (trycommon-git)
