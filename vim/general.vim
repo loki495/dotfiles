@@ -80,6 +80,9 @@ silent! set scl=no
 set wildmenu                    " show list instead of just completing
 set wildmode=list:longest       " ,full " command <Tab> completion, list matches, then longest common part, then all.
 
+set tabpagemax=100
+
+
 silent! colorscheme gruvbox
 
 set listchars=trail:·,precedes:«,extends:»
