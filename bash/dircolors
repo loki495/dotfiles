@@ -26,6 +26,7 @@ TERM mlterm
 TERM putty
 TERM rxvt*
 TERM screen*
+TERM screen-256color
 TERM st
 TERM terminator
 TERM tmux*
@@ -59,10 +60,10 @@ SETUID 37;41 # file that is setuid (u+s)
 SETGID 30;43 # file that is setgid (g+s)
 CAPABILITY 30;41 # file with capability
 STICKY_OTHER_WRITABLE 30;01 # dir that is sticky and other-writable (+t,o+w)
-OTHER_WRITABLE 34;01 # dir that is other-writable (o+w) and not sticky
+OTHER_WRITABLE 34;03 # dir that is other-writable (o+w) and not sticky
 STICKY 37;44 # dir with the sticky bit set (+t) and not other-writable
 # This is for files with execute permission:
-EXEC 01;32
+EXEC 40;01;32
 # List any file extensions like '.gz' or '.tar' that you would like ls
 # to colorize below. Put the extension, a space, and the color init string.
 # (and any comments you want to add after a '#')
@@ -193,3 +194,5 @@ EXEC 01;32
 .opus 00;36
 .spx 00;36
 .xspf 00;36
+.php 00;40;33
+.tpl 00;40;33
