@@ -18,7 +18,9 @@ nmap <silent> <leader>] :ALENext<cr>
 nmap <silent> <leader>[ :ALEPrevious<cr>
 
 let g:ale_php_phpcs_executable='~/dotfiles/bin/phpcs'
-let g:ale_php_phpcbf_executable='~/dotfiles/bin/phpcbf'
+let g:ale_php_phpcbf_executable='~/dotfiles/bin/phpcbf-helper.sh'
+let g:ale_php_phpcbf_use_global = 1
+
 let g:ale_fixers = {'php': ['phpcbf']}
 let g:ale_fix_on_save = 1
 
