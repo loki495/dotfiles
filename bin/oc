@@ -1,0 +1,246 @@
+#!/usr/bin/php
+<?php
+
+class TextType {
+    const NORMAL = 0;
+    const BOLD = 1;
+    const DIM = 2;
+    const ITALIC = 4;
+    const UNDERLINE = 4;
+}
+
+$foreground_colors = [
+    'Black' => 30,
+    'Red' => 31,
+    'Green' => 32,
+    'Yellow' => 33,
+    'Blue' => 34,
+    'Magenta' => 35,
+    'Cyan' => 36,
+    'White' => 37
+];
+
+$background_colors = [
+    'Black' => 40,
+    'Red' => 41,
+    'Green' => 42,
+    'Yellow' => 43,
+    'Blue' => 44,
+    'Magenta' => 45,
+    'Cyan' => 46,
+    'White' => 47
+];
+
+function echo_colored($str, $fg = 'White', $type = TextType::NORMAL, $bg = false) {
+    global $foreground_colors, $background_colors;
+
+    $fg = $foreground_colors[$fg];
+    echo "\e[" . $type . ';' . $fg;
+    if ($bg) {
+        $bg = $background_colors[$bg];
+        echo  ";" . $bg;
+    }
+    echo  "m";
+    echo $str;
+    echo "\e[0m";
+}
+
+function info($str) {
+    echo_colored($str,'Blue');
+    echo "\n";
+}
+
+function error($str) {
+    echo_colored($str,'Red', TextType::BOLD);
+    echo "\n";
+}
+
+function warning($str) {
+    echo_colored($str,'Yellow', TextType::BOLD);
+    echo "\n";
+}
+
+function dd($x) {
+    $e = new \Exception();
+    $t = $e->getTrace();
+    echo $t[0]['line']. ' - '. $t[0]['file'] . "\n";
+    print_r($x);
+    echo "\n";
+    exit(1);
+}
+
+$valid_actions = [
+    'list-packages',
+    'list-package-files',
+];
+
+function usage() {
+    echo "Usage:
+        oc list-packages [ADMIN_FOLDER]
+        oc list-package-files [PACKAGE_NAME] [ADMIN_FOLDER]
+";
+    exit(1);
+}
+
+function list_files($dir, $ext) {
+    return explode("\n",trim(`find $dir -name "*.$ext"`,"\n "));
+}
+
+$base_files_path = "/home/ubuntu/dotfiles/opencart/file-list.txt";
+$base_files = file($base_files_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+$base_dirs_path = "/home/ubuntu/dotfiles/opencart/dirs-list.txt";
+$base_dirs = file($base_dirs_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+$action = $argv[1] ?? null;
+
+$admin_folder = "";
+
+function filter_base($v) {
+    global $base_files, $admin_folder;
+
+    return array_search($v, $base_files) === FALSE && array_search(str_replace($admin_folder, 'admin', $v), $base_files) === FALSE;
+}
+
+function get_package_parts($file) {
+    global $admin_folder,$base_dirs;
+
+    if ($admin_folder != 'admin') $file = preg_replace('/^'.$admin_folder.'/', 'admin', $file);
+
+    $dir = dirname($file);
+    //info("checking $dir");
+    while (array_search($dir, $base_dirs) === FALSE && $dir && $dir != '.') {
+        $dir = dirname($dir);
+        //info("checking $dir");
+    }
+
+    if ($dir == '.' || $dir == '/') {
+        if (strpos($file, 'vqmod/xml') === false)
+            dd($file);
+        else {
+            $base = 'vqmod';
+            $type = 'xml';
+            $package_name = str_replace('.xml', '', basename($file));
+            $existing_module = '';
+        }
+    } else {
+
+        $file_parts = explode('/', trim($file,'/'));
+        $dir_parts = explode('/', trim($dir,'/'));
+
+        $base = array_shift($dir_parts);
+        array_shift($file_parts);
+        $type = array_shift($dir_parts);
+        array_shift($file_parts);
+
+        $existing_module = [];
+        foreach ($dir_parts as $d)
+           $existing_module[] = array_shift($file_parts);
+        $existing_module = implode('/',$existing_module);
+
+        $remove_extensions = ['.php', '.xml', '.tpl' ] ;
+        $package_name = preg_replace('/('.implode('|', $remove_extensions).')$/', '', array_shift($file_parts));
+
+    }
+
+    $result = [
+        'base' => $base,
+        'type' => $type,
+        'existing_module' => $existing_module,
+        'package_name' => $package_name,
+        'file' => $file,
+    ];
+
+    return $result;
+}
+
+function get_packages() {
+    global $admin_folder;
+
+    $files = [];
+    $files['catalog']['controller'] = array_filter(list_files('catalog/controller','php'), 'filter_base');
+    $files['catalog']['model'] = array_filter(list_files('catalog/model','php'), 'filter_base');
+    $files[$admin_folder]['controller'] = array_filter(list_files($admin_folder . '/controller','php'), 'filter_base');
+    $files[$admin_folder]['model'] = array_filter(list_files($admin_folder . '/model','php'), 'filter_base');
+    $files['vqmod'][] = list_files('vqmod/xml','xml');
+
+    $skipped = [];
+
+    $packages = [];
+
+    foreach ($files as $base => $types) {
+        foreach ($types as $type => $files) {
+            if (!$type && $base == 'vqmod') $type = 'xml';
+            //$remove_string = $base . '/' . $type . '/';
+            foreach ($files as $file) {
+                $dirpath = dirname($file).'/';
+
+                //if (strpos($file,'quickcheckout') !== FALSE && strpos($file,'order') != false) {
+                    $package_parts = get_package_parts($file);
+                //} else
+                   //continue;
+
+                if (!isset($package_parts['package_name'])) {
+                    dd(1);
+                    $skipped[] = $file;
+                    continue;
+                }
+
+                $package_folder = $package_parts['type'];
+                $package_name = $package_parts['package_name'];
+
+                $packages[$package_name][$base][$package_folder][] = $file;
+            }
+        }
+    }
+    ksort($packages);
+
+    return $packages;
+}
+
+function list_packages() {
+    global $argv, $admin_folder;
+
+    $admin_folder = $argv[2] ?? 'admin';
+
+    $packages = get_packages();
+
+    foreach ($packages as $name => $details) {
+        echo "$name\n";
+    }
+}
+
+function list_package_files() {
+    global $argv, $admin_folder;
+
+    $package_name = $argv[2];
+    if (!$package_name) 
+        usage();
+
+    $admin_folder = $argv[3] ?? 'admin';
+
+    $packages = get_packages($admin_folder);
+
+    if (isset($packages[$package_name])) {
+        foreach ($packages[$package_name] as $base => $modules) {
+            foreach ($modules as $name => $files) {
+                foreach ($files as $file) {
+                    echo "$file\n";
+                }
+            }
+        }
+    } else {
+        error("Package \"$package_name\" not found!");
+        exit(1);
+    }
+}
+
+if ($action == 'list-packages') {
+    list_packages();
+} else
+if ($action == 'list-package-files') {
+    list_package_files();
+} else
+    usage();
+
+exit(0);
