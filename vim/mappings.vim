@@ -336,7 +336,7 @@ command! Tn -complete=file tabnew
 noremap <leader>gf :tabnew <cfile><cr>
 
 function Dos2Unix()
-    silent! %s/^M//g
+    silent! %s///g
     silent! %s///g
     normal gg
 endfunction
