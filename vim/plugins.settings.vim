@@ -10,12 +10,13 @@ let g:ackprg = 'ag --nogroup --nocolor --column'
 "/
 let g:ale_sign_column_always = 1
 let g:ale_completion_enabled = 1
+let b:ale_linters = ['remove_trailing_lines','trim_whitespace']
 
 let g:ale_set_quickfix = 1
-let g:ale_set_loclist = 0
+let g:ale_set_loclist = 1
 let g:ale_open_list = 1
-nmap <silent> <leader>] :ALENext<cr>
-nmap <silent> <leader>[ :ALEPrevious<cr>
+nmap <silent> <leader>] :ALENextWrap<cr>
+nmap <silent> <leader>[ :ALEPreviousWrap<cr>
 
 let g:ale_php_phpcs_executable='~/dotfiles/bin/phpcs'
 let g:ale_php_phpcbf_executable='~/dotfiles/bin/phpcbf-helper.sh'
@@ -23,12 +24,6 @@ let g:ale_php_phpcbf_use_global = 1
 
 let g:ale_fixers = {'php': ['phpcbf']}
 let g:ale_fix_on_save = 1
-
-
-" nmap <silent> <Leader>[ <Plug>(ale_previous_wrap)
-" nmap <silent> <Leader>] <Plug>(ale_next_wrap)
-
-" let g:ale_set_quickfix = 0
 
 "/
 "/ IndentLine
