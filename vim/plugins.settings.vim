@@ -28,7 +28,7 @@ let g:ale_fix_on_save = 1
 "/
 "/ IndentLine
 "/
-        let g:indentLine_color_term = 29
+let g:indentLine_color_term = 29
 let g:indentLine_bgcolor_term = 230
 
 let g:indentLine_char_list = ['|', '|', '|', '┊']
