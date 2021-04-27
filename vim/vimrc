@@ -32,3 +32,9 @@ so ~/dotfiles/vim/colors/ifdef.vim
 so ~/dotfiles/vim/mappings.vim
 
 call SourceIfExists("~/.vimrc.local")
+
+" Load .vimrc in the base directory of a git repo, if it exists
+let $git_vimrc= expand(system("echo -n $(git rev-parse --show-toplevel)/.vimrc"))
+if filereadable($git_vimrc) && $git_vimrc != expand("$HOME/.vimrc")
+    source $git_vimrc
+endif
