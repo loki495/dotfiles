@@ -148,9 +148,9 @@ git_pull() {
 		CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
 		if [ "$CURRENT_BRANCH" != "master" ]
 		then
-			CHANGES_PENDING=$(git status --porcelain)
+			CHANGES_PENDING_OTHER_BRANCH=$(git status --porcelain)
 
-			if [ ! -z "${CHANGES_PENDING// }" ]
+			if [ ! -z "${CHANGES_PENDING_OTHER_BRANCH// }" ]
 			then
 				git stash
 			fi
@@ -181,6 +181,10 @@ git_pull() {
             echo "Switching back to $CURRENT_BRANCH"
             git checkout $CURRENT_BRANCH
             GIT_EDITOR=true git rebase master -Xours
+            if [ ! -z "${CHANGES_PENDING_OTHER_BRANCH// }" ]
+            then
+                git stash pop
+            fi
         fi
     fi
 }
