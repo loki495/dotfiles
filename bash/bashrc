@@ -194,6 +194,8 @@ alias rm='rm -i'
 alias ..='cd ..'
 alias cd..='cd ..'
 
+alias nvim='~/dotfiles/bin/nvim'
+
 alias psg='ps aux | grep'
 
 alias gs='git status'
