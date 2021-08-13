@@ -32,16 +32,10 @@ nmap <Leader><space> :nohlsearch<cr>
 nmap <Leader>ev :tabnew $MYVIMRC<cr>
 nmap <Leader>ep :tabnew ~/.vim/plugins.vim<cr>
 
-
-" simpler split navigation
-nmap <C-H> <C-W><C-H>
-nmap <C-J> <C-W><C-J>
-nmap <C-K> <C-W><C-K>
-nmap <C-L> <C-W><C-L>
-
 map <F4> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>
 
-vnoremap p "_dP                      “ dont overwrite register when pasting
+vnoremap p "_dP==                      " dont overwrite register when pasting, and indent
+nnoremap p p=`]						   " dont overwrite register when pasting, and indent
 
 "------Whitespace removal
 highlight ExtraWhitespace ctermbg=red guibg=red
@@ -328,7 +322,9 @@ endfunction
 syntax sync fromstart
 au BufEnter *.* :syntax sync fromstart
 
-nnoremap U :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>   "# [U]    Fix syntax highlighting
+nnoremap <C-u> :syntax on<cr>:syntax sync fromstart<cr>:redraw!<cr>   "# [<C-u>]    Fix syntax highlighting
+
+nnoremap U uu
 
 nnoremap <leader>zv :normal mazMzv`a<CR>    "# [Leader-zv]    Close all folds except current
 
@@ -336,9 +332,55 @@ command! Tn -complete=file tabnew
 noremap <leader>gf :tabnew <cfile><cr>
 
 function Dos2Unix()
-    silent! %s///g
+    silent! %s///g
     silent! %s///g
     normal gg
 endfunction
 
 au BufReadPost * silent! call Dos2Unix()
+
+nnoremap <silent> Q <nop>
+
+" Move files
+vnoremap J :m '>+1<CR>gv=gv "# [J]				(visual) Move selection down
+vnoremap K :m '<-2<CR>gv=gv "# [K]				(visual) Move selection up
+inoremap <C-j> <esc>:m .+1<CR>== "# [C-J]				(insert) Move line down
+inoremap <C-k> <esc>:m .-2<CR>== "# [C-K]				(insert) Move line up
+nnoremap <C-j> :m .+1<CR>== "# [C-J]				(normal) Move line down
+nnoremap <C-k> :m .-2<CR>== "# [C-K]				(normal) Move line up
+
+" Indent manually
+vnoremap H :m <<gv "# [H]				(visual) Move line left
+vnoremap L >>gv "# [L]				(visual) Move line right
+inoremap <C-h> <esc>0<< "# [C-h]				(insert) Move line left
+inoremap <C-l> <esc>0>> "# [C-l]				(insert) Move line right
+nnoremap <C-h> << "# [C-h]				(normal) Move line left
+nnoremap <C-l> >> "# [C-l]				(normal) Move line right
+
+" Break undos on insert?
+inoremap _ _<c-g>u
+inoremap - -<c-g>u
+inoremap , ,<c-g>u
+inoremap . .<c-g>u
+inoremap ! !<c-g>u
+inoremap ? ?<c-g>u
+inoremap <space> <space><c-g>u
+inoremap * *<c-g>u
+inoremap ( (<c-g>u
+inoremap ) )<c-g>u
+inoremap $ $<c-g>u
+inoremap % %<c-g>u
+inoremap & &<c-g>u
+inoremap < <<c-g>u
+inoremap > ><c-g>u
+inoremap / /<c-g>u
+inoremap { {<c-g>u
+inoremap } }<c-g>u
+
+nnoremap <Leader>, m'   "# [<Leader>,]              Mark as C-o/C-i jump
+
+" Mark undo spots on C-f / C-o
+nnoremap <C-f> <C-f>m'
+nnoremap <C-b> <C-b>m'
+
+inoremap <C-c> <esc>   "# [C-c]                     Exit Insert mode

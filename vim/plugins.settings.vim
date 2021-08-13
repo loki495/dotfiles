@@ -172,3 +172,9 @@ endfunction
 
 " Vim Fugitive
 nmap <leader>gs :G<CR>
+
+
+"/
+"/ Clang-format
+"/
+autocmd FileType cpp ClangFormatAutoEnable
