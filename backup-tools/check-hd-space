@@ -4,10 +4,17 @@ DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/echos
 source $DIRNAME/../bash/lib/pushdpopd
 
+usage() {
+    echo "Usage: check-hd-space <full|local>"
+    echo "          if arg1 is \"full\", use hardcoded list"
+    echo "          if arg1 is \"local\", get this machine's free hd space"
+    echo "          if arg1 is empty, use current folde"
+    exit
+}
+
 check_current_folder() {
     PATH=$PATH:/usr/bin
 
-    echo $DIRNAME
     source $DIRNAME/../bash/lib/common
 
     if [ -z "${DRIVE+x}" ]
@@ -38,6 +45,24 @@ check_current_folder() {
     echo ""
 }
 
+check_local() {
+    DRIVE_MIN=5000000
+
+    FREE_SPACE=`df | grep /dev/root | awk '{print $4}'`
+
+    echo_info "Free Space: $FREE_SPACE"
+
+    if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
+    then
+        echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
+        echo "LOW HD SPACE WARNING - $FREE_SPACE left free" | mail -s "Free Space Check - BACKUPS" dasc495@gmail.com
+
+    fi
+
+    echo -e "${GREEN}Done with local backup machine${NC}"
+    echo ""
+}
+
 check_all_sites() {
     SITES=( "localleadfinder.net" "juegosretro.com" "studio9furniture.com" "retrogamingstores.com" "retrovideogame.net")
     for folder in ${SITES[@]}
@@ -55,6 +80,12 @@ if [ "$1" == "full" ]
 then
     check_all_sites
     exit
+else
+    if [ "$1" == "local" ]
+    then
+        check_local
+        exit
+    fi
 fi
 
 check_current_folder
