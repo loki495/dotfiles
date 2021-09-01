@@ -1,0 +1,83 @@
+#!/bin/bash
+
+NO_SSL=1
+NEEDS_CONF=0
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+
+usage () {
+	echo "Usage: check-old-database-files <path-to-root-folder> <max_months>"
+    echo "            max_months		    delete all files up to max_months ago (default:6)"
+	exit
+
+}
+
+process_folder () {
+
+	#echo_info "Processing folder: $1"
+
+	if [ -d "$1" ]
+	then
+		ROOT_PATH=`realpath $1`
+		cd $ROOT_PATH
+	else
+		echo_error "Directory \"$1\" does not exist. Aborting"
+		popd
+		return
+	fi
+
+    echo `pwd` " - " `date`
+
+    if [ -d "database" ]
+    then
+        max_date=`date +'%Y-%m-%d' --date "$_MONTHS months ago"`
+
+        for file in `find database -type f ! -newermt "$max_date" | sort`
+        do
+            file=`basename $file`
+            basename=(${file//./ })
+            basename=${basename[-3]}
+
+            pattern="([0-9]{4}-[0-9]{2}-([0-9]{2}))"
+
+            if [[ $basename =~ $pattern ]]
+            then
+                match="${BASH_REMATCH[0]}"
+                day="${BASH_REMATCH[2]}"
+                if [ $day -gt 1 ]
+                then
+                    # delete file
+                    full_path="`pwd`/database/$file"
+                    echo "deleting file: $full_path"
+                    rm -f $full_path
+                fi
+            fi
+        done
+    fi
+
+}
+
+BASE_FOLDER=("$1")
+_MONTHS=("$2")
+
+if [ -z "${BASE_FOLDER// }" ]
+then
+    usage
+    exit
+fi
+
+if [ -z "${_MONTHS// }" ]
+then
+    _MONTHS=6
+fi
+
+echo_info "Processing subfolders of $GREEN$BASE_FOLDER"
+
+BASE_FOLDER=`find "$BASE_FOLDER" -maxdepth 1 -mindepth 1 -type d`
+
+for folder in $BASE_FOLDER;
+do
+    process_folder $folder
+    exec &>/dev/tty
+done
