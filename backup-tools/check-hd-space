@@ -1,0 +1,60 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+source $DIRNAME/../bash/lib/pushdpopd
+
+check_current_folder() {
+    PATH=$PATH:/usr/bin
+
+    echo $DIRNAME
+    source $DIRNAME/../bash/lib/common
+
+    if [ -z "${DRIVE+x}" ]
+    then
+        echo "Error: No DRIVE value set"
+        return
+    fi
+
+    if [ -z "${KEY// }" ]
+    then
+        KEY_OVERRIDE=""
+    else
+        KEY_OVERRIDE="-i $KEY"
+    fi
+
+    FREE_SPACE=`run_ssh df | $(which grep) $DRIVE | $(which awk) '{print $4}'`
+
+    echo_info "Free Space: $FREE_SPACE"
+
+    if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
+    then
+        echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
+        echo "LOW HD SPACE WARNING - $FREE_SPACE left free" | mail -s "Free Space Check - $SITE_DOMAIN" dasc495@gmail.com
+
+    fi
+
+    echo -e "${GREEN}Done with `pwd`${NC}"
+    echo ""
+}
+
+check_all_sites() {
+    SITES=( "localleadfinder.net" "juegosretro.com" "studio9furniture.com" "retrogamingstores.com" "retrovideogame.net")
+    for folder in ${SITES[@]}
+    do
+        pushd .
+        echo "Going to /home/ubuntu/backups/$folder"
+        cd /home/ubuntu/backups/$folder
+        $DIRNAME/check-hd-space
+        popd
+        exec &>/dev/tty
+    done
+}
+
+if [ "$1" == "full" ]
+then
+    check_all_sites
+    exit
+fi
+
+check_current_folder
