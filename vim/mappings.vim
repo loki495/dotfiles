@@ -111,6 +111,7 @@ inoremap <Leader>A <C-o>:call SearchFromCursor()<cr>
 noremap <Leader>A <C-o>:call SearchFromCursor()<cr>
 
 noremap <C-a> :"ad<CR>
+
 "------Mappings----------
 
 cmap w!! w !sudo tee % >/dev/null
