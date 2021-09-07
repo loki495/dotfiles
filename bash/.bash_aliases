@@ -37,6 +37,7 @@ alias gc='git commit -v'
 alias gca='git commit -av'
 alias gsqd='git-summary -qd'
 alias gd='git diff'
+alias gdc='git diff --cached'
 
 # Open Git conflicts in $EDITOR
 alias fix='$EDITOR -p `git diff --name-only | uniq`'
