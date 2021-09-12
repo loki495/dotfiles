@@ -45,7 +45,7 @@ autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
 autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 
-autocmd BufWritePre *.php :%s/\s+$//e
+autocmd BufWritePre *.php :%s/(\s+)$//e
 
 " Restore cursor position, window position, and last search after running a
 " command.
