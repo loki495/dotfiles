@@ -356,11 +356,9 @@ inoremap , ,<c-g>u
 inoremap . .<c-g>u
 inoremap ! !<c-g>u
 inoremap ? ?<c-g>u
-inoremap <space> <space><c-g>u
 inoremap * *<c-g>u
 inoremap ( (<c-g>u
 inoremap ) )<c-g>u
-inoremap $ $<c-g>u
 inoremap % %<c-g>u
 inoremap & &<c-g>u
 inoremap < <<c-g>u
@@ -376,3 +374,6 @@ nnoremap <C-f> <C-f>m'
 nnoremap <C-b> <C-b>m'
 
 inoremap <C-c> <esc>   "# [C-c]                     Exit Insert mode
+
+iabbrev echol echo '<pre>'.__LINE__.' - '.__FILE__."\n";$e = new \Exception();print_r($e->getTraceAsString());echo"\n";print_r();exit;<Esc><S-f>)i
+
