@@ -48,3 +48,6 @@ alias sail='bash vendor/bin/sail'
 
 alias findd='find . -type d'
 alias sync-folders='php ~/dotfiles/backup-tools/sync-folders.php'
+
+# ps aux | grep [ARGS]
+alias psaux='ps aux | grep '
