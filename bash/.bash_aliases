@@ -25,6 +25,7 @@ alias psg='ps aux | grep'
 alias gs='git status'
 alias gss='git status -s'
 alias gl='git log'
+alias glf='git log --name-status --oneline'
 alias gb='git log --all --graph --decorate --oneline'
 alias ga='git add --verbose'
 alias gap='git add -p'
@@ -47,3 +48,6 @@ alias sail='bash vendor/bin/sail'
 
 alias findd='find . -type d'
 alias sync-folders='php ~/dotfiles/backup-tools/sync-folders.php'
+
+# ps aux | grep [ARGS]
+alias psaux='ps aux | grep '

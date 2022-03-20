@@ -2,6 +2,8 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'laher/fuzzymenu.vim'
 
+Plug 'morhetz/gruvbox'
+ 
 " Plug 'vim-airline/vim-airline'
 " Plug 'vim-airline/vim-airline-themes'
 Plug 'itchyny/lightline.vim'
@@ -37,4 +39,4 @@ Plug 'majutsushi/tagbar'
 " Plug 'jiangmiao/auto-pairs'
 
 Plug 'jwalton512/vim-blade'
-Plug 'posva/vim-vue'
+Plug 'leafOfTree/vim-vue-plugin'
