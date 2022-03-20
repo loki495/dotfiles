@@ -97,6 +97,7 @@ set wildmode=list:longest       " ,full " command <Tab> completion, list matches
 set tabpagemax=100
 
 
+let g:gruvbox_contrast_dark='hard'
 silent! colorscheme gruvbox
 
 set listchars=trail:·,precedes:«,extends:»

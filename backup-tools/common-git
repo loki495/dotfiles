@@ -142,7 +142,7 @@ git_pull() {
         SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "cd \"$SSH_BASE_PATH$SSH_PATH\"; pwd"`
         GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
-        echo -e "${GREEN}Local git found...${NC}"
+        echo -e "${GREEN}Local git found at \"$LOCAL_BASE/$LOCAL_PATH\"...${NC}"
         cd $LOCAL_BASE/$LOCAL_PATH
 
 		CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
@@ -174,7 +174,7 @@ git_pull() {
         fi
 
         echo -e "${GREEN}Pulling latest commit${NC}"
-        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
+        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull --rebase
 
         if [ "$CURRENT_BRANCH" != "master" ]
         then

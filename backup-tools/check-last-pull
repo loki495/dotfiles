@@ -1,0 +1,126 @@
+#!/bin/bash
+
+GREP=$(which grep)
+SED=$(which sed)
+GIT=$(which git)
+SSH=$(which ssh)
+CUT=$(which cut)
+STAT=$(which stat)
+DATE=$(which date)
+REALPATH=$(which realpath)
+BASENAME=$(which basename)
+
+
+function check_last_git_pull() {
+    #echo "processing $1"
+    CURRENT_DIR=$1
+
+    PATH=`$GREP LOCAL_PATH= "$CURRENT_DIR/backup.conf" | $SED 's/LOCAL_PATH=//'`
+    SSH_HOST=`$GREP SSH_HOST= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_HOST=//'`
+    SSH_USER=`$GREP SSH_USER= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_USER=//'`
+    SSH_PORT=`$GREP SSH_PORT= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_PORT=//'`
+    SSH_KEY=`$GREP SSH_KEY= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_KEY=//'`
+    SSH_BASE_PATH=`$GREP SSH_BASE_PATH= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_BASE_PATH=//'`
+    SSH_PATH=`$GREP SSH_PATH= "$CURRENT_DIR/backup.conf" | $SED 's/SSH_PATH=//'`
+
+    PORT_OVERRIDE=
+    re='^[0-9]+$'
+
+    if [[ $SSH_PORT =~ $re ]] ;
+    then
+        PORT_OVERRIDE=" -p $SSH_PORT"
+    fi
+
+    SSH_KEY_OVERRIDE=
+    if [ ! -z "${SSH_KEY// }" ]
+    then
+        SSH_KEY="${SSH_KEY%\"}"
+        SSH_KEY="${SSH_KEY#\"}"
+        SSH_KEY="${SSH_KEY%\'}"
+        SSH_KEY="${SSH_KEY#\'}"
+
+        SSH_KEY_OVERRIDE=" -i $SSH_KEY"
+    fi
+
+    if [ -z "${SSH_USER// }" ]
+    then
+        SSH_BASE="$SSH $SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE "
+    else
+        SSH_BASE="$SSH $SSH_USER@$SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE"
+    fi
+
+    LAST_COMMIT_STR=$($SSH $SSH_KEY_OVERRIDE -q -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    cd \"$SSH_BASE_PATH$SSH_PATH\"
+    A=\`git log -1 --date=relative | grep Date | sed 's/Date: //'\`
+    B=\`git log -1 | grep ^commit | sed 's/^commit //'\`
+    echo \$A "\\\|" \$B
+    ")
+
+    IFS='|'
+    LAST_COMMIT=(${LAST_COMMIT_STR})
+    unset IFS;
+
+    LAST_COMMIT_DATE=${LAST_COMMIT[0]}
+    LAST_COMMIT_ID=${LAST_COMMIT[1]}
+
+    cd $CURRENT_DIR/$PATH
+
+    LAST_ORIGIN_COMMIT=(${LAST_COMMIT_ID// /})
+    LAST_ORIGIN_ENDING="^{commit}"
+
+    set -B
+    LAST_COMMIT_ID=$LAST_ORIGIN_COMMIT
+    LAST_COMMIT_ID+=$LAST_ORIGIN_ENDING
+    LAST_COMMIT_ID=`echo $LAST_COMMIT_ID | $CUT -c1-40`
+    set +B
+
+    CMD="$GIT log -1 $LAST_COMMIT_ID"
+    RESULT=`$CMD > /dev/null`
+    CODE=$?
+    EXISTS="YES"
+
+    if [ $CODE -gt 0 ]
+    then
+        EXISTS="NO"
+    fi
+
+    #echo "CMD: $CMD"
+    #echo "EXISTS: $EXISTS"
+    #echo "EXIT CODE: $CODE"
+
+    LAST_PULL_DATE=`$GIT log -1 --date=relative | $GREP Date | $SED 's/Date: //'`
+
+    SAME="NO"
+    if [ "${LAST_PULL_DATE// /}" = "${LAST_COMMIT_DATE// /}" ]
+    then
+        SAME="YES"
+    fi
+
+    ERROR="CHECK NEEDED ($LAST_COMMIT_ID)"
+    if [ "${SAME// /}" = "YES" ] && [ $EXISTS = "YES" ]
+    then
+        ERROR=""
+    fi
+
+    LAST_PULL=`$STAT -c %Y .git/FETCH_HEAD`
+    LAST_PULL_ATTEMPT=`$DATE -d @$LAST_PULL +'%Y-%m-%d %H:%M:%S'`
+
+    printf "%-30s %-23s %-20s %-11s %-5s %s $s\n" `$BASENAME "$CURRENT_DIR"` "$LAST_PULL_ATTEMPT" "$LAST_COMMIT_DATE" "$EXISTS" "$SAME" "$ERROR"
+}
+
+
+
+if [ ! -z "$2" ] && [ "$2" -eq '1' ]
+then
+    DIR=(`$REALPATH "$1"`)
+    echo "Checking $DIR"
+    printf "%-30s %-23s %-20s %-11s %s\n" "REPO" "LAST PULL" "LAST COMMIT" "SAME DATE" "EXISTS"
+    check_last_git_pull $DIR
+else
+    DIR=`$REALPATH $1`
+    printf "%-30s %-23s %-20s %-11s %s\n" "REPO" "LAST PULL" "LAST COMMIT" "SAME DATE" "EXISTS"
+    for i in `find $DIR -maxdepth 1 -mindepth 1 -type d`
+    do
+        check_last_git_pull $i
+    done
+fi
