@@ -51,3 +51,6 @@ alias sync-folders='php ~/dotfiles/backup-tools/sync-folders.php'
 
 # ps aux | grep [ARGS]
 alias psaux='ps aux | grep '
+
+# * delete files older that X days
+# find .  -mtime +X -exec rm {} \;
