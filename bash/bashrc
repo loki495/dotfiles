@@ -97,6 +97,7 @@ set_bash_prompt() {
 
 if [ "$color_prompt" = yes ]; then
 	PROMPT_COMMAND=set_bash_prompt
+    PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND; }'printf "\033]0;%s@%s:%s\007" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/\~}"'
 else
      PS1="${debian_chroot:+($debian_chroot)}[\u@\h, load: `cat /proc/loadavg | awk '{ print $1; }'`] (\d - \t)\n\w \$ "
 fi
