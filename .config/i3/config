@@ -202,6 +202,9 @@ for_window [class="^.*"] border pixel 0
 for_window [class="^Alacritty$"] border normal 0
 for_window [class="todo-tray"] floating enable
 
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="task_dialog"] floating enable
+
 # smart_gaps on
 
 gaps inner 10
