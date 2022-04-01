@@ -54,3 +54,5 @@ alias psaux='ps aux | grep '
 
 # * delete files older that X days
 # find .  -mtime +X -exec rm {} \;
+
+alias screenoff='sleep 1; xset dpms force off'
