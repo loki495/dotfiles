@@ -3,7 +3,7 @@ Plug 'junegunn/fzf.vim'
 Plug 'laher/fuzzymenu.vim'
 
 Plug 'morhetz/gruvbox'
- 
+
 " Plug 'vim-airline/vim-airline'
 " Plug 'vim-airline/vim-airline-themes'
 Plug 'itchyny/lightline.vim'
@@ -29,6 +29,7 @@ Plug 'Chiel92/vim-autoformat'
 Plug 'Yggdroot/indentLine'
 Plug '2072/PHP-Indenting-for-VIm'
 Plug 'rayburgemeestre/phpfolding.vim'
+Plug 'markonm/traces.vim'
 
 Plug 'tpope/vim-fugitive'
 
