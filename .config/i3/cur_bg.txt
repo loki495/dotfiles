@@ -1,0 +1,1 @@
+config cur_bg.txt wallpaper.sh
