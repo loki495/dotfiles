@@ -56,3 +56,6 @@ alias psaux='ps aux | grep '
 # find .  -mtime +X -exec rm {} \;
 
 alias screenoff='sleep 1; xset dpms force off'
+
+# prevent accidental -r
+alias crontab="crontab -i"
