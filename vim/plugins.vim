@@ -17,7 +17,7 @@ Plug 'blueyed/vim-diminactive'
 Plug 'hotoo/highlight-cursor-word'
 " Plug 'wellle/context.vim'
 
-Plug 'w0rp/ale'
+" Plug 'w0rp/ale'
 Plug 'rhysd/vim-clang-format'
 
 " http://www.futurile.net/2016/03/19/vim-surround-plugin-tutorial/
@@ -27,6 +27,8 @@ Plug 'ntpeters/vim-better-whitespace'
 Plug 'Chiel92/vim-autoformat'
 " Plug 'nathanaelkane/vim-indent-guides'
 Plug 'Yggdroot/indentLine'
+
+Plug 'phpactor/phpactor', {'for': 'php', 'do': 'composer install'}
 Plug '2072/PHP-Indenting-for-VIm'
 Plug 'rayburgemeestre/phpfolding.vim'
 Plug 'markonm/traces.vim'
