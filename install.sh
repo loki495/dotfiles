@@ -65,6 +65,10 @@ vim +'PlugInstall --sync' +qall &> /dev/null
 
 echo "VIM done"
 
+rm -rf ~/.config/nvim
+ln -s ~/dotfiles/nvim ~/.config/
+echo "NVIM done"
+
 echo "DONE"
 
 # sudo apt install libncursesw5-dev pkg-config
