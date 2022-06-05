@@ -1,5 +1,6 @@
 set termguicolors
 
+nnoremap <SPACE> <Nop>
 let mapleader = ','
 
 let data_dir = '~/.config/nvim'
