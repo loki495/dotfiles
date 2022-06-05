@@ -71,3 +71,7 @@ echo "DONE"
 # git clone https://github.com/mawww/kakoune.git && cd kakoune/src
 # make
 # PREFIX=$HOME/.local make install
+
+# install node for coc.vim
+# curl -sL install-node.vercel.app/lts | bash
+
