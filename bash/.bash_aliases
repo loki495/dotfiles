@@ -17,7 +17,7 @@ alias egrep='egrep --color=auto'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # should go back to appimage? snap?
-alias nvim='~/dotfiles/bin/nvim'
+# alias nvim='~/dotfiles/bin/nvim'
 # alias nvim='~/nvim/nvim.appimage'
 
 alias psg='ps aux | grep'
