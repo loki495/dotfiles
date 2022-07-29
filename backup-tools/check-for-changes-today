@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ -f ~/dotfiles/.env ]
+then
+    set -a
+    source ~/dotfiles/.env
+    set +a
+fi
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/common
+source $DIRNAME/common-git
+
+cd $LOCAL_PATH
+
+DATE=`date +"%Y-%m-%d 00:00"`
+
+OLD_IFS="$IFS"
+IFS=""
+
+CHANGES="`$(which git) log --since \"$DATE\"`"
+
+if [ -z "$CHANGES" ];
+then
+    echo "No changes detected"
+else
+    echo "Changes detected! Emailing!"
+
+    DIR=`pwd`
+    DIRNAME=`dirname $DIR`
+    DOMAIN=`basename $DIRNAME`
+
+    curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
+        --mail-from 'dasc495@gmail.' \
+        --mail-rcpt 'dasc495@gmail.com' \
+        --user 'dasc495@gmail.com:'$GMAIL_PASSWORD \
+        -T <(echo -e 'From: dasc495@gmail.com\nTo: dasc495@gmail.com\nSubject: GIT CHANGES TO '$DOMAIN'\n\n'$CHANGES)
+
+fi
+
+IFS="$OLD_IFS"
