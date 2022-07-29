@@ -76,6 +76,8 @@ process_folder () {
 	echo_info "Sync Folders"
 	$(which php) ~/dotfiles/backup-tools/sync-folders.php
 
+    ~/dotfiles/backup-tools/check-for-changes-today
+
 	popd
 }
 
