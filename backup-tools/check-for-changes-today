@@ -18,7 +18,7 @@ DATE=`date +"%Y-%m-%d 00:00"`
 OLD_IFS="$IFS"
 IFS=""
 
-CHANGES="`$(which git) log --since \"$DATE\"`"
+CHANGES="`$(which git) log -p --since \"$DATE\"`"
 
 if [ -z "$CHANGES" ];
 then
