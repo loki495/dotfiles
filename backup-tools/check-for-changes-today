@@ -13,12 +13,10 @@ source $DIRNAME/common-git
 
 cd $LOCAL_PATH
 
-DATE=`date +"%Y-%m-%d 00:00"`
-
 OLD_IFS="$IFS"
 IFS=""
 
-CHANGES="`$(which git) log -p --since \"$DATE\"`"
+CHANGES="`$(which git) log -p --no-merges --since \"yesterday\"`"
 
 if [ -z "$CHANGES" ];
 then

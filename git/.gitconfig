@@ -16,3 +16,5 @@
     conflicts = diff --name-only --diff-filter=U
 
 
+[log]
+	date = local
