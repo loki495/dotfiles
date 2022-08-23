@@ -45,7 +45,7 @@ chmod 777 ~/bin/rg
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 # vim +'PlugClean!' +'PlugInstall --sync' +qall
-vim +'PlugInstall --sync' +qall &> /dev/null
+# vim +'PlugInstall --sync' +qall &> /dev/null
 
 # YUM_CMD=$(which yum)
 # APT_GET_CMD=$(which apt-get)
@@ -70,6 +70,8 @@ ln -s ~/dotfiles/nvim ~/.config/
 echo "NVIM done"
 
 echo "DONE"
+
+echo "Remember to :PlugInstall in vim to get all the plugins"
 
 # sudo apt install libncursesw5-dev pkg-config
 # git clone https://github.com/mawww/kakoune.git && cd kakoune/src
