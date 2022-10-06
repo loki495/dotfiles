@@ -59,3 +59,5 @@ alias screenoff='sleep 1; xset dpms force off'
 
 # prevent accidental -r
 alias crontab="crontab -i"
+
+alias bytes2kb='numfmt --to iec --format "%8.2f"'
