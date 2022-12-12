@@ -13,7 +13,7 @@ usage() {
     echo "Usage: check-hd-space <full|local>"
     echo "          if arg1 is \"full\", use hardcoded list"
     echo "          if arg1 is \"local\", get this machine's free hd space"
-    echo "          if arg1 is empty, use current folde"
+    echo "          if arg1 is empty, use current folder"
     exit
 }
 
