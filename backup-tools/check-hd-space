@@ -35,7 +35,7 @@ check_current_folder() {
         KEY_OVERRIDE="-i $KEY"
     fi
 
-    FREE_SPACE=`run_ssh df | $(which grep) $DRIVE | $(which awk) '{print $4}'`
+    FREE_SPACE=`run_ssh df -B1 | $(which grep) $DRIVE | $(which awk) '{print $4}'`
     FREE_SPACE="${FREE_SPACE:-0}"
     FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
     DRIVE_MIN_KB=`echo $(bytes2kb $DRIVE_MIN) | sed -e 's/^[[:space:]]*//'`
@@ -64,7 +64,7 @@ check_local() {
     ROOT_DEVICE="root"
     DEVICE="${1:-$ROOT_DEVICE}"
 
-    FREE_SPACE=`df | grep /dev/$DEVICE | awk '{print $4}'`
+    FREE_SPACE=`df -B1 | grep /dev/$DEVICE | awk '{print $4}'`
     FREE_SPACE="${FREE_SPACE:-0}"
     FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
 
