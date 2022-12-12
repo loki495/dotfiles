@@ -44,8 +44,13 @@ check_current_folder() {
 
     if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
     then
-        echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
-        echo "LOW HD SPACE WARNING - $FREE_SPACE_KB left free" | mail -s "Free Space Check - $SITE_DOMAIN" dasc495@gmail.com
+        echo_error "Not enough free space (MIN = $DRIVE_MIN_KB)!"
+        >&2 echo -en "${BLUE}Sending email...${NC}"
+        (
+          echo "Subject: Free Space Check - $SITE_DOMAIN"
+          echo "LOW HD SPACE WARNING - $FREE_SPACE_KB left free"
+        ) | ssmtp dasc495@gmail.com
+        echo_info "SENT"
 
     fi
 
