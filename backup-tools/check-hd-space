@@ -38,8 +38,9 @@ check_current_folder() {
     FREE_SPACE=`run_ssh df | $(which grep) $DRIVE | $(which awk) '{print $4}'`
     FREE_SPACE="${FREE_SPACE:-0}"
     FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
+    DRIVE_MIN_KB=`echo $(bytes2kb $DRIVE_MIN) | sed -e 's/^[[:space:]]*//'`
 
-    echo_info "Free Space: $FREE_SPACE_KB"
+    echo_info "Free Space: $FREE_SPACE_KB (Min: $DRIVE_MIN_KB)"
 
     if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
     then
