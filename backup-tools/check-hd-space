@@ -4,6 +4,11 @@ DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/echos
 source $DIRNAME/../bash/lib/pushdpopd
 
+bytes2kb() {
+    local retval=`numfmt --to iec --format "%8.2f" $1`
+    echo "$retval"
+}
+
 usage() {
     echo "Usage: check-hd-space <full|local>"
     echo "          if arg1 is \"full\", use hardcoded list"
@@ -31,13 +36,15 @@ check_current_folder() {
     fi
 
     FREE_SPACE=`run_ssh df | $(which grep) $DRIVE | $(which awk) '{print $4}'`
+    FREE_SPACE="${FREE_SPACE:-0}"
+    FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
 
-    echo_info "Free Space: $FREE_SPACE"
+    echo_info "Free Space: $FREE_SPACE_KB"
 
     if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
     then
         echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
-        echo "LOW HD SPACE WARNING - $FREE_SPACE left free" | mail -s "Free Space Check - $SITE_DOMAIN" dasc495@gmail.com
+        echo "LOW HD SPACE WARNING - $FREE_SPACE_KB left free" | mail -s "Free Space Check - $SITE_DOMAIN" dasc495@gmail.com
 
     fi
 
@@ -48,9 +55,14 @@ check_current_folder() {
 check_local() {
     DRIVE_MIN=5000000
 
-    FREE_SPACE=`df | grep /dev/root | awk '{print $4}'`
+    ROOT_DEVICE="root"
+    DEVICE="${1:-$ROOT_DEVICE}"
 
-    echo_info "Free Space: $FREE_SPACE"
+    FREE_SPACE=`df | grep /dev/$DEVICE | awk '{print $4}'`
+    FREE_SPACE="${FREE_SPACE:-0}"
+    FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
+
+    echo_info "Free Space (/dev/$DEVICE): $FREE_SPACE_KB"
 
     if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
     then
@@ -83,7 +95,7 @@ then
 else
     if [ "$1" == "local" ]
     then
-        check_local
+        check_local $2
         exit
     fi
 fi
