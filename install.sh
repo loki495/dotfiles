@@ -44,40 +44,14 @@ chmod 777 ~/bin/rg
 
 curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
-# vim +'PlugClean!' +'PlugInstall --sync' +qall
-# vim +'PlugInstall --sync' +qall &> /dev/null
-
-# YUM_CMD=$(which yum)
-# APT_GET_CMD=$(which apt-get)
-
-# if [[ ! -z $YUM_CMD ]]; then
-#    sudo yum install fonts-powerline -y
-#    sudo snap install ripgrep --classic
-#    sudo snap alias ripgrep.rg rg
-#elif [[ ! -z $APT_GET_CMD ]]; then
-#    sudo apt-get install fonts-powerline -y
-#    sudo snap install ripgrep --classic
-#    sudo snap alias ripgrep.rg rg
-#else
-#    echo "error can't install package $PACKAGE"
-#    exit 1;
-#fi
 
 echo "VIM done"
 
 rm -rf ~/.config/nvim
-ln -s ~/dotfiles/nvim ~/.config/
+ln -s ~/dotfiles/nvim ~/.config/nvim
 echo "NVIM done"
 
 echo "DONE"
 
-echo "Remember to :PlugInstall in vim to get all the plugins"
-
-# sudo apt install libncursesw5-dev pkg-config
-# git clone https://github.com/mawww/kakoune.git && cd kakoune/src
-# make
-# PREFIX=$HOME/.local make install
-
-# install node for coc.vim
-# curl -sL install-node.vercel.app/lts | bash
-
+echo "VIM: :PlugInstall"
+echo "NVIM: :PackerSync"
