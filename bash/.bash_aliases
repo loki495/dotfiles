@@ -61,3 +61,5 @@ alias screenoff='sleep 1; xset dpms force off'
 alias crontab="crontab -i"
 
 alias bytes2kb='numfmt --to iec --format "%8.2f"'
+
+alias vim='nvim'
