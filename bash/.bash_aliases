@@ -16,10 +16,6 @@ alias egrep='egrep --color=auto'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# should go back to appimage? snap?
-# alias nvim='~/dotfiles/bin/nvim'
-# alias nvim='~/nvim/nvim.appimage'
-
 alias psg='ps aux | grep'
 
 alias gs='git status'
@@ -62,4 +58,5 @@ alias crontab="crontab -i"
 
 alias bytes2kb='numfmt --to iec --format "%8.2f"'
 
+alias nvim='~/nvim/AppRun'
 alias vim='nvim'
