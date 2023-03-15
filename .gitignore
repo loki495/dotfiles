@@ -1,6 +1,6 @@
 .old
 .log
 tags
-nvim/squashfs-root
-nvim/nvim.appimage
 .env
+./nvim/plugin/packer_compiled.lua
+
