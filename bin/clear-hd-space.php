@@ -24,10 +24,11 @@ Sample INI file
  [clean-dirs]
  0[path] = '~/retrogamingstores.com/public_html'
  0[type] = 'opencart1|sessions'
- 0[days] = '(int)'  (for sessions only)
+ 0[days] = '(int)'  (for backup_database/sessions only)
 
 Types:
 - opencart1: deletes system/logs/error.txt
 - sessions: deletes all files in subdirs older than 'days' days old
+- backup_database: deletes all files in ~/backups/*\/database/*.sql.gz older than 'days' days old
 
  */
