@@ -50,6 +50,7 @@ echo "VIM: :PlugInstall"
 
 ~/dotfiles/install_neovim_appimage.sh
 
+mkdir -p ~/.config
 rm -rf ~/.config/nvim
 ln -s ~/dotfiles/nvim ~/.config/nvim
 
