@@ -1,8 +1,6 @@
 [user]
 	email = dasc495@gmail.com
 	name = Andres Crucitti
-[url "git@github.com:"]
-    insteadOf = https://github.com/
 [http]
 	sslVerify = false
 [core]
@@ -14,7 +12,5 @@
 	denyCurrentBranch = updateInstead
 [alias]
     conflicts = diff --name-only --diff-filter=U
-
-
 [log]
 	date = local
