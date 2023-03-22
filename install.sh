@@ -6,6 +6,7 @@ SCRIPTPATH=`dirname $SCRIPT`
 # BASH
 mv ~/.bashrc ~/.bashrc.old
 ln -s $SCRIPTPATH/bash/bashrc ~/.bashrc
+source ~/.backrc
 echo "BASH done"
 
 mv ~/.dircolors ~/.dircolors.old
