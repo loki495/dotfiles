@@ -7,3 +7,5 @@ vim.wo.cursorline = true
 vim.wo.nu = true
 vim.wo.rnu = true
 
+vim.opt.mouse = ''
+
