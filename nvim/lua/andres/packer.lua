@@ -7,7 +7,7 @@ return require('packer').startup(function(use)
 	-- Packer can manage itself
 	use 'wbthomason/packer.nvim'
 
-	use { "ellisonleao/gruvbox.nvim" }
+	use { "sainnhe/gruvbox-material" }
 
 	use {
 		'nvim-treesitter/nvim-treesitter',
