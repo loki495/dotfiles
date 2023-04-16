@@ -16,6 +16,7 @@ vim.opt.showmatch = true
 vim.opt.nu = true
 vim.opt.rnu = true
 
+vim.opt.autoindent = true
 vim.opt.smartindent = true
 
 vim.opt.wrap = false
