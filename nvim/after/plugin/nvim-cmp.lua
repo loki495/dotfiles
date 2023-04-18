@@ -3,6 +3,8 @@
 local cmp = require('cmp')
 local cmp_action = require('lsp-zero').cmp_action()
 
+require('luasnip.loaders.from_vscode').lazy_load()
+
 vim.opt.completeopt= "menu,menuone,noselect"
 
 local has_words_before = function()
@@ -14,22 +16,10 @@ cmp.setup({
     mapping = {
         -- `Enter` key to confirm completion
         ['<CR>'] = cmp.mapping.confirm({select = false}),
-        ["<Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_next_item()
-            elseif has_words_before() then
-                cmp.complete()
-            else
-                fallback()
-            end
-        end, { "i", "s" }),
-        ["<S-Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_prev_item()
-            else
-                fallback()
-            end
-        end, { "i", "s" }),
+
+        ['<Tab>'] = cmp_action.luasnip_supertab(),
+        ['<S-Tab>'] = cmp_action.luasnip_shift_supertab(),
+
         ['<C-b>'] = cmp.mapping(cmp.mapping.scroll_docs(-4), { 'i', 'c' }),
         ['<C-f>'] = cmp.mapping(cmp.mapping.scroll_docs(4), { 'i', 'c' }),
         ['<C-Space>'] = cmp.mapping(cmp.mapping.complete(), { 'i', 'c' }),
@@ -44,5 +34,8 @@ cmp.setup({
         { name = 'nvim_lsp' },
         { name = 'path' },
         { name = 'buffer' },
+        { name = 'luasnip', keyword_length = 2},
+
     })
 })
+
