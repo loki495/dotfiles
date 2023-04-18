@@ -10,6 +10,7 @@
     curl -LO https://github.com/neovim/neovim/releases/download/$CHANNEL/nvim.appimage
     chmod u+x nvim.appimage
 
+    rm -rf ~/squashfs-root ~/nvim
 	./nvim.appimage --appimage-extract
 	mv squashfs-root ~
     mv ~/squashfs-root ~/nvim
