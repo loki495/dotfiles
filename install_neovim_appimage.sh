@@ -15,10 +15,6 @@
 	mv squashfs-root ~
     mv ~/squashfs-root ~/nvim
 
-	if [ ! -d ~/.config/nvim ]; then
-		cd ~/.config && git clone https://github.com/dilawar/nvim --recursive
-	fi
-
 	source ~/.bashrc
 )
 
