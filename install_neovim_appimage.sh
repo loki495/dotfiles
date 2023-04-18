@@ -15,6 +15,13 @@
 	mv squashfs-root ~
     mv ~/squashfs-root ~/nvim
 
+    chmod a+x ~/nvim/AppRun ~/nvim/usr/bin/nvim
+
+    
+    ~/nvim/AppRun --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
+
+
+
 	source ~/.bashrc
 )
 
