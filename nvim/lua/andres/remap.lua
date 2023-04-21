@@ -22,6 +22,11 @@ vim.keymap.set("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
 
+vim.keymap.set({"n","x","i"}, "<leader>ee", function ()
+    local navbuddy = require("nvim-navbuddy")
+    navbuddy.open()
+end)
+
 local function map(mode, lhs, rhs, opts)
   local options = { noremap=true, silent=true }
   if opts then
