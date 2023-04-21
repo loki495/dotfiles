@@ -39,6 +39,11 @@ return require('packer').startup(function(use)
     use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
 
     use {
+        "windwp/nvim-autopairs",
+        config = function() require("nvim-autopairs").setup {} end
+    }
+
+    use {
         'VonHeikemen/lsp-zero.nvim',
         branch = 'v2.x',
         requires = {
