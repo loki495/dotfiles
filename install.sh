@@ -49,14 +49,14 @@ curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
 echo "VIM done"
 echo "VIM: :PlugInstall"
 
-~/dotfiles/install_neovim_appimage.sh
-
 mkdir -p ~/.config
 rm -rf ~/.config/nvim
 ln -s ~/dotfiles/nvim ~/.config/nvim
 
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
      ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+
+~/dotfiles/install_neovim_appimage.sh
 
 echo "NVIM done"
 echo "NVIM: :PackerSync"
