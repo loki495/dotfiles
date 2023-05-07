@@ -29,7 +29,7 @@ vim.opt.undofile = true
 vim.opt.termguicolors = true
 
 vim.opt.scrolloff = 8
-vim.opt.signcolumn = "yes"
+vim.opt.signcolumn = "yes:1"
 vim.opt.isfname:append("@-@")
 
 vim.opt.updatetime = 50
@@ -39,3 +39,7 @@ vim.opt.synmaxcol = 240
 vim.wo.cursorline = true
 vim.opt.colorcolumn = "80"
 
+vim.opt.encoding = "utf-8"
+vim.opt.errorbells = false
+
+vim.opt.completeopt = "menu,menuone,noselect"
