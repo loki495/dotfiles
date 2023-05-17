@@ -43,3 +43,6 @@ vim.opt.encoding = "utf-8"
 vim.opt.errorbells = false
 
 vim.opt.completeopt = "menu,menuone,noselect"
+vim.opt.wildmode = 'longest:full,full'
+vim.opt.wildoptions=pum
+
