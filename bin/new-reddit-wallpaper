@@ -7,7 +7,8 @@ subreddits=("EarthPorn" "futureporn" "spaceporn" "FractalPorn" "ExposurePorn" "W
 
 randomsubreddit=${subreddits[$RANDOM % ${#subreddits[@]} ]}
 
-URL=`wget -qO-  "http://www.reddit.com/r/$randomsubreddit/random.json?limit=1" | jq '.[].data.children[0].data.url' -r | sed '$s/\w*$//'`
+REDDIT_URL="http://www.reddit.com/r/$randomsubreddit/random.json?limit=1"
+URL=`chromium --headless --disable-gpu -dump-dom "$REDDIT_URL" | sed -e 's/<[^>]*>//g'| jq '.[].data.children[0].data.url' -r | sed '$s/\w*$//'` 
 EXTENSION=`basename "$URL" | awk -F '.' '{print $2}'`
 FILENAME="`realpath ~/.wallpaper`/wallpaper.$EXTENSION"
 wget -qO- "$URL" > $FILENAME
