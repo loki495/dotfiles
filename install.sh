@@ -55,8 +55,7 @@ echo "- run :PlugInstall"
 rm -rf ~/.config/nvim
 ln -s ~/dotfiles/nvim ~/.config/nvim
 
-git clone --depth 1 https://github.com/wbthomason/packer.nvim\
-     ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+rm ~/.local/share/nvim/site/pack/packer -rf
 
 ~/dotfiles/install_neovim_appimage.sh
 
