@@ -21,21 +21,21 @@ require("lazy").setup({
 		build = ':TSUpdate'
 	},
 
-    { 'gelguy/wilder.nvim' },
+    'gelguy/wilder.nvim',
 
-	{ 'nvim-treesitter/playground' },
+	'nvim-treesitter/playground',
 
-	{ 'mbbill/undotree' },
+	'mbbill/undotree',
 
-	{ 'tpope/vim-fugitive' },
+	'tpope/vim-fugitive',
 
-    { 'vijaymarupudi/nvim-fzf' },
+    'vijaymarupudi/nvim-fzf',
 
-	{ 'ThePrimeagen/harpoon' },
+	'ThePrimeagen/harpoon',
 
-    { 'nvim-lua/plenary.nvim' },
+    'nvim-lua/plenary.nvim',
 
-    { 'nvim-treesitter/nvim-treesitter-context' },
+    'nvim-treesitter/nvim-treesitter-context',
 
     {
         'nvim-telescope/telescope.nvim',
@@ -61,7 +61,8 @@ require("lazy").setup({
         version = 'v2.x',
         dependencies = {
             -- LSP Support
-            {'neovim/nvim-lspconfig'},             -- Required
+            'neovim/nvim-lspconfig',             -- Required
+
             {                                      -- Optional
                 'williamboman/mason.nvim',
                 build = function()

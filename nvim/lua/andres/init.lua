@@ -5,7 +5,7 @@ vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 
-vim.opt.mouse = ''
+vim.opt.mouse = ""
 
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
@@ -43,6 +43,6 @@ vim.opt.encoding = "utf-8"
 vim.opt.errorbells = false
 
 vim.opt.completeopt = "menu,menuone,noselect"
-vim.opt.wildmode = 'longest:full,full'
-vim.opt.wildoptions=pum
+vim.opt.wildmode = "longest:full,full"
+vim.opt.wildmenu = true
 
