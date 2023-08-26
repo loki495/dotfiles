@@ -38,3 +38,6 @@ vim.keymap.set("n", "<up>", "<nop>")
 vim.keymap.set("n", "<down>", "<nop>")
 vim.keymap.set("n", "<left>", "<nop>")
 vim.keymap.set("n", "<right>", "<nop>")
+
+-- Center view horizontally around cursor in current line
+vim.keymap.set("n", "<leader>z", "zszH")
