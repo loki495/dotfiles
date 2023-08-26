@@ -17,6 +17,8 @@ mv ~/.gitconfig ~/.gitconfig.old
 ln -s $SCRIPTPATH/git/.gitconfig ~/.gitconfig
 echo "GIT done"
 
+mkdir -p ~/.config
+
 # VIM
 rm -f ~/.vimrc
 rm -f ~/.vim/plugins.settings.vim
@@ -47,9 +49,9 @@ curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
 
 echo "VIM done"
-echo "VIM: :PlugInstall"
+echo "- run :PlugInstall"
 
-mkdir -p ~/.config
+# NVIM
 rm -rf ~/.config/nvim
 ln -s ~/dotfiles/nvim ~/.config/nvim
 
@@ -59,7 +61,7 @@ git clone --depth 1 https://github.com/wbthomason/packer.nvim\
 ~/dotfiles/install_neovim_appimage.sh
 
 echo "NVIM done"
-echo "NVIM: :PackerSync"
 
+echo
 echo "DONE"
 
