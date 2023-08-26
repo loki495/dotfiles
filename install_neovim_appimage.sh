@@ -17,12 +17,6 @@
 
     chmod a+x ~/nvim/AppRun ~/nvim/usr/bin/nvim
 
-    
-    ~/nvim/AppRun --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
-
-
-
-	source ~/.bashrc
+    rm -f ~/.cache/nvim.appimage
 )
 
-rm -f ~/.cache/nvim.appimage
