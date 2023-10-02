@@ -53,18 +53,6 @@ then
     exit
 fi
 
-if [ -z "${MYSQL_USER// }" ]
-then
-    echo_error "Error: No MYSQL_USER value set"
-    exit
-fi
-
-if [ -z "${MYSQL_DATABASE// }" ]
-then
-    echo_error "Error: No MYSQL_DATABASE value set"
-    exit
-fi
-
 echo_success "SSH Host found: $SSH_HOST"
 
 PORT_OVERRIDE=
@@ -95,6 +83,25 @@ else
     SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE"
 fi
 
+if [ -z "${NO_MYSQL// }" ]
+then
+    echo_info "Checking MySQL variables set"
+else
+    return
+fi
+
+if [ -z "${MYSQL_USER// }" ]
+then
+    echo_error "Error: No MYSQL_USER value set"
+    exit
+fi
+
+if [ -z "${MYSQL_DATABASE// }" ]
+then
+    echo_error "Error: No MYSQL_DATABASE value set"
+    exit
+fi
+
 run_ssh_silent() {
     echo_info $SSH_BASE $@
     $SSH_BASE $@ 2>&1 > /dev/null
@@ -109,21 +116,22 @@ run_ssh() {
 }
 
 check_mycnf() {
-    run_ssh_silent "ls -lha ${MYCNF_PATH}/.my.cnf && grep [mysqldump] ${MYCNF_PATH}/.my.cnf && grep [mysql] ${MYCNF_PATH}/.my.cnf"
+    MYCNF_FILENAME=".my.cnf.$MYSQL_DATABASE"
+    run_ssh_silent "ls -lha ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysqldump] ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysql] ${MYCNF_PATH}/${MYCNF_FILENAME}"
     LAST_RESULT=$?
 
     if [ $LAST_RESULT -gt 0 ]
     then
-        echo_error "No ~/.my.cfg with [mysqldump] found"
-        TOUCH="touch ${MYCNF_PATH}/.my.cnf"
-        ECHO1="echo \"[mysqldump]\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO5="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/.my.cnf"
-        ECHO6="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/.my.cnf"
+        echo_error "No ${MYCNF_PATH}/${MYCNF_FILENAME} with [mysqldump] found"
+        TOUCH="touch ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO1="echo \"[mysqldump]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO5="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO6="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
         run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5 && $ECHO6"
     else
-        echo_success ".my.cnf found"
+        echo_success "${MYCNF_PATH}/${MYCNF_FILENAME}"
     fi
 }
