@@ -116,7 +116,15 @@ run_ssh() {
 }
 
 check_mycnf() {
+
     MYCNF_FILENAME=".my.cnf.$MYSQL_DATABASE"
+
+    if [ ! -z "${DELETE_MYCNF// }" ]
+    then
+        echo_info "Deleting ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        run_ssh "rm -f \"${MYCNF_PATH}/${MYCNF_FILENAME}\""
+    fi
+
     run_ssh_silent "ls -lha ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysqldump] ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysql] ${MYCNF_PATH}/${MYCNF_FILENAME}"
     LAST_RESULT=$?
 
