@@ -136,17 +136,24 @@ git_pull() {
     echo -e "${GREEN}Checking for local repo${NC}"
     pwd
     ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
+
+    UPSTREAM_BRANCH="master"
+    if [ ! -z "${UPSTREAM_GIT_BRANCH// }" ]
+    then
+        UPSTREAM_BRANCH="$UPSTREAM_GIT_BRANCH"
+    fi
+
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}No local found, cloning repo into $LOCAL_PATH${NC}"
         SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "cd \"$SSH_BASE_PATH$SSH_PATH\"; pwd"`
-        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone -b $UPSTREAM_BRANCH ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
     else
         echo -e "${GREEN}Local git found at \"$LOCAL_BASE/$LOCAL_PATH\"...${NC}"
         cd $LOCAL_BASE/$LOCAL_PATH
 
 		CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
-		if [ "$CURRENT_BRANCH" != "master" ]
+		if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
 		then
 			CHANGES_PENDING_OTHER_BRANCH=$(git status --porcelain)
 
@@ -154,7 +161,7 @@ git_pull() {
 			then
 				git stash
 			fi
-			git checkout master
+			git checkout $UPSTREAM_BRANCH
 		fi
 
         CHANGES_PENDING=$(git status --porcelain)
@@ -170,17 +177,21 @@ git_pull() {
             git checkout -b "$BRANCH_NAME"
             git add .
             git commit -m "$BRANCH_NAME"
-            git checkout master
+        fi
+
+        if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
+        then
+            git checkout $UPSTREAM_BRANCH
         fi
 
         echo -e "${GREEN}Pulling latest commit${NC}"
-        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull --rebase
+        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull origin $UPSTREAM_BRANCH --rebase -X theirs
 
-        if [ "$CURRENT_BRANCH" != "master" ]
+        if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
         then
             echo "Switching back to $CURRENT_BRANCH"
             git checkout $CURRENT_BRANCH
-            GIT_EDITOR=true git rebase master -Xours
+            GIT_EDITOR=true git rebase $UPSTREAM_BRANCH -X theirs
             if [ ! -z "${CHANGES_PENDING_OTHER_BRANCH// }" ]
             then
                 git stash pop
