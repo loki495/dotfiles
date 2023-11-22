@@ -58,5 +58,5 @@ alias crontab="crontab -i"
 
 alias bytes2kb='numfmt --to iec --format "%8.2f"'
 
-alias nvim='~/nvim/AppRun'
+alias nvim='~/nvim/bin/nvim'
 alias vim='nvim'

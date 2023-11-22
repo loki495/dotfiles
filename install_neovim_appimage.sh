@@ -1,22 +1,11 @@
 #!/usr/bin/env bash
 (
-    CHANNEL=nightly
-	mkdir -p ~/.cache
-	cd ~/.cache
-	if [ -f ./nvim.appimage ]; then
-        rm -f ./nvim.appimage
-    fi
+    cd ~
 
-    curl -LO https://github.com/neovim/neovim/releases/download/$CHANNEL/nvim.appimage
-    chmod u+x nvim.appimage
-
-    rm -rf ~/squashfs-root ~/nvim
-	./nvim.appimage --appimage-extract
-	mv squashfs-root ~
-    mv ~/squashfs-root ~/nvim
-
-    chmod a+x ~/nvim/AppRun ~/nvim/usr/bin/nvim
-
-    rm -f ~/.cache/nvim.appimage
+    rm -rf nvim-linux64.tar.gz
+    rm -rf ~/nvim-linux64/
+    wget "https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+    tar xvf nvim-linux64.tar.gz
+    mv ~/nvim-linux64/ ~/nvim
+    rm -rf nvim-linux64.tar.gz
 )
-
