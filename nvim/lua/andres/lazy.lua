@@ -89,6 +89,11 @@ require("lazy").setup({
             "numToStr/Comment.nvim",        -- Optional
             "nvim-telescope/telescope.nvim" -- Optional
         },
+    },
+
+    {
+        'Exafunction/codeium.vim',
+        event = 'BufEnter'
     }
 
 })
