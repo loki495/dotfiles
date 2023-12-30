@@ -34,8 +34,11 @@ cmp.setup({
         { name = 'path' },
         { name = 'buffer' },
         { name = 'luasnip', keyword_length = 2},
-
-    })
+        { name = "codeium" },
+    }),
+    experimental = {
+        ghost_text = {hlgroup = "Comment"}
+    }
 })
 
 -- If you want insert `(` after select function or method item
