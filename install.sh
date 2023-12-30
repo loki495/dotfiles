@@ -57,7 +57,7 @@ ln -s ~/dotfiles/nvim ~/.config/nvim
 
 rm ~/.local/share/nvim/site/pack/packer -rf
 
-~/dotfiles/install_neovim_appimage.sh
+~/dotfiles/install_neovim.sh
 
 echo "NVIM done"
 
