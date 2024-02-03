@@ -12,9 +12,23 @@ else
     FORCED_USER="--user $MYSQL_USER"
 fi
 
+# MYSQL_EXCLUDED_TABLES=(
+# table1
+# table2
+# table3
+# table4
+# tableN   
+# )
+ 
+IGNORED_TABLES_STRING=''
+for TABLE in "${MYSQL_EXCLUDED_TABLES[@]}"
+do :
+   IGNORED_TABLES_STRING+=" --ignore-table=${DATABASE}.${TABLE}"
+done
+
 MYCNF_FULL_PATH="$MYCNF_PATH/.my.cnf.$MYSQL_DATABASE"
 
 echo "Getting mysql backup"
-OPTIONS="--defaults-file=$MYCNF_FULL_PATH --no-tablespaces --databases $MYSQL_DATABASE $FORCED_USER --default-character-set=utf8 --opt --single-transaction --routines --triggers --events --no-create-db --add-drop-table --complete-insert --tz-utc"
+OPTIONS="$IGNORED_TABLES_STRING --defaults-file=$MYCNF_FULL_PATH --no-tablespaces --databases $MYSQL_DATABASE $FORCED_USER --default-character-set=utf8 --opt --single-transaction --routines --triggers --events --no-create-db --add-drop-table --complete-insert --tz-utc"
 
 run_ssh mysqldump  $OPTIONS  | gzip -9 > $MYSQLDUMP_FILE
