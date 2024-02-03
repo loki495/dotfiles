@@ -117,7 +117,7 @@ git_commit() {
 }
 
 git_clean_local() {
-    echo -e "${GREEN}Checking for local repo${NC}"
+    echo -e "${GREEN}Checking for local repo at \"${LOCAL_BASE}/${LOCAL_PATH}/.git\"${NC}"
     pwd
     ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
     if [ $? -ne 0 ]
@@ -133,15 +133,16 @@ git_clean_local() {
 }
 
 git_pull() {
-    echo -e "${GREEN}Checking for local repo${NC}"
-    pwd
-    ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
 
     UPSTREAM_BRANCH="master"
     if [ ! -z "${UPSTREAM_GIT_BRANCH// }" ]
     then
         UPSTREAM_BRANCH="$UPSTREAM_GIT_BRANCH"
     fi
+
+    echo -e "${GREEN}Checking for local repo at \"${LOCAL_BASE}/${LOCAL_PATH}/.git\"${NC}"
+    pwd
+    ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
 
     if [ $? -ne 0 ]
     then
