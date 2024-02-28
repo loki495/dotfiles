@@ -39,7 +39,8 @@ require("lazy").setup({
 
     {
         'nvim-telescope/telescope.nvim',
-        version = '0.1.1',
+            "--branch=stable", -- latest stable release
+
         -- or                            , branch = '0.1.x',
         dependencies = { {'nvim-lua/plenary.nvim'} }
     },
@@ -105,10 +106,9 @@ require("lazy").setup({
         config = function()
             require("codeium").setup(
                 {
-                    vim.g.codeium_no_map_tab = 1,
-                    vim.keymap.set('i', '<C-g>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
+                    vim.keymap.set('i', '<M-G>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
                 })
         end
-    },
+    }
 
 })
