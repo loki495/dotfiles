@@ -1,0 +1,19 @@
+# window_opacity = 1.0
+
+[colors]
+# background = "#282828"
+# foreground = "#eaeaea"
+
+[font]
+size = 10.0
+
+[font.normal]
+family = "Source Code Pro"
+style = "Regular"
+
+[window]
+decorations = "full"
+dynamic_padding = true
+dynamic_title = true
+# x = 10
+# y = 10
