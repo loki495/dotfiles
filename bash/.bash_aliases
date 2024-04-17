@@ -35,6 +35,7 @@ alias gca='git commit -av'
 alias gsqd='git-summary -qd'
 alias gd='git diff'
 alias gdc='git diff --cached'
+alias gsh='git show'
 
 # Open Git conflicts in $EDITOR
 alias fix='$EDITOR -p `git diff --name-only | uniq`'
@@ -60,3 +61,5 @@ alias bytes2kb='numfmt --to iec --format "%8.2f"'
 
 alias nvim='~/nvim/bin/nvim'
 alias vim='nvim'
+
+alias a='php artisan'
