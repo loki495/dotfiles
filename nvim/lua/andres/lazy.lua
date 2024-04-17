@@ -106,7 +106,7 @@ require("lazy").setup({
         config = function()
             require("codeium").setup(
                 {
-                    vim.keymap.set('i', '<M-G>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
+                    vim.keymap.set('i', '<C-G>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
                 })
         end
     }

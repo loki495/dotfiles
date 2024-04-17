@@ -1,1 +1,1 @@
-vim.g.codeium_no_map_tab = 1
+vim.g.codeium_no_map_tab = 0
