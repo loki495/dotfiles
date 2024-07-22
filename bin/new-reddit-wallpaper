@@ -1,16 +1,20 @@
 #!/bin/bash
 
-notify-send "Getting new wallpaper from reddit"
+notify-send "Getting new wallpaper"
+
+##notify-send "Getting new wallpaper from reddit"
 # wallpaper-reddit --lottery --random EarthPorn futureporn spaceporn FractalPorn ExposurePorn WeatherPorn wallpapers CityPorn SkyPorn multiwall offensive_wallpapers wallpaper nocontext_wallpapers
 
-subreddits=("EarthPorn" "futureporn" "spaceporn" "FractalPorn" "ExposurePorn" "WeatherPorn" "wallpapers" "CityPorn" "SkyPorn" "multiwall" "offensive_wallpapers" "wallpaper" "nocontext_wallpapers" "darkwallpaper" "Amoledbackgrounds")
+##subreddits=("EarthPorn" "futureporn" "spaceporn" "FractalPorn" "ExposurePorn" "WeatherPorn" "wallpapers" "CityPorn" "SkyPorn" "multiwall" "offensive_wallpapers" "wallpaper" "nocontext_wallpapers" "darkwallpaper" "Amoledbackgrounds")
 
-randomsubreddit=${subreddits[$RANDOM % ${#subreddits[@]} ]}
+##randomsubreddit=${subreddits[$RANDOM % ${#subreddits[@]} ]}
 
-REDDIT_URL="http://www.reddit.com/r/$randomsubreddit/random.json?limit=1"
-URL=`chromium --headless --disable-gpu -dump-dom "$REDDIT_URL" | sed -e 's/<[^>]*>//g'| jq '.[].data.children[0].data.url' -r | sed '$s/\w*$//'` 
-EXTENSION=`basename "$URL" | awk -F '.' '{print $2}'`
-FILENAME="`realpath ~/.wallpaper`/wallpaper.$EXTENSION"
+##REDDIT_URL="http://www.reddit.com/r/$randomsubreddit/random.json?limit=1"
+##URL=`chromium --headless --disable-gpu -dump-dom "$REDDIT_URL" | sed -e 's/<[^>]*>//g'| jq '.[].data.children[0].data.url' -r | sed '$s/\w*$//'` 
+
+URL="https://unsplash.it/1920/1080?random"
+FILENAME="`realpath ~/.wallpaper`/wallpaper.jpg"
+
 wget -qO- "$URL" > $FILENAME
 feh --bg-fill "$FILENAME"
 notify-send "New wallpaper set"
