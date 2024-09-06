@@ -63,3 +63,4 @@ alias nvim='~/nvim/bin/nvim'
 alias vim='nvim'
 
 alias a='php artisan'
+alias at='php artisan test'
