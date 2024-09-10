@@ -43,3 +43,15 @@ vim.keymap.set("n", "<right>", "<nop>")
 
 -- Center view horizontally around cursor in current line
 vim.keymap.set("n", "<leader>z", "zszH")
+
+-- surround visual selection with special chars
+vim.keymap.set("v", "{", "<esc>`>a<cr>}<esc>`<i{<cr><esc>[{iif () <esc>==f{=%F(a")
+vim.keymap.set("v", "(", "<esc>I(<esc>A)<esc>")
+vim.keymap.set("v", "\"", "<esc>`>a\"<esc>`<i\"<esc>[\"i")
+vim.keymap.set("v", "'", "<esc>`>a'<esc>`<i'<esc>[\"i")
+
+-- Move line down
+vim.keymap.set("v", "N", ":m '>+1<CR>gv=gv")
+
+-- Move line up
+vim.keymap.set("v", "M", ":m '<-2<CR>gv=gv")
