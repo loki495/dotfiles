@@ -55,3 +55,6 @@ vim.keymap.set("v", "N", ":m '>+1<CR>gv=gv")
 
 -- Move line up
 vim.keymap.set("v", "M", ":m '<-2<CR>gv=gv")
+
+-- open file under cursor in new tab
+vim.keymap.set("n", "<C-t>", "<C-w>gf")
