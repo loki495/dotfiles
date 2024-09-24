@@ -18,9 +18,3 @@ dynamic_title = true
 # x = 10
 # y = 10
 
-[keyboard]
-bindings = [
-    { key = "L", mods = "Control", chars = "\U0000000c" },
-]
-
-
