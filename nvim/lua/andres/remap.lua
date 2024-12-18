@@ -14,8 +14,8 @@ vim.keymap.set("n", "<leader>Y", [["+Y]])
 vim.keymap.set({"n", "v"}, "<leader>d", [["_d]])
 
 -- Tab / Quickerror / location list navigation
-vim.keymap.set("n", "<leader>[", ":tabprev<CR>", { silent = true })
-vim.keymap.set("n", "<leader>]", ":tabnext<CR>", { silent = true })
+vim.keymap.set("n", "<C-;>", ":tabprev<CR>", { silent = true })
+vim.keymap.set("n", "<C-'>", ":tabnext<CR>", { silent = true })
 vim.keymap.set("n", "<C-k>", "<cmd>cnext<CR>zz", { silent = true })
 vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz", { silent = true })
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz", { silent = true })
