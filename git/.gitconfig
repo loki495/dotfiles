@@ -16,3 +16,5 @@
 	date = local
 [init]
 	defaultBranch = master
+[commit]
+    verbose = true
