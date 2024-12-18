@@ -58,3 +58,6 @@ vim.keymap.set("v", "M", ":m '<-2<CR>gv=gv")
 
 -- open file under cursor in new tab
 vim.keymap.set("n", "<C-t>", "<C-w>gf")
+
+-- open current dir in Oil
+vim.keymap.set("n", "-", ":Oil<CR>")

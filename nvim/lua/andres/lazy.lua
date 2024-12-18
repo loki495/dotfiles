@@ -5,7 +5,7 @@ if not vim.loop.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+    --"--branch=stable", -- latest stable release
     lazypath,
   })
 end
@@ -39,7 +39,7 @@ require("lazy").setup({
 
     {
         'nvim-telescope/telescope.nvim',
-            "--branch=stable", -- latest stable release
+            --"--branch=stable", -- latest stable release
 
         -- or                            , branch = '0.1.x',
         dependencies = { {'nvim-lua/plenary.nvim'} }
@@ -109,6 +109,16 @@ require("lazy").setup({
                     vim.keymap.set('i', '<C-G>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
                 })
         end
+    },
+
+    {
+        'stevearc/oil.nvim',
+        ---@module 'oil'
+        ---@type oil.SetupOpts
+        opts = {},
+        -- Optional dependencies
+        dependencies = { { "echasnovski/mini.icons", opts = {} } },
+        -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if prefer nvim-web-devicons
     }
 
 })
