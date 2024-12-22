@@ -61,3 +61,9 @@ vim.keymap.set("n", "<C-t>", "<C-w>gf")
 
 -- open current dir in Oil
 vim.keymap.set("n", "-", ":Oil<CR>")
+
+-- delete word with ctrl-backspace and ctrl-h
+vim.api.nvim_set_keymap('i', '<C-BS>', '<C-W>', {noremap = true})
+vim.api.nvim_set_keymap('i', '<C-H>', '<C-W>', {noremap = true})
+
+
