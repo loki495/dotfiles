@@ -66,5 +66,11 @@ vim.keymap.set("n", "-", ":Oil<CR>")
 vim.keymap.set('i', '<C-BS>', '<C-W>', {noremap = true})
 vim.keymap.set('i', '<C-H>',  '<C-W>', {noremap = true})
 
+-- exit terminal mode with ctrl-q
 vim.keymap.set('t', '<C-Q>', '<C-\\><C-N>', {noremap = true})
 
+-- show current line diagnistics with <leader><space>
+vim.keymap.set('n', '<leader><space>', '<cmd>lua vim.diagnostic.open_float(0, {scope="line"})<CR>')
+
+vim.keymap.set('n', '<leader>q', '<cmd>lua vim.diagnostic.goto_prev()<CR>')
+vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.goto_next()<CR>')
