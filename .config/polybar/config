@@ -138,9 +138,9 @@ wrapping-scroll = false
 ; Only show workspaces on the same output as the bar
 ;pin-workspaces = true
 
-label-mode-padding = 2
-label-mode-foreground = #000
-label-mode-background = ${colors.primary}
+label-mode-padding = 6
+label-mode-foreground = #ff0000
+label-mode-background = #00ffff
 
 ; focused = Active workspace on focused monitor
 label-focused = %index%
