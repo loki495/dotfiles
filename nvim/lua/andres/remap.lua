@@ -21,6 +21,9 @@ vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz", { silent = true })
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz", { silent = true })
 vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz", { silent = true })
 
+-- Toggle between last buffer and current
+vim.keymap.set("n", "<C-l>", ":b#<CR>", { silent = true })
+
 -- Substitute word under cursor
 vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
@@ -74,3 +77,7 @@ vim.keymap.set('n', '<leader><space>', '<cmd>lua vim.diagnostic.open_float(0, {s
 
 vim.keymap.set('n', '<leader>q', '<cmd>lua vim.diagnostic.goto_prev()<CR>')
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.goto_next()<CR>')
+
+vim.filetype.add({
+  pattern = { [".*%.blade%.php"] = "php" }
+})
