@@ -1,0 +1,11 @@
+TODO:
+
+- open TODOS
+- cexpr system('git grep "// TODO:" -n -- *.php')
+- better navigation
+- phpstan / phphactor
+
+- shortcut for "n ." (find next / prev and . / redo last)
+Run pest 
+
+terminal?

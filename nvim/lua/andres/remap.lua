@@ -32,12 +32,6 @@ vim.keymap.set("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
 
--- Launch Navbuddy
-vim.keymap.set({"n","x","i"}, "<leader>ee", function ()
-    local navbuddy = require("nvim-navbuddy")
-    navbuddy.open()
-end)
-
 -- Disable arrow key
 vim.keymap.set("n", "<up>", "<nop>")
 vim.keymap.set("n", "<down>", "<nop>")
@@ -77,6 +71,7 @@ vim.keymap.set('n', '<leader><space>', '<cmd>lua vim.diagnostic.open_float(0, {s
 
 vim.keymap.set('n', '<leader>q', '<cmd>lua vim.diagnostic.goto_prev()<CR>')
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.goto_next()<CR>')
+vim.keymap.set("n", "<leader>e", '<cmd>lua vim.lsp.buf.code_action()<CR>', { silent = true })
 
 vim.filetype.add({
   pattern = { [".*%.blade%.php"] = "php" }
