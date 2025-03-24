@@ -213,4 +213,8 @@ export LESS_TERMCAP_me=$'\E[0m'
 export LESS_TERMCAP_se=$'\E[0m'
 export LESS_TERMCAP_ue=$'\E[0m'
 
+if [ -f ~/dotfiles/git/.git-completion.bash ]; then
+    . ~/dotfiles/git/.git-completion.bash
+fi
+
 [ -f ~/.bashrc.local ] && source ~/.bashrc.local
