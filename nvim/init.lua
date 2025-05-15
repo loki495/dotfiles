@@ -1,4 +1,5 @@
 require("andres.init")
 require("andres.remap")
 require("andres.functions")
+require("andres.mason-workaround")
 require("andres.lazy")

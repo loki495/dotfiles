@@ -83,3 +83,9 @@ end)
 vim.filetype.add({
   pattern = { [".*%.blade%.php"] = "php" }
 })
+
+vim.api.nvim_set_keymap(
+    'n', '<leader>\'\'',
+  ":PhpActor import_class<CR>",
+  { noremap = true, silent = true }
+)
