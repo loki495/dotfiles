@@ -47,16 +47,16 @@ vim.keymap.set("v", "(", "<esc>I(<esc>A)<esc>")
 vim.keymap.set("v", "\"", "<esc>`>a\"<esc>`<i\"<esc>[\"i")
 vim.keymap.set("v", "'", "<esc>`>a'<esc>`<i'<esc>[\"i")
 
--- Move line down
+-- Move line down with N
 vim.keymap.set("v", "N", ":m '>+1<CR>gv=gv")
 
--- Move line up
+-- Move line up with M
 vim.keymap.set("v", "M", ":m '<-2<CR>gv=gv")
 
--- open file under cursor in new tab
+-- open file under cursor in new tab with ctrl-t
 vim.keymap.set("n", "<C-t>", "<C-w>gf")
 
--- open current dir in Oil
+-- open current dir in Oil with -
 vim.keymap.set("n", "-", ":Oil<CR>")
 
 -- delete word with ctrl-backspace and ctrl-h
@@ -72,6 +72,13 @@ vim.keymap.set('n', '<leader><space>', '<cmd>lua vim.diagnostic.open_float(0, {s
 vim.keymap.set('n', '<leader>q', '<cmd>lua vim.diagnostic.goto_prev()<CR>')
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.goto_next()<CR>')
 vim.keymap.set("n", "<leader>e", '<cmd>lua vim.lsp.buf.code_action()<CR>', { silent = true })
+
+vim.keymap.set("n", "Q", 'ZZ', { silent = true })
+
+vim.keymap.set("n", "<leader>p", function()
+    vim.cmd("botright split")  -- Open a new horizontal split at the bottom
+    vim.cmd("terminal ./vendor/bin/pest " .. vim.fn.expand("%"))  -- Run the CLI command with the current file
+end)
 
 vim.filetype.add({
   pattern = { [".*%.blade%.php"] = "php" }
