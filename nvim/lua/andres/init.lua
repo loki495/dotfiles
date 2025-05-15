@@ -45,4 +45,3 @@ vim.opt.errorbells = false
 vim.opt.completeopt = "menu,menuone,noselect"
 vim.opt.wildmode = "longest:full,full"
 vim.opt.wildmenu = true
-
