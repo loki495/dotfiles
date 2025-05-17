@@ -6,6 +6,7 @@
 [core]
 	quotepath = false
 	commitGraph = true
+	editor = "/home/andres/nvim/bin/nvim"
 [gc]
 	writeCommitGraph = true
 [receive]
