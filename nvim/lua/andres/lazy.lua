@@ -92,7 +92,7 @@ require("lazy").setup({
         config = function()
             require("phpactor").setup({
                 install = {
-                    bin = '~/dotfiles/bin/phpactor',
+                    bin = vim.fn.expand('~/dotfiles/bin/phpactor'),
                 }
             })
         end,
