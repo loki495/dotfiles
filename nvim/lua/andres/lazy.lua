@@ -36,6 +36,8 @@ require("lazy").setup({
 
     'nvim-lua/plenary.nvim',
 
+    'gelguy/wilder.nvim',
+
     'nvim-treesitter/nvim-treesitter-context',
 
     {
@@ -54,6 +56,11 @@ require("lazy").setup({
                 version = "^1.0.0",
             },
         }
+    },
+
+    {
+        'romgrk/fzy-lua-native',
+        build = 'make',
     },
 
     {
