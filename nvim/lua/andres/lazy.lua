@@ -298,27 +298,42 @@ require("lazy").setup({
 
     {
         "olimorris/codecompanion.nvim",
-        opts = {},
+        opts = {
+
+            strategies = {
+                chat = {
+                    adapter = "openrouter_claude",
+                },
+                inline = {
+                    adapter = "openrouter_claude",
+                },
+                cmd = {
+                    adapter = "openrouter_claude",
+                }
+            },
+
+            adapters = {
+                openrouter_claude = function()
+                    return require("codecompanion.adapters").extend("openai_compatible", {
+                        env = {
+                            url = "https://openrouter.ai/api",
+                            api_key = os.getenv("OPENROUTER_API_KEY"),
+                            chat_url = "/v1/chat/completions",
+                            models_endpoint = "/v1/models",
+                        },
+                        schema = {
+                            model = {
+                                default = "anthropic/claude-3.7-sonnet",
+                            },
+                        },
+                    })
+                end,
+            },
+
+        },
         dependencies = {
             "nvim-lua/plenary.nvim",
             "nvim-treesitter/nvim-treesitter",
-        },
-
-        adapters = {
-            openrouter_claude = function()
-                return require("codecompanion.adapters").extend("openai_compatible", {
-                    env = {
-                        url = "https://openrouter.ai/api",
-                        api_key = "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",
-                        chat_url = "/v1/chat/completions",
-                    },
-                    schema = {
-                        model = {
-                            default = "anthropic/claude-3.7-sonnet",
-                        },
-                    },
-                })
-            end,
         },
     },
 
