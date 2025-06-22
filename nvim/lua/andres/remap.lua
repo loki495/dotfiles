@@ -89,3 +89,9 @@ vim.api.nvim_set_keymap(
   ":PhpActor import_class<CR>",
   { noremap = true, silent = true }
 )
+
+vim.api.nvim_set_keymap(
+    'n', '<leader>cc',
+    ":CodeCompanionChat<CR>",
+  { noremap = true, silent = true }
+)
