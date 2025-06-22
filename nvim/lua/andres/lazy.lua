@@ -287,6 +287,48 @@ require("lazy").setup({
             --statuscolumn = { enabled = true },
             --words = { enabled = true },
         },
-    }
+    },
+
+    {
+        "olimorris/codecompanion.nvim",
+        opts = {},
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "nvim-treesitter/nvim-treesitter",
+        },
+
+        adapters = {
+            openrouter_claude = function()
+                return require("codecompanion.adapters").extend("openai_compatible", {
+                    env = {
+                        url = "https://openrouter.ai/api",
+                        api_key = "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",
+                        chat_url = "/v1/chat/completions",
+                    },
+                    schema = {
+                        model = {
+                            default = "anthropic/claude-3.7-sonnet",
+                        },
+                    },
+                })
+            end,
+        },
+    },
+
+    {
+        "MeanderingProgrammer/render-markdown.nvim",
+        ft = { "markdown", "codecompanion" }
+    },
+
+    {
+        "echasnovski/mini.diff",
+        config = function()
+            local diff = require("mini.diff")
+            diff.setup({
+                -- Disabled by default
+                source = diff.gen_source.none(),
+            })
+        end,
+    },
 
 })
