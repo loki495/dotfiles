@@ -73,25 +73,37 @@ vim.keymap.set('n', '<leader>q', '<cmd>lua vim.diagnostic.goto_prev()<CR>')
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.goto_next()<CR>')
 vim.keymap.set("n", "<leader>e", '<cmd>lua vim.lsp.buf.code_action()<CR>', { silent = true })
 
-vim.keymap.set("n", "Q", 'ZZ', { silent = true })
+vim.keymap.set("n", "Q", function()
+  local nofile = vim.api.nvim_buf_get_option(0, "buftype") == "nofile"
+
+  vim.print(vim.api.nvim_buf_get_name(0))
+  vim.print(vim.api.nvim_buf_get_name(0))
+  if nofile then
+    vim.cmd("q")
+  elseif vim.api.nvim_buf_get_name(0) ~= "" then
+    vim.cmd("wq")
+  else
+    vim.cmd("q!")
+  end
+end, { noremap = true, silent = true })
 
 vim.keymap.set("n", "<leader>p", function()
     vim.cmd("botright split")  -- Open a new horizontal split at the bottom
     vim.cmd("terminal ./vendor/bin/pest " .. vim.fn.expand("%"))  -- Run the CLI command with the current file
 end)
 
-vim.filetype.add({
-  pattern = { [".*%.blade%.php"] = "php" }
-})
+-- vim.filetype.add({
+--   pattern = { [".*%.blade%.php"] = "php" }
+-- })
 
 vim.api.nvim_set_keymap(
-    'n', '<leader>\'\'',
+  'n', '<leader>\'\'',
   ":PhpActor import_class<CR>",
   { noremap = true, silent = true }
 )
 
 vim.api.nvim_set_keymap(
-    'n', '<leader>cc',
+    'n', '<leader><S-C>',
     ":CodeCompanionChat<CR>",
   { noremap = true, silent = true }
 )
