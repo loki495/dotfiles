@@ -42,6 +42,8 @@ vim.opt.colorcolumn = "80"
 vim.opt.encoding = "utf-8"
 vim.opt.errorbells = false
 
+vim.opt.splitright = true
+
 vim.opt.wildmode = { "longest:full", "full" }  -- break into list, avoids parsing bugs
 vim.opt.wildoptions = "pum"
 vim.opt.wildchar = 9  -- Tab key
