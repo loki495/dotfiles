@@ -1,3 +1,7 @@
+- new mappings
+  - composer update --with-all-dependencies
+  - npm updated
+
 Bash
 - move config stuff out of common
 
