@@ -95,3 +95,9 @@ vim.api.nvim_set_keymap(
     ":CodeCompanionChat<CR>",
   { noremap = true, silent = true }
 )
+
+vim.keymap.set("n", "<leader>vv", ToggleVSplitWidth, { desc = "Toggle VSplit Width (90%/50%)" })
+
+vim.keymap.del("n", "<C-W><C-D>")
+vim.keymap.del("n", "<C-W>d")
+vim.keymap.set("n", "<C-W>", '<C-W><C-W>', { desc = "Toggle VSplit Width (90%/50%)" })
