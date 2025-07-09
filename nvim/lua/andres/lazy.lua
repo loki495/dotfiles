@@ -330,6 +330,21 @@ require("lazy").setup({
                 end,
             },
 
+            context = {
+                -- Include more project-wide information
+                sources = {
+                    "buffers",       -- open buffers
+                    "lsp",           -- LSP symbols (functions, classes)
+                    "git",           -- staged/tracked files
+                    "cwd",           -- contents of current working directory
+                },
+                -- Limit to avoid overloading token usage
+                cwd = {
+                    include = { "%.php$", "%.js$", "%.css$" },
+                    --max_files = 20,
+                    max_file_size = 100000, -- bytes
+                },
+            },
         },
         dependencies = {
             "nvim-lua/plenary.nvim",
