@@ -108,6 +108,15 @@ vim.api.nvim_set_keymap(
   { noremap = true, silent = true }
 )
 
+local php_dev = require("andres.php_dev")
+
+vim.keymap.set("n", "<leader>cc", function()
+  StreamCommandInVSplit({ "make", "fast_cli" }, "/home/andres/dev/php-src")
+end, { desc = "Build PHP with Highlighting" })
+
+vim.keymap.set("n", "<leader>cv", php_dev.run_php_test, { desc = "Pick + run PHP test" })
+vim.keymap.set("n", "<leader>cd", php_dev.toggle_debug_macro, { desc = "Toggle MY_DEBUG macro" })
+
 vim.keymap.set("n", "<leader>vv", ToggleVSplitWidth, { desc = "Toggle VSplit Width (90%/50%)" })
 
 vim.keymap.del("n", "<C-W><C-D>")
