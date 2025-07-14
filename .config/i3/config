@@ -256,3 +256,4 @@ exec --no-startup-id killall -qw picom; picom &
 
 #exec --no-startup-id ~/bin/i3-battery-popup/i3-battery-popup -L 26 -l 11 -t 1m -n
 
+bindsym $mod+Shift+s exec --no-startup-id scrot -u '%Y-%m-%d_%H-%M-%S_focused.png' -e 'mv $f ~/Pictures/'
