@@ -5,7 +5,7 @@ wilder.set_option('pipeline', {
   wilder.branch(
     wilder.cmdline_pipeline({
       fuzzy = 1,
-      set_pcre2_pattern = 1,
+      -- set_pcre2_pattern = 1,
     }),
     wilder.python_search_pipeline({
       pattern = 'fuzzy',
@@ -24,7 +24,7 @@ wilder.set_option('renderer', wilder.popupmenu_renderer(
     prompt_position = 'top', -- 'top' or 'bottom' to set the location of the prompt
     reverse = 0,             -- set to 1 to reverse the order of the list, use in combination with 'prompt_position'
     highlighter = {
-      wilder.lua_pcre2_highlighter(), -- requires `luarocks install pcre2`
+      -- wilder.lua_pcre2_highlighter(), -- requires `luarocks install pcre2`
       wilder.lua_fzy_highlighter(),   -- requires fzy-lua-native vim plugin found
        -- at https://github.com/romgrk/fzy-lua-native
     },
