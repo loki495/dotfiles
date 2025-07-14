@@ -1,0 +1,152 @@
+/* General bar styling */
+* {
+  font-family: "Noto Sans", sans-serif;
+  font-size: 12px;
+  border: none;
+  border-radius: 5px;
+  min-height: 0;
+}
+
+window#waybar {
+  background-color: rgba(0, 0, 0, 0.7); /* #33000000 */
+  color: #EAEAEA;
+  border: none;
+  padding: 0px;
+}
+
+/* Module spacing and alignment */
+.modules-left,
+.modules-center,
+.modules-right {
+  margin: 0 4px;
+}
+
+/* Workspaces (i3/sway) */
+#workspaces button {
+  padding: 0 6px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  border: none;
+  margin: 0 2px;
+}
+
+#workspaces button.focused {
+  background: rgba(0, 255, 0, 0.31); /* #5000ff00 */
+  border-bottom: 2px solid #fba922;
+  color: #fff;
+}
+
+#workspaces button.urgent {
+  background: #bd2c40;
+  color: #000;
+}
+
+#workspaces button.visible {
+  background: #3f3f3f;
+  border-bottom: 2px solid #555;
+  color: #fff;
+}
+
+/* Clock */
+#clock {
+  background: rgba(0, 0, 0, 0.4); /* #aa000000 */
+  color: #ffffff;
+  font-weight: bold;
+  padding: 0 8px;
+  font-size: 16px;
+}
+
+/* CPU */
+#cpu {
+  background: rgba(0, 136, 0, 0.33); /* #55008800 */
+  padding: 0 8px;
+}
+
+/* Memory */
+#memory {
+  background: rgba(0, 0, 255, 0.33); /* #550000ff */
+  padding: 0 8px;
+}
+
+/* Battery */
+#battery {
+  padding: 0 8px;
+}
+
+#battery.charging {
+  background: rgba(68, 68, 255, 0.27); /* #4444ff44 */
+}
+
+#battery.discharging {
+  background: rgba(136, 153, 34, 0.13); /* #88992222 */
+}
+
+#battery.full {
+  background: rgba(68, 255, 68, 0.27); /* #44ff4444 */
+}
+
+/* Volume / PulseAudio */
+#pulseaudio {
+  background: rgba(0, 0, 0, 0.25); /* #44000000 */
+  padding: 0 8px;
+}
+
+/* Filesystem blocks */
+#custom-fs_root {
+  background: rgba(68, 0, 0, 0.27);
+  padding: 0px 0px;
+  padding-right: 20px;
+}
+
+#custom-fs_home {
+  background: rgba(0, 68, 0, 0.27);
+  padding: 0 8px;
+}
+
+/* Tray */
+#tray {
+  background: rgba(68, 68, 68, 0.27); /* #66444444 */
+  padding: 0 6px;
+}
+
+/* Custom buttons */
+#custom-screenoff,
+#custom-hibernate,
+#custom-activity,
+#custom-right7 {
+  padding: 0 8px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+#custom-hibernate {
+  background: rgba(68, 0, 0, 0.27);
+}
+
+#custom-screenoff {
+  background: rgba(64, 0, 0, 0.27);
+}
+
+#custom-activity {
+  background: rgba(102, 0, 0, 0.27);
+}
+
+#custom-right7 {
+  color: #dd0000;
+}
+
+/* Background for keyboard-state module */
+#keyboard-state {
+  background-color: transparent;
+  color: transparent;
+}
+
+/* When Caps Lock is active (you can toggle special styles) */
+#keyboard-state.locked {
+  background-color: rgba(255,0,0,0.6); /* Your desired background color */
+  padding: 10px 8px; /* Optional: spacing */
+  margin: 50px;
+  border-radius: 6px; /* Optional: rounded corners */
+  color: #000;
+}
+

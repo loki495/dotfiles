@@ -1,0 +1,181 @@
+# Set mod key
+set $mod Mod4
+set $ctl Control
+
+focus_follows_mouse yes
+floating_modifier $mod
+
+set $opacity 0.95
+for_window [class=".*"] opacity $opacity
+for_window [app_id=".*"] opacity $opacity
+
+corner_radius 7
+# corner_radius_floating 12
+
+# Font
+font pango:Noto Sans Mono 11
+
+# Window appearance
+default_border pixel 0
+default_floating_border pixel 1
+client.focused          #000000 #115511aa #ffffff #ff5555 #ff5555
+
+# For specific window classes, set border rules
+for_window [app_id="alacritty"] border pixel 0
+for_window [app_id="todo-tray"] floating enable
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="task_dialog"] floating enable
+
+# Assign apps to workspaces
+assign [app_id="skype"] workspace 1
+assign [app_id="trillian"] workspace 1
+assign [app_id="conky"] workspace 1
+assign [app_id="slimjet"] workspace 2
+assign [class="Brave-browser"] workspace 2
+assign [app_id="Alacritty"] workspace 3
+assign [app_id="slack"] workspace 5
+
+# Keybindings
+bindsym $mod+Return exec alacritty
+bindsym $mod+Shift+q kill
+
+# Launcher (swap rofi with wofi)
+bindsym $mod+d exec wofi --show drun
+bindsym $mod+Shift+d exec wofi --show run
+bindsym $mod+Shift+w exec wofi --show window
+
+# Custom launchers
+bindsym $mod+w exec ~/bin/new-reddit-wallpaper
+bindsym $mod+Shift+x exec ~/.config/polybar/scripts/ubuntu-menu
+
+# Navigation
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move windows
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# Splits
+bindsym $mod+b split h
+bindsym $mod+v split v
+
+# Layout
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+t layout tabbed
+bindsym $mod+e layout toggle split
+
+# Floating mode toggle
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+# Focus tree
+bindsym $mod+a focus parent
+
+# Resize mode
+mode "resize" {
+  bindsym h resize shrink width 10px
+  bindsym j resize grow height 10px
+  bindsym k resize shrink height 10px
+  bindsym l resize grow width 10px
+
+  bindsym Left resize shrink width 10px
+  bindsym Down resize grow height 10px
+  bindsym Up resize shrink height 10px
+  bindsym Right resize grow width 10px
+
+  bindsym Return mode "default"
+  bindsym Escape mode "default"
+  bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Workspaces
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10"
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+bindsym $mod+0 workspace $ws10
+
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+bindsym $mod+Shift+0 move container to workspace $ws10
+
+# Session controls
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r exec swaymsg reload
+
+# Exit launcher mode
+set $exit_mode_launcher exit: [l]ogout, [r]eboot, [h]ibernate, [s]leep, [p]oweroff
+bindsym $mod+$ctl+q mode "$exit_mode_launcher"
+
+mode "$exit_mode_launcher" {
+  bindsym l exec swaymsg exit
+  bindsym r exec systemctl reboot
+  bindsym h exec systemctl hibernate
+  bindsym s exec systemctl suspend
+  bindsym p exec systemctl poweroff
+  bindsym Return exec swaymsg exit
+  bindsym Escape mode "default"
+}
+
+# Clipboard
+bindsym $mod+c exec wl-copy < ~/.cache/clipster.hist
+
+# Screenshot (scrot won't work)
+bindsym $mod+Shift+s exec grim -g "$(slurp)" - | wl-copy
+
+exec_always pkill waybar || true; waybar &
+exec_always nm-applet --indicator
+exec_always dunst
+exec_always clipster -d
+exec_always swaymsg "workspace 1; trillian && ~/.config/sway/resize_trillian.sh"
+exec_always swaymsg "workspace 2; layout tabbed; brave;"
+exec_always swaymsg "workspace 3; layout tabbed"
+exec_always ~/bin/new-reddit-wallpaper
+
+input "type:touchpad" {
+  tap enabled
+  natural_scroll disabled
+}
+
+# Gaps
+gaps inner 10

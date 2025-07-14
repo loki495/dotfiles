@@ -5,10 +5,10 @@
 # foreground = "#eaeaea"
 
 [font]
-size = 10.0
+size = 12.0
 
 [font.normal]
-family = "Source Code Pro"
+family = "Noto Sans Mono"
 style = "Regular"
 
 [window]

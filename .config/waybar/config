@@ -1,0 +1,158 @@
+{
+  // Basic Bar Layout
+  "layer": "top",
+  "position": "top",
+  "height": 26,
+  "modules-left": [
+    "custom/screenoff",
+    "custom/hibernate",
+    "sway/workspaces",
+    "custom/activity"
+  ],
+  "modules-center": [
+    "clock",
+  ],
+  "modules-right": [
+    "custom/fs-root",
+    "custom/fs-home",
+    "keyboard-state",
+    "cpu",
+    "memory",
+    "battery",
+    "pulseaudio",
+    "tray"
+  ],
+
+  // Modules
+  "custom/screenoff": {
+    "format": " Screen Off ",
+    "tooltip": false,
+    "on-click": "sleep 1 && xset dpms force off",
+    "background": "#40000000",
+    "foreground": "#ffffff",
+    "padding": 4
+  },
+
+  "custom/hibernate": {
+    "format": " Hibernate ",
+    "tooltip": false,
+    "on-click": "sleep 1 && systemctl hibernate",
+    "background": "#44000000",
+    "foreground": "#ffffff",
+    "padding": 4
+  },
+
+  "custom/activity": {
+    "format": " Apps ",
+    "tooltip": false,
+    "on-click": "~/.config/polybar/scripts/gnome-menu",
+    "on-click-right": "~/.config/polybar/scripts/gnome-menu",
+    "background": "#66000000",
+    "foreground": "#EAEAEA"
+  },
+
+  "custom/right7": {
+    "format": "%{T3} %{T-}",
+    "tooltip": false,
+    "background": "#44000000",
+    "foreground": "#dd0000"
+  },
+
+  "keyboard-state": {
+      "numlock": false,
+      "capslock": true,
+      "format": "{icon}  ",
+      "format-capslock": "{icon}",
+      "format-icons": {
+          "locked": "🔒",
+          "unlocked": ""
+      },
+      "background": "#774444",
+      "foreground": "#ffffff"
+  },
+
+  "custom/fs-root": {
+    "exec": "df -h / | awk 'NR==2{print \"ROOT: \"$4\"  \"}'",
+    "interval": 60,
+    "tooltip": false,
+    "background": "#354b002f"
+  },
+
+  "custom/fs-home": {
+    "exec": "df -h /home | awk 'NR==2{print \"HOME: \"$4 \"  \"}'",
+    "interval": 60,
+    "tooltip": false,
+    "background": "#550ff0f0"
+  },
+
+  "sway/workspaces": {
+    "format": "{name}",
+    "disable-scroll": true,
+    "all-outputs": false,
+    "format-focused": "<span background=\"#5000ff00\">{name}</span>",
+    "format-visible": "<span background=\"#663f3f3f\">{name}</span>",
+    "format-urgent": "<span background=\"#bd2c40\">{name}</span>",
+    "format-inactive": "<span background=\"#66000000\">{name}</span>",
+    "on-click": "swaymsg workspace {name}"
+  },
+
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 1,
+    "tooltip": false,
+    "background": "#55008800"
+  },
+
+  "memory": {
+    "format": "RAM {percentage}%",
+    "interval": 3,
+    "tooltip": false,
+    "background": "#550000ff"
+  },
+
+  "battery": {
+    "format": "BAT: {capacity}% {icon}",
+    "interval": 10,
+    "tooltip": false,
+    "states": {
+      "good": 80,
+      "warning": 30,
+      "critical": 15
+    },
+    "format-charging": "BAT: {capacity}% (c)",
+    "format-plugged": "BAT: {capacity}% (p)",
+    "format-discharging": "BAT: {capacity}%",
+    "format-full": "BAT: full",
+    "background": "#88992222"
+  },
+
+  "pulseaudio": {
+    "format": "VOL: {volume}% {icon}",
+    "format-muted": "MUTED",
+    "tooltip": false,
+    "scroll-step": 5,
+    "on-click": "~/dotfiles/bin/pulseaudio-control togmute",
+    "on-click-middle": "~/dotfiles/bin/pulseaudio-control --sink-blacklist \"alsa_output.pci-0000_01_00.1.hdmi-stereo-extra2\" next-sink",
+    "on-scroll-up": "~/dotfiles/bin/pulseaudio-control --volume-max 130 up",
+    "on-scroll-down": "~/dotfiles/bin/pulseaudio-control --volume-max 130 down",
+    "background": "#44000000"
+  },
+
+  "clock": {
+    "interval": 1,
+    "format": "{:%F - %I:%M:%S %p}",
+    "tooltip": false,
+    "format-alt": "{:%a %b %d, %I:%M %p}",
+    "background": "#aa000000",
+    "foreground": "#ffffffff"
+  },
+
+  "tray": {
+    "spacing": 10,
+    "background": "#66444444",
+    "foreground": "#ffffff"
+  },
+
+  // Styling
+  "style": "~/.config/waybar/style.css"
+}
