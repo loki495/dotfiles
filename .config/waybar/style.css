@@ -1,152 +1,183 @@
-/* General bar styling */
+/* =============================================================================
+ *
+ * Waybar configuration
+ *
+ * Configuration reference: https://github.com/Alexays/Waybar/wiki/Configuration
+ *
+ * =========================================================================== */
+
+/* -----------------------------------------------------------------------------
+ * Keyframes
+ * -------------------------------------------------------------------------- */
+
+
+/*
+Polar Night
+nord0  #2e3440
+nord1  #3b4252
+nord2  #434c5e
+nord3  #4c566a
+Snow Storm
+nord4  #d8dee9
+nord5  #e5e9f0
+nord6  #eceff4
+Frost
+nord7  #8fbcbb
+nord8  #88c0d0
+nord9  #81a1c1
+nord10 #5e81ac
+Aurora
+nord11 #bf616a
+nord12 #d08770
+nord13 #ebcb8b
+nord14 #a3be8c
+nord15 #b48ead
+*/
+
+/* -----------------------------------------------------------------------------
+ * Base styles
+ * -------------------------------------------------------------------------- */
+
+/* Reset all styles */
+
 * {
-  font-family: "Noto Sans", sans-serif;
-  font-size: 12px;
-  border: none;
-  border-radius: 5px;
-  min-height: 0;
-}
+    color: #eceff4;
+    border: 0;
+    border-radius: 0;
+    padding: 0 0;
+    font-family:Symbols Nerd Font Mono;
+    font-size: 15px;
+    margin-right: 5px;
+    margin-left: 5px;
+    padding-bottom:2px;
+   }
 
 window#waybar {
-  background-color: rgba(0, 0, 0, 0.7); /* #33000000 */
-  color: #EAEAEA;
-  border: none;
-  padding: 0px;
+    background:rgba (0, 0, 0, 0.65);
+    border-radius: 20px 20px 20px 20px;
 }
 
-/* Module spacing and alignment */
-.modules-left,
-.modules-center,
-.modules-right {
-  margin: 0 4px;
-}
-
-/* Workspaces (i3/sway) */
 #workspaces button {
-  padding: 0 6px;
-  background: rgba(0, 0, 0, 0.4);
-  color: #ffffff;
-  border: none;
-  margin: 0 2px;
+    padding: 2px 0px;
+    border-bottom: 2px;
+    color: #eceff4;
+    border-color: #d8dee9;
+    border-style: solid;
+    margin-top:2px;
 }
 
-#workspaces button.focused {
-  background: rgba(0, 255, 0, 0.31); /* #5000ff00 */
-  border-bottom: 2px solid #fba922;
-  color: #fff;
+#workspaces button.active {
+    border-color: #81a1c1;
 }
 
-#workspaces button.urgent {
-  background: #bd2c40;
-  color: #000;
+#clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather{
+    padding: 0 3px;
+    border-bottom: 2px;
+    border-style: solid;
 }
 
-#workspaces button.visible {
-  background: #3f3f3f;
-  border-bottom: 2px solid #555;
-  color: #fff;
-}
+/* -----------------------------------------------------------------------------
+ * Module styles
+ * -------------------------------------------------------------------------- */
 
-/* Clock */
+
 #clock {
-  background: rgba(0, 0, 0, 0.4); /* #aa000000 */
-  color: #ffffff;
-  font-weight: bold;
-  padding: 0 8px;
-  font-size: 16px;
+ color:#a3be8c;
 }
 
-/* CPU */
-#cpu {
-  background: rgba(0, 136, 0, 0.33); /* #55008800 */
-  padding: 0 8px;
+#backlight {
+    color: #ebcb8b;
 }
 
-/* Memory */
-#memory {
-  background: rgba(0, 0, 255, 0.33); /* #550000ff */
-  padding: 0 8px;
-}
-
-/* Battery */
 #battery {
-  padding: 0 8px;
+    color: #d8dee9;
 }
 
 #battery.charging {
-  background: rgba(68, 68, 255, 0.27); /* #4444ff44 */
+    color: #81a1c1;
 }
 
-#battery.discharging {
-  background: rgba(136, 153, 34, 0.13); /* #88992222 */
+@keyframes blink {
+    to {
+        color: #4c566a;
+        background-color: #eceff4;
+    }
 }
 
-#battery.full {
-  background: rgba(68, 255, 68, 0.27); /* #44ff4444 */
+#battery.critical:not(.charging) {
+    background: #bf616a;
+    color: #eceff4;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
 }
 
-/* Volume / PulseAudio */
+#cpu {
+    color:#a3be8c ;
+}
+
+#memory {
+    color: #d3869b;
+}
+
+#network.disabled {
+    color:#bf616a;
+}
+
+#network{
+    color:#a3be8c;
+}
+
+#network.disconnected {
+    color: #bf616a;
+}
+
 #pulseaudio {
-  background: rgba(0, 0, 0, 0.25); /* #44000000 */
-  padding: 0 8px;
+    color: #b48ead;
 }
 
-/* Filesystem blocks */
-#custom-fs_root {
-  background: rgba(68, 0, 0, 0.27);
-  padding: 0px 0px;
-  padding-right: 20px;
+#pulseaudio.muted {
+    color: #e20548;
 }
 
-#custom-fs_home {
-  background: rgba(0, 68, 0, 0.27);
-  padding: 0 8px;
+#temperature {
+    color: #8fbcbb;
 }
 
-/* Tray */
+#temperature.critical {
+    color: #bf616a;
+}
+
+#idle_inhibitor {
+   color: #ebcb8b;
+}
+
 #tray {
-  background: rgba(68, 68, 68, 0.27); /* #66444444 */
-  padding: 0 6px;
 }
 
-/* Custom buttons */
-#custom-screenoff,
-#custom-hibernate,
-#custom-activity,
-#custom-right7 {
-  padding: 0 8px;
-  color: #ffffff;
-  background: rgba(0, 0, 0, 0.25);
+#custom-launcher{
+        font-size: 20px;
+        background-image: url('/home/andres/.config/waybar/launcher.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        border-style: hidden;
 }
 
-#custom-hibernate {
-  background: rgba(68, 0, 0, 0.27);
+#custom-power{
+    border-style: hidden;
+    margin-top:2px;
 }
 
-#custom-screenoff {
-  background: rgba(64, 0, 0, 0.27);
+#window{
+    border-style: hidden;
+    margin-top:1px;
 }
-
-#custom-activity {
-  background: rgba(102, 0, 0, 0.27);
+#custom-keyboard-layout{
+   color:#d08770;
 }
-
-#custom-right7 {
-  color: #dd0000;
+#custom-network_traffic{
+   color:#d08770;
 }
-
-/* Background for keyboard-state module */
-#keyboard-state {
-  background-color: transparent;
-  color: transparent;
-}
-
-/* When Caps Lock is active (you can toggle special styles) */
-#keyboard-state.locked {
-  background-color: rgba(255,0,0,0.6); /* Your desired background color */
-  padding: 10px 8px; /* Optional: spacing */
-  margin: 50px;
-  border-radius: 6px; /* Optional: rounded corners */
-  color: #000;
-}
-
