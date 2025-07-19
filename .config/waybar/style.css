@@ -74,6 +74,7 @@ window#waybar {
     padding: 0 3px;
     border-bottom: 2px;
     border-style: solid;
+    font-size: 18px;
 }
 
 /* -----------------------------------------------------------------------------
@@ -180,4 +181,21 @@ window#waybar {
 }
 #custom-network_traffic{
    color:#d08770;
+}
+/* Background for keyboard-state module */
+#keyboard-state {
+    background-color: transparent;
+    color: #f8f8f2; /* Optional: text color */
+    padding: 0; /* Optional: spacing */
+    border-radius: 6px; /* Optional: rounded corners */
+    margin: 0;
+}
+
+/* When Caps Lock is active (you can toggle special styles) */
+#keyboard-state label.capslock.locked{
+    background-color: rgba(255, 0, 0, 0.5);
+    color: #ffffff;
+    padding: 0 3px;
+    border-radius: 6px;
+    margin: 0;
 }
