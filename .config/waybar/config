@@ -10,41 +10,41 @@
     // Add according to your wishes: "custom/weather"
 
     "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
-    "modules-center": ["custom/network_traffic"],
-    "modules-right": ["custom/updates", "backlight", "custom/keyboard-layout", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "clock","custom/power"],
+    "modules-center": ["clock", "weather"],
+    "modules-right": ["custom/updates", "backlight", "custom/keyboard-layout", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
- // Modules configuration
+    // Modules configuration
 
-  "hyprland/workspaces": {
-    "format": "{icon}",
-    "on-click": "activate",
-    "all-outputs": true,
-    "sort-by-number": true,
-    "format-icons": {
-      "1": "1",
-      "2": "2",
-      "3": "3",
-      "4": "4",
-      "5": "5",
-      "6": "6",
-      "7": "7",
-      "8": "8",
-      "9": "9",
-      "10": "10",
-      "focused": "",
-      "default": ""
-    },
-    "on-scroll-up": "hyprctl dispatch workspace e+1",
-    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "focused": "",
+            "default": ""
+        },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
     },
     "hyprland/window": {
         "format": "{}",
-	"icon":true,
-	"icon-size" : 20
+        "icon":true,
+        "icon-size" : 20
     },
     "idle_inhibitor": {
         "format": "{icon}",
-       "format-icons": {
+        "format-icons": {
             "activated": "",
             "deactivated": "",
         },
@@ -58,7 +58,7 @@
     "clock": {
         "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
         "format": " {:%a %d %b  %I:%M %p}",	//12 hour format
-        //"format": " {:%a %d %b  %H:%M}",	//24 hour format
+                                                //"format": " {:%a %d %b  %H:%M}",	//24 hour format
         "format-alt": " {:%d/%m/%Y  %H:%M:%S}",
         //"max-length": 200
         "interval": 1,
@@ -95,13 +95,13 @@
         },
         "format": "{icon} {capacity: >3}%",
         "format-icons": ["", "", "", "", ""]
-        // "format-good": "", // An empty format will hide the module
-        // "format-full": "",
-        //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
-        //"format": "&#x202b;{icon}&#x202c; {capacity}%",
-        //"format-icons": ["ﱉ","ﱊ","ﱌ","ﱍ","ﱋ"]
+            // "format-good": "", // An empty format will hide the module
+            // "format-full": "",
+            //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
+            //"format": "&#x202b;{icon}&#x202c; {capacity}%",
+            //"format-icons": ["ﱉ","ﱊ","ﱌ","ﱍ","ﱋ"]
     },
-      "network": {
+    "network": {
         //"interface": "wlp0s20f3", // (Optional) To force the use of this interface  "format-wifi": "  {essid}",
         "format": "⚠Disabled",
         "format-wifi": "",
@@ -116,36 +116,36 @@
         //"max-length": 2,
         "on-click": "nm-connection-editor"
     },
-   "custom/updates": {
-       "format": "{} {icon}",
-       "return-type": "json",
-       "format-icons": {
-           "has-updates": "󱍷",
-           "updated": "󰂪",
-       },
-       "exec-if": "which waybar-module-pacman-updates",
-       "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200 --network-interval-seconds",
-       "on-click": "foot -e update"
-   },
+    "custom/updates": {
+        "format": "{} {icon}",
+        "return-type": "json",
+        "format-icons": {
+            "has-updates": "󱍷",
+            "updated": "󰂪",
+        },
+        "exec-if": "which waybar-module-pacman-updates",
+        "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200 --network-interval-seconds",
+        "on-click": "foot -e update"
+    },
     "custom/power": {
-      	"format":"⏻",
-       	"on-click": "nwgbar",
-      	"tooltip": false,
-   },
-   "custom/keyboard-layout": {
-      	"format": " Cheat", // Icon: keyboard
+        "format":"⏻",
+        "on-click": "nwgbar",
+        "tooltip": false,
+    },
+    "custom/keyboard-layout": {
+        "format": " Cheat", // Icon: keyboard
         "on-click": "~/.config/waybar/scripts/keyhint.sh",
-     },
+    },
     "custom/launcher": {
-    "format":"    ",
-    	"on-click": "exec nwg-drawer -c 7 -is 70 -spacing 23",
-    	"tooltip": false,
-     },
-     "custom/network_traffic": {
-             "exec": "~/.config/waybar/scripts/network_traffic.sh",
-             "return-type": "json",
-             "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes} ⇡{bandwidthUpBytes}",    // optional
-},
+        "format":"    ",
+        "on-click": "exec nwg-drawer -c 7 -is 70 -spacing 23",
+        "tooltip": false,
+    },
+    "custom/network_traffic": {
+        "exec": "~/.config/waybar/scripts/network_traffic.sh",
+        "return-type": "json",
+        "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes} ⇡{bandwidthUpBytes}",    // optional
+    },
     "pulseaudio": {
         "scroll-step": 3, // %, can be a float
         "format": "{icon} {volume}% {format_source}",
@@ -167,11 +167,11 @@
         },
         "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
         "on-click-right": "pavucontrol"
-        },
-        // https://github.com/chubin/wttr.in
-        "custom/weather": {
+    },
+    // https://github.com/chubin/wttr.in
+    "custom/weather": {
         "exec": "curl 'https://wttr.in/Essen?format=2'",
         "interval": 900,
-	    "on-click": "yad --html --uri='https://wttr.in/Essen' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
-        },
-    }
+        "on-click": "yad --html --uri='https://wttr.in/Essen' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
+    },
+}
