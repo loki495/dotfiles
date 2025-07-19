@@ -19,6 +19,11 @@ echo "GIT done"
 
 mkdir -p ~/.config
 
+# Garuda stuff
+ln -s $SCRIPTPATH/.config/waybar ~/.config/waybar
+ln -s $SCRIPTPATH/.config/hypr ~/.config/hypr
+ln -s $SCRIPTPATH/.config/fish ~/.config/fish
+
 # VIM
 rm -f ~/.vimrc
 rm -f ~/.vim/plugins.settings.vim
