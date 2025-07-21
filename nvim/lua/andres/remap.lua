@@ -29,8 +29,18 @@ vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><
 
 -- Source current file
 vim.keymap.set("n", "<leader><leader>", function()
-    vim.cmd("so")
-end)
+    local file = vim.api.nvim_buf_get_name(0)
+
+  if file:match("^" .. vim.fn.expand("~/.config/nvim/lua/")) then
+    -- If the file is in your config/lua folder, source it
+    vim.cmd("source " .. vim.fn.fnameescape(file))
+    print("Sourced: " .. file)
+  else
+    -- Otherwise, just save the file
+    vim.cmd("write")
+    print("Saved: " .. file)
+  end
+end, { desc = "Source or save file" })
 
 -- Disable arrow key
 vim.keymap.set("n", "<up>", "<nop>")
