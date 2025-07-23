@@ -272,3 +272,5 @@ bind \t tab_handler
 bind shift-tab shift_tab_handler
 
 bind escape fish_vi_key_bindings
+
+source ~/.phpbrew/phpbrew.fish
