@@ -274,3 +274,25 @@ bind shift-tab shift_tab_handler
 bind escape fish_vi_key_bindings
 
 source ~/.phpbrew/phpbrew.fish
+
+# Default title: includes last command if set
+function fish_title
+    set userhost (whoami)"@"(hostname -s)
+    set dir (prompt_pwd)
+    if set -q __last_cmd
+        echo "$userhost:$dir - $__last_cmd"
+    else
+        echo "$userhost:$dir -"
+    end
+end
+
+# Save the running command
+function fish_preexec --on-event fish_preexec
+    set -g __last_cmd $argv[1]
+end
+
+# Clear the command after it's done
+function fish_postexec --on-event fish_postexec
+    set -e __last_cmd
+end
+
