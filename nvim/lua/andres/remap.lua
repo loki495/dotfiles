@@ -129,6 +129,8 @@ vim.keymap.set("n", "<leader>cd", php_dev.toggle_debug_macro, { desc = "Toggle M
 
 vim.keymap.set("n", "<leader>vv", ToggleVSplitWidth, { desc = "Toggle VSplit Width (90%/50%)" })
 
+vim.keymap.set("n", "<leader>t", ':tabnew<CR>', { silent = true })
+
 vim.keymap.del("n", "<C-W><C-D>")
 vim.keymap.del("n", "<C-W>d")
 vim.keymap.set("n", "<C-W>", '<C-W><C-W>', { desc = "Toggle VSplit Width (90%/50%)" })
