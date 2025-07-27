@@ -46,6 +46,8 @@ echo "- run :PlugInstall"
 mkdir -p ~/.config
 
 # Garuda stuff
+rm -rf ~/.config/wireplumber
+ln -s $SCRIPTPATH/.config/wireplumber ~/.config/wireplumber
 rm -rf ~/.config/waybar
 ln -s $SCRIPTPATH/.config/waybar ~/.config/waybar
 rm -rf ~/.config/hypr
