@@ -70,7 +70,9 @@ window#waybar {
     border-color: #81a1c1;
 }
 
-#clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather{
+#clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather,
+#custom-gpu-temp
+{
     padding: 0 3px;
     border-bottom: 2px;
     border-style: solid;
@@ -198,4 +200,17 @@ window#waybar {
     padding: 0 3px;
     border-radius: 6px;
     margin: 0;
+}
+
+#custom-gpu-temp.cool {
+    background-color: rgba(0, 255, 0, 0.2);
+}
+#custom-gpu-temp.warm {
+    background-color: rgba(255, 255, 0, 0.4);
+}
+#custom-gpu-temp.hot {
+    background-color: rgba(255, 0, 0, 0.3);
+}
+#custom-gpu-temp.critical {
+    background-color: rgba(255, 0, 0, 0.7);
 }

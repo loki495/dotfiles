@@ -11,7 +11,7 @@
 
     "modules-left": ["custom/lock", "custom/launcher", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "weather"],
-    "modules-right": ["keyboard-state","custom/updates", "backlight", "custom/keyboard-layout", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["keyboard-state","custom/updates", "custom/gpu-temp", "custom/keyboard-layout", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
@@ -313,5 +313,10 @@
         "exec": "~/.config/waybar/scripts/hypr_status.sh",
         "interval": 1,
         "format": "{}"
-    }
+    },
+    "custom/gpu-temp": {
+        "exec": "~/.config/waybar/scripts/gpu_temp.sh",
+        "interval": 5,
+        "return-type": "json"
+    },
 }
