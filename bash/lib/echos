@@ -39,4 +39,20 @@ echo_success() {
 echo_error() {
     >&2 echo -e "${RED}${@}${NC}"
 }
+ask() {
+    local prompt="${GREEN}$1${NC}"
+    local answer
+    read -rp "$(echo -e "$prompt") " answer
+    echo "$answer"
+}
+ask_yes_no() {
+    local prompt="${1:-Are you sure? [y/N]}"
+    local answer
 
+    answer=$(ask "$prompt")
+
+    case "$answer" in
+        [yY][eE][sS]|[yY]) return 0 ;;
+        *)                return 1 ;;
+    esac
+}
