@@ -306,7 +306,7 @@
     },
     "custom/lock": {
         "exec": "echo \"🔒 Lock\"",
-        "on-click": "swaylock",
+        "on-click": "swaylock --color 000000",
         "tooltip": "Click to lock screen"
     },
     "custom/window_status": {
