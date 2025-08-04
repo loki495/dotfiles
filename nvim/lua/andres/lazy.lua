@@ -368,4 +368,14 @@ require("lazy").setup({
         end,
     },
 
+    {
+        dir = "~/dotfiles/nvim/plugins/custom_finder",
+        name = "custom_finder",
+        dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
+        keys = {
+            { "<leader>z", function() require("custom_finder").open() end, desc = "Open Custom Finder" }
+        }
+    }
+
+
 })
