@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/common
+
+check_mycnf
+
+if [ -z "${MYSQL_FORCE_USER// }" ]
+then
+    FORCED_USER=""
+else
+    FORCED_USER="--user $MYSQL_USER"
+fi
+
+IGNORED_TABLES_STRING=''
+for TABLE in "${MYSQL_EXCLUDED_TABLES[@]}"
+do :
+   IGNORED_TABLES_STRING+=" --ignore-table=${MYSQL_DATABASE}.${TABLE}"
+done
+
+MYCNF_FULL_PATH="$MYCNF_PATH/.my.cnf.$MYSQL_DATABASE"
+
+BACKUP_DIR=$(pwd)"/database"
+MAX_PARALLEL=4
+
+# Get tables from remote
+TABLES=$(run_ssh "mysql --defaults-file=$MYCNF_FULL_PATH -N -e 'SHOW TABLES FROM \\\`$MYSQL_DATABASE\\\`'")
+echo $TABLES
+exit
+
+TABLE_LIST=($TABLES)
+TOTAL=${#TABLE_LIST[@]}
+echo "✅ Found $TOTAL tables in $MYSQL_DATABASE"
+
+# Dump each table in parallel, with ordered logging
+i=0
+printf "%s\n" "${TABLE_LIST[@]}" | xargs -n1 -P $MAX_PARALLEL -I{} bash -c '
+  TABLE="{}"
+  OUT_FILE="${BACKUP_DIR}/${MYSQL_DATABASE}_${TABLE}_$(date +%Y%m%d).sql.gz"
+
+  # Get the index by scanning the list again (safe even in parallel)
+  INDEX=$(printf "%s\n" "${TABLE_LIST[@]}" | grep -n "^$TABLE$" | cut -d: -f1)
+
+  echo "📍 $INDEX/'"$TOTAL"' - Dumping table $TABLE..."
+
+  run_ssh "mysqldump \
+    --defaults-file=$MYCNF_FULL_PATH \
+    --no-tablespaces \
+    --databases $MYSQL_DATABASE \
+    '"$FORCED_USER"' \
+    --default-character-set=utf8 \
+    --opt \
+    --single-transaction \
+    --routines \
+    --triggers \
+    --events \
+    --no-create-db \
+    --add-drop-table \
+    --complete-insert \
+    --tz-utc \
+    '"$IGNORED_TABLES_STRING"' \
+    --tables \\\`$TABLE\\\`" \
+  | gzip -9 > "$OUT_FILE"
+
+  echo "✅ $INDEX/'"$TOTAL"' - $TABLE Done."
+' _
+
