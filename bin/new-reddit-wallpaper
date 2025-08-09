@@ -17,5 +17,6 @@ FILENAME="`realpath ~/.wallpaper`/wallpaper.jpg"
 
 wget -qO- "$URL" > $FILENAME
 feh --bg-fill "$FILENAME" 2&> /dev/null
-swaybg -i $FILENAME -m fill 2&> /dev/null
-notify-send "New wallpaper set"
+killall swaybg
+swaybg -i "$FILENAME" -m fill 2&> /dev/null
+notify-send "New wallpaper set" "$FILENAME"
