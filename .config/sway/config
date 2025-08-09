@@ -81,7 +81,7 @@ bindsym $mod+t layout tabbed
 bindsym $mod+e layout toggle split
 
 # Floating mode toggle
-bindsym $mod+Shift+space floating toggle
+bindsym $mod+Shift+f floating toggle
 bindsym $mod+space focus mode_toggle
 
 # Focus tree
@@ -160,8 +160,10 @@ mode "$exit_mode_launcher" {
 # Clipboard
 bindsym $mod+c exec wl-copy < ~/.cache/clipster.hist
 
-# Screenshot (scrot won't work)
+# Screenshot 
 bindsym $mod+Shift+s exec grim -g "$(slurp)" - | wl-copy
+
+bindsym $mod+n border toggle
 
 exec_always pkill waybar || true; waybar &
 exec_always nm-applet --indicator
@@ -179,3 +181,5 @@ input "type:touchpad" {
 
 # Gaps
 gaps inner 10
+
+hide_edge_borders --i3 smart
