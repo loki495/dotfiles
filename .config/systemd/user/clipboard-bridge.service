@@ -1,0 +1,9 @@
+[Unit]
+Description=Clipboard Bridging Service
+
+[Service]
+ExecStart=/home/andres/bin/clipboard-sync.sh
+Restart=always
+
+[Install]
+WantedBy=default.target
