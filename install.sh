@@ -17,6 +17,8 @@ mv ~/.gitconfig ~/.gitconfig.old
 ln -s $SCRIPTPATH/git/.gitconfig ~/.gitconfig
 echo "GIT done"
 
+ln -s $SCRIPTPATH/.mcphost ~/.mcphost
+
 # VIM
 rm -f ~/.vimrc
 rm -f ~/.vim/plugins.settings.vim
