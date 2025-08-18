@@ -71,7 +71,7 @@ window#waybar {
 }
 
 #clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather,
-#custom-gpu-temp
+#custom-gpu_temp, #custom-free_hd
 {
     padding: 0 3px;
     border-bottom: 2px;
@@ -184,8 +184,8 @@ window#waybar {
 #custom-network_traffic{
    color:#d08770;
 }
-/* Background for keyboard-state module */
-#keyboard-state {
+/* Background for keyboard_state module */
+#keyboard_state {
     background-color: transparent;
     color: #f8f8f2; /* Optional: text color */
     padding: 0; /* Optional: spacing */
@@ -194,7 +194,7 @@ window#waybar {
 }
 
 /* When Caps Lock is active (you can toggle special styles) */
-#keyboard-state label.capslock.locked{
+#keyboard_state label.capslock.locked{
     background-color: rgba(255, 0, 0, 0.5);
     color: #ffffff;
     padding: 0 3px;
@@ -202,15 +202,18 @@ window#waybar {
     margin: 0;
 }
 
-#custom-gpu-temp.cool {
+#custom-gpu_temp.cool {
     background-color: rgba(0, 255, 0, 0.2);
 }
-#custom-gpu-temp.warm {
+#custom-gpu_temp.warm {
     background-color: rgba(255, 255, 0, 0.4);
 }
-#custom-gpu-temp.hot {
+#custom-gpu_temp.hot {
     background-color: rgba(255, 0, 0, 0.3);
 }
-#custom-gpu-temp.critical {
+#custom-gpu_temp.critical {
+    background-color: rgba(255, 0, 0, 0.7);
+}
+#custom-free_hd.critical {
     background-color: rgba(255, 0, 0, 0.7);
 }
