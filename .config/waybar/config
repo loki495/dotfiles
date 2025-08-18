@@ -6,12 +6,9 @@
     "margin": "0 0 0 0",
     "spacing":0,
 
-    // Choose the order of the modules
-    // Add according to your wishes: "custom/weather"
-
     "modules-left": ["custom/lock", "custom/launcher", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
-    "modules-center": ["clock", "weather"],
-    "modules-right": ["keyboard-state","custom/updates", "custom/gpu-temp", "custom/keyboard-layout", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-center": ["clock", "custom/weather"],
+    "modules-right": ["keyboard_state","custom/free_hd","custom/updates", "custom/gpu_temp", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
@@ -132,10 +129,6 @@
         "on-click": "nwgbar",
         "tooltip": false,
     },
-    "custom/keyboard-layout": {
-        "format": " Cheat", // Icon: keyboard
-        "on-click": "~/.config/waybar/scripts/keyhint.sh",
-    },
     "custom/launcher": {
         "format":"    ",
         "on-click": "exec nwg-drawer -c 7 -is 70 -spacing 23",
@@ -167,156 +160,40 @@
         },
         "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
         "on-click-right": "pavucontrol"
-    },
-    // https://github.com/chubin/wttr.in
-    "custom/weather": {
-        "exec": "curl 'https://wttr.in/Essen?format=2'",
-        "interval": 900,
-        "on-click": "yad --html --uri='https://wttr.in/Essen' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
-    },
-    "keyboard-state": {
-        "numlock": false,
-        "capslock": true,
-        "format": "{icon}",
-        "format-capslock": "{icon}",
-        "format-icons": {
-            "locked": "🔒",
-            "unlocked": ""
-        }
-    },
-    "cpu": {
-        "format": "🖳{usage}%",
-        "on-click": "foot -e htop"
-    },
-    "memory": {
-        "format": "🖴 {: >3}%",
-        "on-click": "foot -e htop"
-    },
-    "temperature": {
-        "thermal-zone": 7,  // Check with: # cat /sys/class/hwmon/hwmon*/temp1_input
-        "hwmon-path": "/sys/class/hwmon/hwmon7/temp1_input",
-        "critical-threshold": 80,
-        "format-critical": "{temperatureC}°C ",
-        "format": "{temperatureC}°C "
-    },
-    "backlight": {
-        // "device": "acpi_video1",
-        "format": "{icon} {percent: >3}%",
-        "format-icons": ["", ""],
-        "on-scroll-down": "brightnessctl -c backlight set 1%-",
-        "on-scroll-up": "brightnessctl -c backlight set +1%",
-        "on-click": "~/.config/waybar/scripts/backlight-hint.sh"
-    },
-    "battery": {
-        "states": {
-            // "good": 95,
-            "warning": 30,
-            "critical": 15
-        },
-        "format": "{icon} {capacity: >3}%",
-        "format-icons": ["", "", "", "", ""]
-            // "format-good": "", // An empty format will hide the module
-            // "format-full": "",
-            //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
-            //"format": "&#x202b;{icon}&#x202c; {capacity}%",
-            //"format-icons": ["ﱉ","ﱊ","ﱌ","ﱍ","ﱋ"]
-    },
-    "network": {
-        //"interface": "wlp0s20f3", // (Optional) To force the use of this interface  "format-wifi": "  {essid}",
-        "format": "⚠Disabled",
-        "format-wifi": "",
-        "format-ethernet": "",
-        "format-linked": "{ifname} (No IP)",
-        "format-disconnected": "⚠Disabled",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}",
-        "family": "ipv4",
-        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%\nFreq: {frequency}MHz\nUp: {bandwidthUpBits} Down: {bandwidthDownBits}",
-        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}\n up: {bandwidthUpBits} down: {bandwidthDownBits}",
-        //"min-length": 2,
-        //"max-length": 2,
-        "on-click": "nm-connection-editor"
-    },
-    "custom/updates": {
-        "format": "{} {icon}",
-        "return-type": "json",
-        "format-icons": {
-            "has-updates": "󱍷",
-            "updated": "󰂪",
-        },
-        "exec-if": "which waybar-module-pacman-updates",
-        "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200 --network-interval-seconds",
-        "on-click": "foot -e update"
-    },
-    "custom/power": {
-        "format":"⏻",
-        "on-click": "nwgbar",
-        "tooltip": false,
-    },
-    "custom/keyboard-layout": {
-        "format": " Cheat", // Icon: keyboard
-        "on-click": "~/.config/waybar/scripts/keyhint.sh",
-    },
-    "custom/launcher": {
-        "format":"    ",
-        "on-click": "exec nwg-drawer -c 7 -is 70 -spacing 23",
-        "tooltip": false,
-    },
-    "custom/network_traffic": {
-        "exec": "~/.config/waybar/scripts/network_traffic.sh",
-        "return-type": "json",
-        "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes} ⇡{bandwidthUpBytes}",    // optional
-    },
-    "pulseaudio": {
-        "scroll-step": 3, // %, can be a float
-        "format": "{icon} {volume}% {format_source}",
-        "format-bluetooth": "{volume}% {icon} {format_source}",
-        "format-bluetooth-muted": " {icon} {format_source}",
-        "format-muted": " {format_source}",
-        //"format-source": "{volume}% ",
-        //"format-source-muted": "",
-        "format-source": "",
-        "format-source-muted": "",
-        "format-icons": {
-            "headphone": "",
-            "hands-free": "",
-            "headset": "",
-            "phone": "",
-            "portable": "",
-            "car": "",
-            "default": ["", "", ""]
-        },
-        "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
-        "on-click-right": "pavucontrol"
-    },
-    // https://github.com/chubin/wttr.in
-    "custom/weather": {
-        "exec": "curl 'https://wttr.in/Essen?format=2'",
-        "interval": 900,
-        "on-click": "yad --html --uri='https://wttr.in/Essen' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
-    },
-    "keyboard-state": {
-        "numlock": false,
-        "capslock": true,
-        "format": "{icon}",
-        "format-capslock": "{icon}",
-        "format-icons": {
-            "locked": "🔒",
-            "unlocked": ""
-        }
     },
     "custom/lock": {
         "exec": "echo \"🔒 Lock\"",
         "on-click": "swaylock --color 000000",
         "tooltip": "Click to lock screen"
     },
+    "custom/weather": {
+        "exec": "curl 'https://wttr.in/Essen?format=2'",
+        "interval": 900,
+        "on-click": "yad --html --uri='https://wttr.in/Essen' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
+    },
     "custom/window_status": {
         "exec": "~/.config/waybar/scripts/hypr_status.sh",
         "interval": 1,
         "format": "{}"
     },
-    "custom/gpu-temp": {
+    "custom/gpu_temp": {
         "exec": "~/.config/waybar/scripts/gpu_temp.sh",
         "interval": 5,
         "return-type": "json"
+    },
+    "custom/free_hd": {
+        "exec": "~/.config/waybar/scripts/free_hd.sh",
+        "interval": 10,
+        "return-type": "json"
+    },
+    "keyboard_state": {
+        "numlock": false,
+        "capslock": true,
+        "format": "{icon}",
+        "format-capslock": "{icon}",
+        "format-icons": {
+            "locked": "🔒",
+            "unlocked": ""
+        }
     },
 }
