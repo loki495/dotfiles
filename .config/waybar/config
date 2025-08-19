@@ -6,9 +6,9 @@
     "margin": "0 0 0 0",
     "spacing":0,
 
-    "modules-left": ["custom/lock", "custom/launcher", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
+    "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "custom/weather"],
-    "modules-right": ["keyboard_state","custom/free_hd","custom/updates", "custom/gpu_temp", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
@@ -185,6 +185,12 @@
         "exec": "~/.config/waybar/scripts/free_hd.sh",
         "interval": 10,
         "return-type": "json"
+    },
+    "custom/sysinfo": {
+        "exec": "echo '{\"text\":\"\"}'",
+        "return-type": "json",
+        "interval": 0,
+        "on-click": "~/.config/waybar/scripts/toggle-sysinfo.sh"
     },
     "keyboard_state": {
         "numlock": false,
