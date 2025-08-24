@@ -102,9 +102,9 @@ vim.keymap.set("n", "<leader>p", function()
     vim.cmd("terminal ./vendor/bin/pest " .. vim.fn.expand("%"))  -- Run the CLI command with the current file
 end)
 
--- vim.filetype.add({
---   pattern = { [".*%.blade%.php"] = "php" }
--- })
+vim.filetype.add({
+   pattern = { [".*%.blade%.php"] = "php" }
+})
 
 vim.api.nvim_set_keymap(
   'n', '<leader>\'\'',
