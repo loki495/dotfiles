@@ -142,10 +142,11 @@ if $USE_DB; then
   mkdir -p docker/mysql
 fi
 
+UID=$(id -u)
+GID=$(id -g)
+
 # === Write docker-compose.yml ===
 cat > docker-compose.yml <<EOF
-version: "3.8"
-
 volumes:
   mysql-data: {}
 
@@ -162,7 +163,10 @@ services:
       - "traefik.http.routers.${PROJECT_SLUG}.entrypoints=web"
       - "traefik.http.services.${PROJECT_SLUG}.loadbalancer.server.port=80"
     command: >
-      sh -c "a2enmod rewrite &&
+      sh -c "
+             groupmod -g ${GID} www-data &&
+             usermod -u ${UID} www-data &&
+
              echo '<Directory /var/www/html>' > /etc/apache2/conf-enabled/allow-override.conf &&
              echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
              echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
@@ -200,9 +204,11 @@ cat >> docker-compose.yml <<EOF
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     volumes:
       - ./:/var/www/html
-    ports:
-      - "3000:3000"
-      - "5173:5173"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_SLUG}-vite.rule=Host(\`vite.${PROJECT_SLUG}.dev.local.test\`)"
+      - "traefik.http.routers.${PROJECT_SLUG}-vite.entrypoints=web"
+      - "traefik.http.services.${PROJECT_SLUG}-vite.loadbalancer.server.port=5173"
     networks:
       - web
 EOF
