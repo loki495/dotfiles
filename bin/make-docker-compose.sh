@@ -167,14 +167,25 @@ services:
              echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
              echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
              sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/${APACHE_ROOT}|' /etc/apache2/sites-available/000-default.conf &&
-             chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database 2>/dev/null || true &&
-             find /var/www/html/storage -type d -exec chmod 775 {} \; 2>/dev/null || true &&
-             find /var/www/html/bootstrap/cache -type d -exec chmod 775 {} \; 2>/dev/null || true &&
-             find /var/www/html/database -type d -exec chmod 775 {} \; 2>/dev/null || true &&
-             find /var/www/html/storage -type f -exec chmod 644 {} \; 2>/dev/null || true &&
-             find /var/www/html/bootstrap/cache -type d -exec chmod 644 {} \; 2>/dev/null || true &&
-             find /var/www/html/database -type f -exec chmod 644 {} \; 2>/dev/null || true &&
-             apache2-foreground"
+
+             # replace sources with archive.debian.org
+             sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list
+             sed -i '/security.debian.org/d' /etc/apt/sources.list
+
+             # disable Valid-Until check (Stretch has old Release files)
+             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
+             # update and install packages
+             apt-get update &&
+             apt-get install -y libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev libxpm-dev libzip-dev unzip &&
+
+             docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ &&
+             docker-php-ext-install gd mysqli pdo_mysql &&
+             docker-php-ext-enable gd mysqli pdo_mysql &&
+
+             a2enmod rewrite &&
+             a2enmod headers &&
+             exec apache2-foreground"
     networks:
       - web
 EOF
