@@ -167,9 +167,9 @@
         "tooltip": "Click to lock screen"
     },
     "custom/weather": {
-        "exec": "curl 'https://wttr.in/?format=2'",
+        "exec": "curl 'https://wttr.in/Montebello?format=3'",
         "interval": 900,
-        "on-click": "yad --html --uri='https://wttr.in/' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
+        "on-click": "yad --html --uri='https://wttr.in/Montebello' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
     },
     "custom/window_status": {
         "exec": "~/.config/waybar/scripts/hypr_status.sh",
