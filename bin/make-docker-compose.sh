@@ -137,7 +137,6 @@ if $USE_DB; then
 fi
 
 # === Create folders ===
-mkdir -p public
 if $USE_DB; then
   mkdir -p docker/mysql
 fi
@@ -164,40 +163,71 @@ services:
       - "traefik.http.services.${PROJECT_SLUG}.loadbalancer.server.port=80"
     command: >
       sh -c "
-             groupmod -g ${GID} www-data &&
-             usermod -u ${UID} www-data &&
+        set -e
 
-             echo '<Directory /var/www/html>' > /etc/apache2/conf-enabled/allow-override.conf &&
-             echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
-             echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
-             sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/${APACHE_ROOT}|' /etc/apache2/sites-available/000-default.conf &&
+        # Fix user/group IDs
+        groupmod -g ${GID} www-data &&
+        usermod -u ${UID} www-data &&
 
-             # replace sources with archive.debian.org
-             sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list
-             sed -i '/security.debian.org/d' /etc/apt/sources.list
+        # Apache config for AllowOverride and DocumentRoot
+        echo '<Directory /var/www/html>' > /etc/apache2/conf-enabled/allow-override.conf &&
+        echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
+        echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
+        sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/${APACHE_ROOT}|' /etc/apache2/sites-available/000-default.conf &&
 
-             # disable Valid-Until check (Stretch has old Release files)
-             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+        # Detect release codename
+        release=\$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)
 
-             # update and install packages
-             apt-get update &&
-             apt-get install -y libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev libxpm-dev libzip-dev unzip &&
+        if [ \"\$$release\" = \"stretch\" ] || [ \"\$$release\" = \"buster\" ]; then
+          # Old, archived releases
+            sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list
+          sed -i '/security.debian.org/d' /etc/apt/sources.list
+          if [ -d /etc/apt/sources.list.d ]; then
+            for f in /etc/apt/sources.list.d/*; do
+              [ -f \"\$$f\" ] || continue
+              sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' \"\$$f\"
+              sed -i '/security.debian.org/d' \"\$$f\"
+            done
+          fi
 
-             docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ &&
-             docker-php-ext-install gd mysqli pdo_mysql &&
-             docker-php-ext-enable gd mysqli pdo_mysql &&
+        elif [ \"\$$release\" = \"bullseye\" ]; then
 
-             a2enmod rewrite &&
-             a2enmod headers &&
-             exec apache2-foreground"
-    networks:
+          # Active release → keep official mirrors
+          sed -i 's|archive.debian.org/debian|deb.debian.org/debian|g' /etc/apt/sources.list
+          sed -i 's|http://deb.debian.org/debian-security|http://security.debian.org/debian-security|g' /etc/apt/sources.list
+        fi
+
+        echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
+        # Update and install needed libs
+        apt-get update &&
+        apt-get install -y libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev libxpm-dev libzip-dev unzip &&
+    
+        # Detect PHP version
+        phpver=\$(php -r 'echo PHP_MAJOR_VERSION.\".\".PHP_MINOR_VERSION;')
+  
+        if [ \"\$$phpver\" = \"7.0\" ] || [ \"\$$phpver\" = \"7.1\" ] || [ \"\$$phpver\" = \"7.2\" ] || [ \"\$$phpver\" = \"7.3\" ]; then
+          docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-freetype-dir=/usr/include/
+          else
+        # PHP 7.4+ and all 8.x versions
+          docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp
+        fi &&
+
+        docker-php-ext-install gd mysqli pdo_mysql &&
+        docker-php-ext-enable gd mysqli pdo_mysql &&
+
+        a2enmod rewrite &&
+        a2enmod headers &&
+        exec apache2-foreground
+      "
+   networks:
       - web
 EOF
 
 if $USE_VITE; then
 cat >> docker-compose.yml <<EOF
 
-  vite:
+   vite:
     image: node:18
     container_name: ${PROJECT_SLUG}-vite
     working_dir: /var/www/html
@@ -237,12 +267,25 @@ cat >> docker-compose.yml <<EOF
 
 networks:
   web:
-    external: true
+    external: false
 EOF
+
+ENV_FILE="./.env"
+
+# If .env does not exist, create it
+if [ ! -f "$ENV_FILE" ]; then
+    touch "$ENV_FILE"
+fi
+
+# Remove any existing COMPOSE_PROJECT_NAME line
+grep -v '^COMPOSE_PROJECT_NAME=' "$ENV_FILE" > "$ENV_FILE.tmp" && mv "$ENV_FILE.tmp" "$ENV_FILE"
+
+# Add the new COMPOSE_PROJECT_NAME at the end
+echo "COMPOSE_PROJECT_NAME=$PROJECT_SLUG" >> "$ENV_FILE"
 
 echo -e "\n${GREEN}✅ docker-compose.yml created for project '${PROJECT_SLUG}'.${RESET}"
 echo -e "${CYAN}🌐 Accessible at: http://${PROJECT_SLUG}.dev.local.test${RESET}"
-echo -e "${CYAN}📂 Apache document root: ./public/${APACHE_ROOT}${RESET}"
+echo -e "${CYAN}📂 Apache document root: ./${APACHE_ROOT}${RESET}"
 if $USE_DB; then
   echo -e "${CYAN}🐬 MariaDB version: ${MARIADB_VERSION}${RESET}"
   echo -e "${CYAN}🔑 DB user: ${MYSQL_USER}  Password: ${MYSQL_PASSWORD}${RESET}"
