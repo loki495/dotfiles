@@ -1,0 +1,15 @@
+services:
+  kodi-db:
+    image: mariadb:10.6
+    container_name: kodi-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: kodi
+      MYSQL_USER: kodi
+      MYSQL_PASSWORD: 0495
+      command: --skip-ssl --skip-secure-auth --require_secure_transport=OFF
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./data:/var/lib/mysql
