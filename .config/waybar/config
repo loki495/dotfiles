@@ -54,7 +54,7 @@
     },
     "clock": {
         "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
-        "format": " {:%a %d %b  %I:%M %p}",	//12 hour format
+        "format": " {:%a %d %b  %I:%M:%S %p}",	//12 hour format
                                                 //"format": " {:%a %d %b  %H:%M}",	//24 hour format
         "format-alt": " {:%d/%m/%Y  %H:%M:%S}",
         //"max-length": 200
