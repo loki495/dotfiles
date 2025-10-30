@@ -134,3 +134,11 @@ vim.keymap.set("n", "<leader>t", ':tabnew<CR>', { silent = true })
 vim.keymap.del("n", "<C-W><C-D>")
 vim.keymap.del("n", "<C-W>d")
 vim.keymap.set("n", "<C-W>", '<C-W><C-W>', { desc = "Toggle VSplit Width (90%/50%)" })
+
+local run = require("andres.run_in_vsplit")
+
+vim.keymap.set("n", "<leader>m", function()
+  local cmd = vim.fn.input("Command: ")
+  run.run(cmd)
+end, { desc = "Run shell command in right vsplit" })
+
