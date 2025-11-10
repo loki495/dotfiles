@@ -1,19 +1,6 @@
 local wilder = require('wilder')
 wilder.setup({modes = {':', '/', '?'}})
 
-wilder.set_option('pipeline', {
-  wilder.branch(
-    wilder.cmdline_pipeline({
-      fuzzy = 1,
-      -- set_pcre2_pattern = 1,
-    }),
-    wilder.python_search_pipeline({
-      pattern = 'fuzzy',
-    })
-  ),
-})
-
-
 wilder.set_option('renderer', wilder.popupmenu_renderer(
   wilder.popupmenu_palette_theme({
     -- 'single', 'double', 'rounded' or 'solid'
@@ -36,6 +23,19 @@ wilder.set_option('renderer', wilder.popupmenu_renderer(
     },
   })
 ))
+
+wilder.set_option('pipeline', {
+  wilder.branch(
+    wilder.python_search_pipeline({
+      pattern = 'fuzzy',
+    }),
+    wilder.cmdline_pipeline({
+      fuzzy = 1,
+      fuzzy_filter = wilder.lua_fzy_filter(),
+      -- set_pcre2_pattern = 1,
+    })
+  ),
+})
 
 --wilder.set_option('renderer', wilder.renderer_mux({
   --[':'] = wilder.popupmenu_renderer({

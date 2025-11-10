@@ -189,6 +189,8 @@ require("lazy").setup({
             'hrsh7th/cmp-buffer',
             'hrsh7th/cmp-path',
             'hrsh7th/cmp-cmdline',
+            "tailwind-tools",
+            "onsails/lspkind-nvim",
         },
         config = function()
             local cmp = require('cmp')
@@ -237,7 +239,12 @@ require("lazy").setup({
                 }, {
                         { name = 'buffer' },
                         { name = 'path' },
-                    })
+                    }),
+                formatting = {
+                    format = require("lspkind").cmp_format({
+                        before = require("tailwind-tools.cmp").lspkind_format
+                    }),
+                },
             })
 
             cmp.setup.cmdline({ '/', '?' }, {
@@ -375,6 +382,24 @@ require("lazy").setup({
         keys = {
             { "<leader>z", function() require("custom_finder").open() end, desc = "Open Custom Finder" }
         }
+    },
+
+    {
+        "luckasRanarison/tailwind-tools.nvim",
+        name = "tailwind-tools",
+        build = ":UpdateRemotePlugins",
+        dependencies = {
+            "nvim-treesitter/nvim-treesitter",
+            "nvim-telescope/telescope.nvim", -- optional
+            "neovim/nvim-lspconfig", -- optional
+        },
+        opts = {
+            cmd = "./node_modules/.bin/tailwindcss",
+            config = "./tailwind.config.js",
+            include = {"./resources/**/*.{js,vue,jsx,ts,tsx}", "./src/**/*.{js,jsx}"},
+            exclude = {"node_modules", "dist"},
+            enable_tsx = false,  -- disable TSX parsing
+        } -- your configuration
     }
 
 
