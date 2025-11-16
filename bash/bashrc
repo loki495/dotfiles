@@ -217,4 +217,36 @@ if [ -f ~/dotfiles/git/.git-completion.bash ]; then
     . ~/dotfiles/git/.git-completion.bash
 fi
 
+syncclone() {
+    local repo="$1"
+    local stable_branch="${2:-stable}"
+
+    if [ -z "$repo" ]; then
+        echo "Usage: syncclone <path_to_repo> [stable_branch]"
+        return 1
+    fi
+
+    cd "$repo" || return 1
+
+    git fetch || return 1
+
+    # Read custom branch name for this repo
+    local changes_branch
+    changes_branch=$(git config --local local.changeBranch)
+
+    if [ -z "$changes_branch" ]; then
+        echo "No 'local.changeBranch' set for this repo."
+        echo "Set it with: git config --local local.changeBranch your-branch-name"
+        return 1
+    fi
+
+    # Update stable
+    git checkout "$stable_branch" || return 1
+    git pull --ff-only || return 1
+
+    # Rebase changes branch
+    git checkout "$changes_branch" || return 1
+    git rebase "$stable_branch"
+}
+
 [ -f ~/.bashrc.local ] && source ~/.bashrc.local
