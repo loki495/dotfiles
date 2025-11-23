@@ -1,6 +1,7 @@
 require("andres.init")
 require("andres.php_dev")
 require("andres.functions")
+require("andres.autocmds")
 require("andres.remap")
 require("andres.mason-workaround")
 require("andres.lazy")
