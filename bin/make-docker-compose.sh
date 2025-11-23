@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # === Colors ===
 RED="\033[0;31m"
@@ -8,6 +9,12 @@ YELLOW="\033[1;33m"
 BOLD="\033[1m"
 RESET="\033[0m"
 
+DOTFILES_SETUP="${HOME}/dotfiles/misc/docker/setup-dev-container.sh"
+if [ ! -f "${DOTFILES_SETUP}" ]; then
+  echo -e "${RED}Missing setup script: ${DOTFILES_SETUP}${RESET}"
+  exit 1
+fi
+
 echo -e "${CYAN}${BOLD}=== Docker Compose Generator for PHP Projects ===${RESET}\n"
 
 # === Helpers ===
@@ -15,16 +22,15 @@ function prompt_yes_no() {
   local prompt="$1"
   local default_answer="$2" # y/n
   local answer
-
   while true; do
     read -p "$(echo -e "${CYAN}${prompt} [${default_answer^^}/$( [[ $default_answer == y ]] && echo n || echo y )]:${RESET} ")" answer
     answer="${answer,,}" # lowercase
-    if [[ -z "$answer" ]]; then
-      answer=$default_answer
+    if [[ -z "${answer}" ]]; then
+      answer="${default_answer}"
     fi
-    if [[ "$answer" == "y" || "$answer" == "yes" ]]; then
+    if [[ "${answer}" == "y" || "${answer}" == "yes" ]]; then
       return 0
-    elif [[ "$answer" == "n" || "$answer" == "no" ]]; then
+    elif [[ "${answer}" == "n" || "${answer}" == "no" ]]; then
       return 1
     else
       echo -e "${RED}Please answer y or n.${RESET}"
@@ -35,13 +41,13 @@ function prompt_yes_no() {
 # === Project Name ===
 while true; do
   read -p "$(echo -e "${CYAN}Project name (used as subdomain, e.g. project.dev.local.test):${RESET} ")" PROJECT
-  if [[ -z "$PROJECT" ]]; then
+  if [[ -z "${PROJECT}" ]]; then
     echo -e "${RED}Project name cannot be empty.${RESET}"
   else
     break
   fi
 done
-PROJECT_SLUG=$(echo "$PROJECT" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+PROJECT_SLUG=$(echo "${PROJECT}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 
 # === PHP Version ===
 LATEST_PHP="8.4"
@@ -53,24 +59,23 @@ for i in "${!PHP_OPTIONS[@]}"; do
 done
 
 while true; do
-  read -p "$(echo -e "${CYAN}Choose PHP version [default: ${GREEN}$LATEST_PHP${CYAN}]:${RESET} ")" REPLY
-  if [[ -z "$REPLY" ]]; then
-    PHP_VERSION="$LATEST_PHP"
-    echo -e "✔ Using default PHP version: ${GREEN}${PHP_VERSION}${RESET}"
+  read -p "$(echo -e "${CYAN}Choose PHP version [default: ${GREEN}${LATEST_PHP}${CYAN}]:${RESET} ")" REPLY
+  if [[ -z "${REPLY}" ]]; then
+    PHP_VERSION="${LATEST_PHP}"
     break
-  elif [[ "$REPLY" =~ ^[0-9]+$ && "$REPLY" -ge 1 && "$REPLY" -le ${#PHP_OPTIONS[@]} ]]; then
+  elif [[ "${REPLY}" =~ ^[0-9]+$ && "${REPLY}" -ge 1 && "${REPLY}" -le ${#PHP_OPTIONS[@]} ]]; then
     opt="${PHP_OPTIONS[$((REPLY-1))]}"
-    if [[ "$opt" == "Other" ]]; then
+    if [[ "${opt}" == "Other" ]]; then
       while true; do
         read -p "$(echo -e "${CYAN}Enter custom PHP version tag (e.g. 8.0-apache): ${RESET}")" PHP_VERSION
-        if [[ -z "$PHP_VERSION" ]]; then
+        if [[ -z "${PHP_VERSION}" ]]; then
           echo -e "${RED}Version can't be empty.${RESET}"
         else
           break
         fi
       done
     else
-      PHP_VERSION="$opt"
+      PHP_VERSION="${opt}"
     fi
     break
   else
@@ -78,7 +83,9 @@ while true; do
   fi
 done
 
-# === Detect Laravel ===
+echo -e "✔ Using PHP version: ${GREEN}${PHP_VERSION}${RESET}"
+
+# === Detect Laravel & docroot ===
 LARAVEL_DETECTED=false
 if [[ -f "artisan" && -d "bootstrap" && -d "storage" ]]; then
   LARAVEL_DETECTED=true
@@ -88,7 +95,7 @@ if [[ -f "artisan" && -d "bootstrap" && -d "storage" ]]; then
   else
     while true; do
       read -p "$(echo -e "${CYAN}Enter Apache document root folder relative to project root:${RESET} ")" APACHE_ROOT
-      if [[ -z "$APACHE_ROOT" ]]; then
+      if [[ -z "${APACHE_ROOT}" ]]; then
         echo -e "${RED}Document root cannot be empty.${RESET}"
       else
         break
@@ -97,15 +104,11 @@ if [[ -f "artisan" && -d "bootstrap" && -d "storage" ]]; then
   fi
 else
   echo -e "\n${YELLOW}No Laravel detected.${RESET}"
-  while true; do
-    read -p "$(echo -e "${CYAN}Enter Apache document root folder relative to project root [default: .]:${RESET} ")" APACHE_ROOT
-    APACHE_ROOT=${APACHE_ROOT:-"."}
-    # accept '.' or folder name
-    break
-  done
+  read -p "$(echo -e "${CYAN}Enter Apache document root folder relative to project root [default: .]:${RESET} ")" APACHE_ROOT
+  APACHE_ROOT=${APACHE_ROOT:-"."}
 fi
 
-# === Detect Laravel ===
+# === Vite support ===
 USE_VITE=false
 if [[ -f "vite.config.js" ]]; then
   echo -e "\n${GREEN}Vite detected.${RESET}"
@@ -114,44 +117,29 @@ if [[ -f "vite.config.js" ]]; then
   fi
 fi
 
-# === MariaDB Version ===
-echo
-read -p "$(echo -e "${CYAN}MariaDB version (put 0 to skip DB) [default: 10.5]:${RESET} ")" MARIADB_VERSION
-MARIADB_VERSION=${MARIADB_VERSION:-10.5}
-USE_DB=true
-if [[ "$MARIADB_VERSION" == "0" ]]; then
-  USE_DB=false
-fi
+# === Copy setup script ===
+cp "${DOTFILES_SETUP}" "./setup-dev-container.sh"
 
-# === DB credentials (only if DB enabled) ===
-if $USE_DB; then
-  echo
-  read -p "$(echo -e "${CYAN}MySQL/MariaDB root password [default: root]:${RESET} ")" MYSQL_ROOT_PASSWORD
-  MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
-  read -p "$(echo -e "${CYAN}MySQL/MariaDB database name [default: app]:${RESET} ")" MYSQL_DATABASE
-  MYSQL_DATABASE=${MYSQL_DATABASE:-app}
-  read -p "$(echo -e "${CYAN}MySQL/MariaDB user [default: user]:${RESET} ")" MYSQL_USER
-  MYSQL_USER=${MYSQL_USER:-user}
-  read -p "$(echo -e "${CYAN}MySQL/MariaDB password [default: pass]:${RESET} ")" MYSQL_PASSWORD
-  MYSQL_PASSWORD=${MYSQL_PASSWORD:-pass}
-fi
-
-# === Create folders ===
-mkdir -p public
-if $USE_DB; then
-  mkdir -p docker/mysql
-fi
-
-# === Write docker-compose.yml ===
+# Compose: write docker-compose.yml with inline dockerfile (dockerfile_inline)
 cat > docker-compose.yml <<EOF
-version: "3.8"
-
-volumes:
-  mysql-data: {}
+name: ${PROJECT_SLUG}
 
 services:
   app:
-    image: php:${PHP_VERSION}-apache
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM php:${PHP_VERSION}-apache
+        ARG DEBIAN_FRONTEND=noninteractive
+        ARG APACHE_ROOT="."  # default to current folder
+
+        COPY setup-dev-container.sh /usr/local/bin/setup-dev-container.sh
+
+        RUN chmod +x /usr/local/bin/setup-dev-container.sh && \
+            APACHE_ROOT=${APACHE_ROOT} /usr/local/bin/setup-dev-container.sh
+
+        EXPOSE 80
+    image: ${PROJECT_SLUG}-app
     container_name: ${PROJECT_SLUG}-app
     restart: unless-stopped
     volumes:
@@ -161,37 +149,12 @@ services:
       - "traefik.http.routers.${PROJECT_SLUG}.rule=Host(\`${PROJECT_SLUG}.dev.local.test\`)"
       - "traefik.http.routers.${PROJECT_SLUG}.entrypoints=web"
       - "traefik.http.services.${PROJECT_SLUG}.loadbalancer.server.port=80"
-    command: >
-      sh -c "a2enmod rewrite &&
-             echo '<Directory /var/www/html>' > /etc/apache2/conf-enabled/allow-override.conf &&
-             echo 'AllowOverride All' >> /etc/apache2/conf-enabled/allow-override.conf &&
-             echo '</Directory>' >> /etc/apache2/conf-enabled/allow-override.conf &&
-             sed -i 's|DocumentRoot .*|DocumentRoot /var/www/html/${APACHE_ROOT}|' /etc/apache2/sites-available/000-default.conf &&
-
-             # replace sources with archive.debian.org
-             sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list
-             sed -i '/security.debian.org/d' /etc/apt/sources.list
-
-             # disable Valid-Until check (Stretch has old Release files)
-             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-
-             # update and install packages
-             apt-get update &&
-             apt-get install -y libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev libxpm-dev libzip-dev unzip &&
-
-             docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ &&
-             docker-php-ext-install gd mysqli pdo_mysql &&
-             docker-php-ext-enable gd mysqli pdo_mysql &&
-
-             a2enmod rewrite &&
-             a2enmod headers &&
-             exec apache2-foreground"
     networks:
       - web
 EOF
 
-if $USE_VITE; then
-cat >> docker-compose.yml <<EOF
+if ${USE_VITE}; then
+  cat >> docker-compose.yml <<EOF
 
   vite:
     image: node:18
@@ -200,28 +163,11 @@ cat >> docker-compose.yml <<EOF
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     volumes:
       - ./:/var/www/html
-    ports:
-      - "3000:3000"
-      - "5173:5173"
-    networks:
-      - web
-EOF
-fi
-
-if $USE_DB; then
-cat >> docker-compose.yml <<EOF
-
-  db:
-    image: mariadb:${MARIADB_VERSION}
-    container_name: ${PROJECT_SLUG}-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - ./docker/mysql:/var/lib/mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_SLUG}-vite.rule=Host(\`vite.${PROJECT_SLUG}.dev.local.test\`)"
+      - "traefik.http.routers.${PROJECT_SLUG}-vite.entrypoints=web"
+      - "traefik.http.services.${PROJECT_SLUG}-vite.loadbalancer.server.port=5173"
     networks:
       - web
 EOF
@@ -234,13 +180,15 @@ networks:
     external: true
 EOF
 
-echo -e "\n${GREEN}✅ docker-compose.yml created for project '${PROJECT_SLUG}'.${RESET}"
-echo -e "${CYAN}🌐 Accessible at: http://${PROJECT_SLUG}.dev.local.test${RESET}"
-echo -e "${CYAN}📂 Apache document root: ./public/${APACHE_ROOT}${RESET}"
-if $USE_DB; then
-  echo -e "${CYAN}🐬 MariaDB version: ${MARIADB_VERSION}${RESET}"
-  echo -e "${CYAN}🔑 DB user: ${MYSQL_USER}  Password: ${MYSQL_PASSWORD}${RESET}"
-  echo -e "${YELLOW}ℹ️ To access this DB, use your central Adminer instance with server: '${PROJECT_SLUG}-db'${RESET}"
-else
-  echo -e "${YELLOW}ℹ️ No database configured.${RESET}"
+# Ensure .env contains COMPOSE_PROJECT_NAME
+ENV_FILE="./.env"
+if [ ! -f "${ENV_FILE}" ]; then
+  touch "${ENV_FILE}"
 fi
+grep -v '^COMPOSE_PROJECT_NAME=' "${ENV_FILE}" > "${ENV_FILE}.tmp" && mv "${ENV_FILE}.tmp" "${ENV_FILE}"
+echo "COMPOSE_PROJECT_NAME=${PROJECT_SLUG}" >> "${ENV_FILE}"
+
+echo -e "\n${GREEN}✅ docker-compose.yml created (inline Dockerfile) for project '${PROJECT_SLUG}'.${RESET}"
+echo -e "${CYAN}🌐 Accessible at: http://${PROJECT_SLUG}.dev.local.test${RESET}"
+echo -e "${CYAN}📂 Apache document root: ./${APACHE_ROOT}${RESET}"
+echo -e "${YELLOW}ℹ️ Note: This compose does NOT create a per-project DB. Use your central mariadb and point DB host accordingly.${RESET}"
