@@ -246,7 +246,7 @@ syncclone() {
 
     # Rebase changes branch
     git checkout "$changes_branch" || return 1
-    git rebase "$stable_branch"
+    git rebase "$stable_branch" -X ours
 }
 
 [ -f ~/.bashrc.local ] && source ~/.bashrc.local
