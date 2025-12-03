@@ -1,0 +1,20 @@
+[Unit]
+Description=Unison sync for dev profile
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/unison dev
+Restart=on-failure
+RestartSec=3
+# Prevent runaway respawn if SSH drops repeatedly
+StartLimitIntervalSec=60
+StartLimitBurst=10
+
+# Unison sometimes writes a lot; isolate logs
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
