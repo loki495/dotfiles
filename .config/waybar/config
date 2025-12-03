@@ -7,8 +7,8 @@
     "spacing":0,
 
     "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
-    "modules-center": ["clock", "custom/weather"],
-    "modules-right": ["keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-center": ["clock", "custom/weather", "custom/optimus"],
+    "modules-right": ["custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
@@ -192,7 +192,7 @@
         "interval": 0,
         "on-click": "~/.config/waybar/scripts/toggle-sysinfo.sh"
     },
-    "keyboard_state": {
+    "custom/keyboard_state": {
         "numlock": false,
         "capslock": true,
         "format": "{icon}",
@@ -201,5 +201,13 @@
             "locked": "🔒",
             "unlocked": ""
         }
+    },
+    "custom/brightness": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "brightnessctl | grep -Eo '[[:digit:]]+%'",
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "smooth-scrolling-threshold": 1     // optional: makes scrolling feel less 'chunky'
     },
 }
