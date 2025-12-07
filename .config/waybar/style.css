@@ -68,6 +68,7 @@ window#waybar {
 
 #workspaces button.active {
     border-color: #5171f1;
+    background: #20296f;
 }
 
 #clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather,
