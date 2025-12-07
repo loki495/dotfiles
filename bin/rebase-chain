@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DRY_RUN=0
+BAIL_ON_CONFLICT=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run) DRY_RUN=1 ;;
+        --bail) BAIL_ON_CONFLICT=1 ;;
+    esac
+    shift
+done
+
+error() {
+    echo "Error: $*" >&2
+}
+
+###############################################################################
+# Detect if a branch is attached to a worktree, return its path
+###############################################################################
+worktree_path_for_branch() {
+    local branch="$1"
+
+    git worktree list --porcelain | awk -v target="$branch" '
+        BEGIN { RS=""; FS="\n" }
+        {
+            wt_path=""
+            wt_branch=""
+
+            for (i=1; i<=NF; i++) {
+                if ($i ~ /^worktree /) {
+                    wt_path = substr($i, 10)
+                }
+                if ($i ~ /^branch /) {
+                    # extract branch short name from "branch refs/heads/foo"
+                    full = substr($i, 8)
+                    sub(/^refs\/heads\//, "", full)
+                    wt_branch = full
+                }
+            }
+
+            if (wt_branch == target && wt_path != "") {
+                print wt_path
+            }
+        }
+    '
+}
+
+###############################################################################
+# Safe upstream discovery: only accept upstreams whose entire history is
+# contained in this branch (merge-base equals tip-of-upstream).
+###############################################################################
+find_upstream_branch() {
+    local branch="$1"
+    local candidates
+    candidates=$(git for-each-ref --format='%(refname:short)' refs/heads)
+
+    local best=""
+    local best_distance=99999999
+
+    for c in $candidates; do
+        [[ "$c" == "$branch" ]] && continue
+
+        # base commit between the two
+        base=$(git merge-base "$branch" "$c" 2>/dev/null || true)
+        [[ -z "$base" ]] && continue
+
+        # Tip commit of the candidate
+        tip=$(git rev-parse "$c")
+
+        # Only accept if entire candidate is ancestor of branch
+        if [[ "$base" != "$tip" ]]; then
+            continue
+        fi
+
+        # Distance: how far ahead branch is from upstream candidate
+        distance=$(git rev-list --count "$tip..$branch" 2>/dev/null || echo 99999999)
+
+        if (( distance < best_distance )); then
+            best_distance=$distance
+            best="$c"
+        fi
+    done
+
+    echo "$best"
+}
+
+###############################################################################
+# Recursively ensure upstream → parent → branch are rebased in order
+###############################################################################
+process_branch() {
+    local branch="$1"
+    local seen="$2" # for loop detection
+
+    # Loop detection
+    if [[ "$seen" == *",$branch,"* ]]; then
+        error "Detected rebase loop at branch '$branch'. Aborting."
+        exit 1
+    fi
+    seen="${seen}${branch},"
+
+    local upstream
+    upstream=$(find_upstream_branch "$branch")
+
+    if [[ -n "$upstream" ]]; then
+        echo "Found base '$upstream' for '$branch', checking that one is properly rebased..."
+        process_branch "$upstream" "$seen"
+        echo "Base '$upstream' is up to date; now rebasing '$branch' onto it..."
+
+        local wt_branch wt_upstream
+        wt_branch=$(worktree_path_for_branch "$branch")
+        wt_upstream=$(worktree_path_for_branch "$upstream")
+
+        echo "worktree for $branch: $wt_branch"
+
+        # Enter worktree of branch if it exists
+        if [[ -n "$wt_branch" ]]; then
+            echo "Worktree found: $wt_branch"
+            pushd "$wt_branch" >/dev/null
+        fi
+
+        if (( DRY_RUN )); then
+            echo "DRY-RUN: git rebase \"$upstream\" \"$branch\""
+        else
+            if ! git rebase "$upstream" "$branch"; then
+                echo "Rebase conflict on '$branch'."
+                if (( BAIL_ON_CONFLICT )); then
+                    echo "Aborting rebase due to --bail option."
+                    git rebase --abort || true
+                    exit 1
+                else
+                    echo "Leaving conflict for manual resolution."
+                    exit 1
+                fi
+            fi
+        fi
+
+        # Return to original directory
+        if [[ -n "$wt_branch" ]]; then
+            popd >/dev/null
+        fi
+    else
+        echo "Branch '$branch' has no detected upstream; treating it as a base branch."
+    fi
+}
+
+###############################################################################
+# Identify the current branch
+###############################################################################
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$current_branch" == "HEAD" ]]; then
+    error "Not on a branch."
+    exit 1
+fi
+
+process_branch "$current_branch" ","
+
