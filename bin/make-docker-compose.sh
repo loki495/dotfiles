@@ -118,7 +118,10 @@ if [[ -f "vite.config.js" ]]; then
 fi
 
 # === Copy setup script ===
-cp "${DOTFILES_SETUP}" "./setup-dev-container.sh"
+mkdir -p docker
+mkdir -p docker/logs
+
+cp "${DOTFILES_SETUP}" "./docker/setup-dev-container.sh"
 
 # Compose: write docker-compose.yml with inline dockerfile (dockerfile_inline)
 cat > docker-compose.yml <<EOF
@@ -126,29 +129,22 @@ name: ${PROJECT_SLUG}
 
 services:
   app:
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM php:${PHP_VERSION}-apache
-        ARG DEBIAN_FRONTEND=noninteractive
-        ARG APACHE_ROOT="."  # default to current folder
-
-        COPY setup-dev-container.sh /usr/local/bin/setup-dev-container.sh
-
-        RUN chmod +x /usr/local/bin/setup-dev-container.sh && \
-            APACHE_ROOT=${APACHE_ROOT} /usr/local/bin/setup-dev-container.sh
-
-        EXPOSE 80
-    image: ${PROJECT_SLUG}-app
     container_name: ${PROJECT_SLUG}-app
     restart: unless-stopped
     volumes:
       - ./:/var/www/html
+      - ./docker/logs:/var/www/html/logs:rw
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${PROJECT_SLUG}.rule=Host(\`${PROJECT_SLUG}.dev.local.test\`)"
       - "traefik.http.routers.${PROJECT_SLUG}.entrypoints=web"
       - "traefik.http.services.${PROJECT_SLUG}.loadbalancer.server.port=80"
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM php:${PHP_VERSION}-apache
+        COPY docker/setup-dev-container.sh /tmp/setup.sh
+        RUN chmod +x /tmp/setup.sh && /usr/bin/bash /tmp/setup.sh
     networks:
       - web
 EOF
