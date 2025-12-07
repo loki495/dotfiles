@@ -4,3 +4,10 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
     end,
 })
 
+vim.api.nvim_create_autocmd("BufReadPost", {
+  pattern = "*",
+  callback = function()
+    -- Remove stray CR (^M) characters
+    vim.cmd([[%s/\r//ge]])
+  end,
+})
