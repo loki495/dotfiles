@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+url="$1"
+
+# Remove "nvim://"
+raw="${url#nvim://}"
+
+# Split path and query
+file="${raw%%\?*}"
+query="${raw#*\?}"
+
+# Extract line (defaults to 1)
+line=$(printf "%s" "$query" | sed -n 's/.*line=\([0-9]*\).*/\1/p')
+line="${line:-1}"
+
+# Extract stack if present
+stack=$(printf "%s" "$url" | sed -n 's/.*stack=\([^&]*\).*/\1/p')
+stack_decoded=$(printf "%s" "$stack" | base64 -d 2>/dev/null || true)
+
+# Create temp stack file only if content exists
+tmp=""
+if [ -n "$stack_decoded" ]; then
+    tmp="/tmp/nvim_stack_$$.txt"
+    printf "%s\n%s\n" "$stack_decoded" > "$tmp"
+fi
+
+# Socket for the scratchpad nvim
+SOCK="/tmp/nvim_scratch.sock"
+
+# Launch scratchpad nvim if not running
+if [ ! -S "$SOCK" ]; then
+    echo "Starting scratchpad nvim"
+    foot --app-id nvimfloat --title nvimfloat -e /home/andres/nvim/bin/nvim \
+        --listen "$SOCK" \
+        "+${line}" "$file" &
+    sleep 0.1
+fi
+
+echo "Sending commands to scratchpad nvim"
+# Send commands to existing instance
+echo "Sending file: $file"
+nvr --servername "$SOCK" --remote-send ":e $file<CR>"  # ensure main file is open
+echo "Sending line: $line"
+nvr --servername "$SOCK" --remote-send ":silent! bdelete! $file<CR>:e! $file<CR>:${line}<CR>"
+
+# If stack exists, load into quickfix
+if [ -n "$tmp" ]; then
+    echo "Sending stack: $tmp"
+    nvr --servername "$SOCK" --remote-send ":cfile $tmp<CR>"
+    echo "Opening quickfix"
+    nvr --servername "$SOCK" --remote-send ":copen<CR>:setlocal wrap linebreak<CR>"
+fi
+
+# Focus main window
+echo "Focusing main window"
+nvr --servername "$SOCK" --remote-send ":wincmd p<CR>"
+nvr --servername "$SOCK" --remote-send ":redraw!<CR>"
+
+SCRATCH="special:scratchpad"
+
+# Get the currently active workspace
+ACTIVE=$(hyprctl activeworkspace | awk '{print $2}')
+
+# Switch to scratch if not already there
+if [ "$ACTIVE" != "$SCRATCH" ]; then
+    hyprctl dispatch workspace "$SCRATCH"
+fi
+
+# Cleanup
+rm -f "$tmp"
