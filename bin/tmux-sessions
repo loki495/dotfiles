@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Don't nest tmux
+if [ -n "${TMUX:-}" ]; then
+  exit 0
+fi
+
+# Get existing sessions
+mapfile -t sessions < <(tmux list-sessions -F '#S' 2>/dev/null || true)
+
+if [ "${#sessions[@]}" -eq 0 ]; then
+  exec tmux new -s main
+fi
+
+echo "Existing tmux sessions:"
+select choice in "${sessions[@]}" "Create new session" "Cancel"; do
+  case "$REPLY" in
+    ''|*[!0-9]*) echo "Invalid choice" ;;
+    *)
+      if [ "$REPLY" -le "${#sessions[@]}" ]; then
+        exec tmux attach -t "${sessions[$((REPLY-1))]}"
+      elif [ "$REPLY" -eq "$(( ${#sessions[@]} + 1 ))" ]; then
+        read -rp "New session name: " name
+        exec tmux new -s "${name:-main}"
+      else
+        break
+      fi
+      ;;
+  esac
+done
+
