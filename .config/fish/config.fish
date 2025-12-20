@@ -46,7 +46,9 @@ if status --is-interactive
 end
 
 ## Advanced command-not-found hook
-source /usr/share/doc/find-the-command/ftc.fish
+if test -f /usr/share/doc/find-the-command/ftc.fish
+    source /usr/share/doc/find-the-command/ftc.fish
+end
 
 ## Functions
 # Functions needed for !! and !$ https://github.com/oh-my-fish/plugin-bang-bang
@@ -273,7 +275,9 @@ bind shift-tab shift_tab_handler
 
 bind escape fish_vi_key_bindings
 
-source ~/.phpbrew/phpbrew.fish
+if test -f ~/.phpbrew/bashrc
+    source ~/.phpbrew/phpbrew.fish
+end
 
 # Default title: includes last command if set
 function fish_title
