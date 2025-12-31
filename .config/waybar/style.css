@@ -218,3 +218,7 @@ window#waybar {
 #custom-free_hd.critical {
     background-color: rgba(255, 0, 0, 0.7);
 }
+#custom-todo {
+    background-color: rgba(55, 118, 180, 0.7);
+    padding: 10px
+}

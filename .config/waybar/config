@@ -8,7 +8,7 @@
 
     "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "custom/weather", "custom/optimus"],
-    "modules-right": ["custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
@@ -209,5 +209,13 @@
         "on-scroll-up": "brightnessctl set +5%",
         "on-scroll-down": "brightnessctl set 5%-",
         "smooth-scrolling-threshold": 1     // optional: makes scrolling feel less 'chunky'
+    },
+    "custom/todo":
+    {
+        "exec": "~/.config/waybar/scripts/todo.sh",
+        "interval": 5,
+        "return-type": "json",
+        "on-click": "~/.config/waybar/scripts/todo.sh add",
+        "on-click-right": "~/.config/waybar/scripts/todo.sh edit"
     },
 }
