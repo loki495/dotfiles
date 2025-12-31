@@ -6,5 +6,4 @@ SETUVAR --export PYENV_ROOT:/home/andres/\x2epyenv
 SETUVAR __done_min_cmd_duration:10000
 SETUVAR __done_notification_urgency_level:low
 SETUVAR __fish_initialized:4300
-SETUVAR fish_key_bindings:fish_default_key_bindings
 SETUVAR fish_user_paths:/home/andres/\x2epyenv/bin
