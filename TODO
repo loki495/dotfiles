@@ -13,3 +13,13 @@ Backup Tools:
 
 Vim:
 - modeline not working? (trycommon-git)
+
+GEMINI SUGGESTIONS
+1.  **OS/Architecture Detection for Neovim:** The `install_neovim.sh` currently hardcodes the download for `linux-x86_64`. Consider adding logic to detect the operating system and architecture (`uname -s` and `uname -m`) to download the correct binary for wider compatibility.
+2.  **More Robust Error Handling and Logging:** While `set -e` is used, consider adding more explicit error messages or logging to a file for easier debugging, especially for long-running or complex installation steps.
+3.  **Dependency Management for Dotfiles:** For tools that are installed from external sources (like `vim-plug` or `neovim`), consider using a more centralized dependency management approach if the list grows.
+4.  **Version Control of Sensitive Information:** Although no sensitive information was explicitly found, ensure that any personal tokens, API keys, or passwords are never committed to the repository. Use environment variables or a secrets management tool for such cases.
+5.  **Documentation:** The addition of this `README.md` is a great start! Continue to add comments to individual scripts where complexity warrants explanation.
+6.  **User Confirmation for Destructive Actions:** While the scripts try to be non-destructive by moving old files, some `rm -rf` commands could benefit from a user confirmation prompt before execution, especially for global installations or removal of existing configurations.
+7.  **Consolidate Configuration for Similar Tools:** You have both `nvim/` and `vim/` directories. If possible and desired, consider consolidating configurations if there's significant overlap or if you primarily use one over the other.
+
