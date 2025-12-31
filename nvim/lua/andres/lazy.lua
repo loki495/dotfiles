@@ -157,6 +157,23 @@ require("lazy").setup({
                 }
             })
 
+            -- Rust setup (move your rust-analyzer.lua contents here for simplicity)
+            require('lspconfig').rust_analyzer.setup({
+                capabilities = capabilities,
+                settings = {
+                    ["rust-analyzer"] = {
+                        cargo = { allFeatures = true },
+                        procMacro = { enable = true },
+                        inlayHints = {
+                            bindingModeHints = { enable = true },
+                            chainingHints = { enable = true },
+                            parameterHints = { enable = true },
+                            typeHints = { enable = true },
+                        },
+                    },
+                },
+            })
+
 
             -- Configure keymaps
             vim.api.nvim_create_autocmd('LspAttach', {
