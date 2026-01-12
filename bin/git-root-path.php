@@ -4,7 +4,7 @@
 $type = preg_replace('/^--/','',$argv[1]);
 if (!$type) exit;
 
-$pwd = trim(`pwd`, "\n \t\r");
+$pwd = trim(shell_exec("pwd"), "\n \t\r");
 $root_path = trim(shell_exec("git rev-parse --show-toplevel 2>/dev/null") ?? '', "\n \t\r");
 
 if (!$root_path) {
