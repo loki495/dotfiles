@@ -6,6 +6,14 @@ vim.keymap.set("n", "<CR>", [[{-> v:hlsearch ? ":nohl<CR>" : "<CR>"}()]], { sile
 -- Ctr-C to escape insert
 vim.keymap.set("i", "<C-c>", "<Esc>")
 
+-- comments
+vim.keymap.set({"n"}, "<leader>/", "gcc", {remap = true}) 
+vim.keymap.set({"v"}, "<leader>/", "gcc", {remap = true}) 
+
+-- GIT
+vim.keymap.set({"n"}, "<leader>gh", ":0Gclog<CR>")
+vim.keymap.set({"n"}, "<leader>ge", ":Gedit<CR>")
+
 -- Check if 4 below necessary / useful
 --       paste without overwriting register map?
 vim.keymap.set("x", "<leader>p", [["_dP]])
