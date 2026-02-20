@@ -151,6 +151,8 @@
         "format-source-muted": "",
         "format-icons": {
             "headphone": "",
+            "alsa_output.usb-TTGK_Technology_USB_Audio_330223C2241018-00.analog-stereo": "",
+            "analog-stereo": "",
             "hands-free": "",
             "headset": "",
             "phone": "",
