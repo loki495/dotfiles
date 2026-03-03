@@ -23,10 +23,10 @@ LATEST_URL=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/neovim
 LATEST_TAG=$(basename "$LATEST_URL")
 
 echo "Downloading Neovim ($LATEST_TAG)..."
-wget --quiet "https://github.com/neovim/neovim/releases/download/$LATEST_TAG/nvim-linux64.tar.gz"
+wget --quiet "https://github.com/neovim/neovim/releases/download/$LATEST_TAG/nvim-linux-x86_64.tar.gz"
 
 echo "Extracting archive..."
-tar xzf nvim-linux64.tar.gz
+tar xzf nvim-linux-x86_64.tar.gz
 
 if [ "$INSTALL_TYPE" == "global" ]; then
     echo "Installing Neovim globally..."
@@ -39,7 +39,7 @@ if [ "$INSTALL_TYPE" == "global" ]; then
     # Remove existing installation
     rm -rf /opt/nvim/*
     # Move files
-    mv nvim-linux64/* /opt/nvim/
+    mv nvim-linux-x86_64/* /opt/nvim/
     # Create symlink
     ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim
     echo "Neovim installed globally."
@@ -52,7 +52,7 @@ else # INSTALL_TYPE is "user"
     # Remove existing installation
     rm -rf "$HOME/.local/share/nvim/*"
     # Move files
-    mv nvim-linux64/* "$HOME/.local/share/nvim/"
+    mv nvim-linux-x86_64/* "$HOME/.local/share/nvim/"
     # Create symlink
     ln -sf "$HOME/.local/share/nvim/bin/nvim" "$HOME/.local/bin/nvim"
     echo "Neovim installed for the current user."
