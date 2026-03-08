@@ -68,8 +68,9 @@ alias crontab="crontab -i"
 
 alias bytes2kb='numfmt --to iec --format "%8.2f"'
 
-alias nvim='~/nvim/bin/nvim'
-alias vim='nvim'
+if command -v nvim > /dev/null 2>&1; then
+    alias vim='nvim'
+fi
 
 alias a='php artisan'
 alias at='php artisan test'

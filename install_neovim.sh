@@ -60,6 +60,36 @@ else # INSTALL_TYPE is "user"
     echo "Please ensure '$HOME/.local/bin' is in your PATH."
 fi
 
+# Set up alias in .bashrc.local
+# If running with sudo, we want the non-root user's HOME
+ACTUAL_HOME=$HOME
+if [ -n "$SUDO_USER" ]; then
+    ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+fi
+
+BASHRC_LOCAL="$ACTUAL_HOME/.bashrc.local"
+NVIM_EXE=""
+if [ "$INSTALL_TYPE" == "global" ]; then
+    NVIM_EXE="/usr/local/bin/nvim"
+else
+    NVIM_EXE="$ACTUAL_HOME/.local/bin/nvim"
+fi
+
+echo "Setting up Neovim alias in $BASHRC_LOCAL..."
+touch "$BASHRC_LOCAL"
+# Remove existing nvim aliases to avoid duplicates
+if [ -f "$BASHRC_LOCAL" ]; then
+    # We use a temporary file to avoid issues with redirecting to the same file
+    sed "/alias nvim=/d" "$BASHRC_LOCAL" | sed "/alias vim='nvim'/d" > "$BASHRC_LOCAL.tmp"
+    mv "$BASHRC_LOCAL.tmp" "$BASHRC_LOCAL"
+fi
+echo "alias nvim='$NVIM_EXE'" >> "$BASHRC_LOCAL"
+echo "alias vim='nvim'" >> "$BASHRC_LOCAL"
+# Ensure the user owns their .bashrc.local if we created/modified it as root
+if [ -n "$SUDO_USER" ]; then
+    chown "$SUDO_USER":"$(id -gn "$SUDO_USER")" "$BASHRC_LOCAL"
+fi
+
 echo "Cleaning up..."
 rm -rf "$TMP_DIR"
 

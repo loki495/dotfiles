@@ -23,7 +23,7 @@ try_default_config() {
     fi
 }
 
-if [ -z "${NEEDS_CONF// }" ]
+if [ -z "$(echo "${NEEDS_CONF:-}" | tr -d ' ')" ]
 then
     if [ $# -eq 0 ]
     then
@@ -40,14 +40,14 @@ then
     source $CONF_FILE
 fi
 
-if [ -z "${NO_SSH// }" ]
+if [ -z "$(echo "${NO_SSH:-}" | tr -d ' ')" ]
 then
     echo_info "Checking basic SSH connectivity"
 else
     return
 fi
 
-if [ -z "${SSH_HOST// }" ]
+if [ -z "$(echo "${SSH_HOST:-}" | tr -d ' ')" ]
 then
     echo_error "Error: No SSH_HOST value set"
     exit
@@ -68,7 +68,7 @@ else
 fi
 
 SSH_KEY_OVERRIDE=
-if [ -z "${SSH_KEY// }" ]
+if [ -z "$(echo "${SSH_KEY:-}" | tr -d ' ')" ]
 then
     echo_error "SSH No key found... continuing..."
 else
@@ -76,27 +76,27 @@ else
     SSH_KEY_OVERRIDE=" -i $SSH_KEY"
 fi
 
-if [ -z "${SSH_USER// }" ]
+if [ -z "$(echo "${SSH_USER:-}" | tr -d ' ')" ]
 then
     SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE "
 else
     SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE"
 fi
 
-if [ -z "${NO_MYSQL// }" ]
+if [ -z "$(echo "${NO_MYSQL:-}" | tr -d ' ')" ]
 then
     echo_info "Checking MySQL variables set"
 else
     return
 fi
 
-if [ -z "${MYSQL_USER// }" ]
+if [ -z "$(echo "${MYSQL_USER:-}" | tr -d ' ')" ]
 then
     echo_error "Error: No MYSQL_USER value set"
     exit
 fi
 
-if [ -z "${MYSQL_DATABASE// }" ]
+if [ -z "$(echo "${MYSQL_DATABASE:-}" | tr -d ' ')" ]
 then
     echo_error "Error: No MYSQL_DATABASE value set"
     exit
@@ -119,7 +119,7 @@ check_mycnf() {
 
     MYCNF_FILENAME=".my.cnf.$MYSQL_DATABASE"
 
-    if [ ! -z "${DELETE_MYCNF// }" ]
+    if [ ! -z "$(echo "${DELETE_MYCNF:-}" | tr -d ' ')" ]
     then
         echo_info "Deleting ${MYCNF_PATH}/${MYCNF_FILENAME}"
         run_ssh "rm -f \"${MYCNF_PATH}/${MYCNF_FILENAME}\""

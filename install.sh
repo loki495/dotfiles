@@ -124,6 +124,6 @@ echo
 echo "===================================="
 echo "All dotfiles setup complete!"
 echo "Remember to:"
-echo "  - I you want to use Vim and its plugins, open Vim and run :PlugInstall."
+echo "  - If you want to use Vim and its plugins, open Vim and run :PlugInstall."
 echo "  - Ensure '$HOME/.local/bin' is in your PATH if you chose user-local Neovim installation."
 echo "===================================="
