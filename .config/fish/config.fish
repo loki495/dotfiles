@@ -309,3 +309,7 @@ function fish_postexec --on-event fish_postexec
     set -e __last_cmd
 end
 
+
+
+# Added by Antigravity CLI installer
+set -gx PATH "/home/andres/.local/bin" $PATH
