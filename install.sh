@@ -91,6 +91,21 @@ echo ".config symlinks done."
 
 
 echo "------------------------------------"
+echo "Setting up Claude Code config..."
+mkdir -p ~/.claude
+for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
+  rm -f ~/.claude/"$f"
+  ln -s "$SCRIPTPATH/claude/$f" ~/.claude/"$f"
+done
+for d in skills commands agents hooks; do
+  rm -rf ~/.claude/"$d"
+  ln -s "$SCRIPTPATH/claude/$d" ~/.claude/"$d"
+done
+echo "Claude Code config linked to ~/.claude."
+echo "  - Uses this machine's username in ~/.claude/settings.json's hook paths (/home/andres/...) —"
+echo "    if provisioning under a different username, update those paths after linking."
+
+echo "------------------------------------"
 echo "Neovim Application Installation"
 echo "Do you want to install Neovim for the current user or globally?"
 echo "  1) User-local installation (\$HOME/.local/bin/nvim)"
