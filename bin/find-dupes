@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# Usage Check
+if [ -z "$1" ]; then
+    echo "Usage: $0 /path/to/search"
+    exit 1
+fi
+
+# Path Handling
+TARGET_DIR=$(realpath "$1")
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "Error: Directory $TARGET_DIR does not exist."
+    exit 1
+fi
+
+CANDIDATES="candidates.tmp"
+REPORT="duplicate_report.txt"
+
+echo "--- Starting Scan ---"
+echo "Target: $TARGET_DIR"
+
+# Phase 1: Metadata Filter (Null-Delimited)
+# -printf "%s %p\0" ensures spaces in names don't break the list.
+echo "Phase 1: Finding size collisions..."
+find "$TARGET_DIR" -type f -printf "%s %p\0" | \
+sort -z -n -k1,1 | \
+awk '
+    BEGIN { RS="\0"; ORS="\0" }
+    {
+        # Split line into size (first field) and path (rest of line)
+        match($0, /^[0-9]+ /)
+        size[NR] = substr($0, RSTART, RLENGTH - 1)
+        path[NR] = substr($0, RSTART + RLENGTH)
+    }
+    END {
+        for (i = 1; i <= NR; i++) {
+            if (size[i] == size[i-1] || size[i] == size[i+1]) {
+                print path[i]
+            }
+        }
+    }' > "$CANDIDATES"
+
+# Phase 2: Hash Verification
+COUNT=$(grep -cz '^' "$CANDIDATES")
+
+if [ "$COUNT" -gt 0 ]; then
+    echo "Phase 2: Hashing $COUNT potential duplicates..."
+
+    # -0 tells xargs to expect null-terminated input
+    # md5sum prints "hash  path"
+    xargs -0 md5sum < "$CANDIDATES" | sort | awk '
+        {
+            hash = $1
+            # Reconstruct path from everything after the hash + 2 spaces
+            match($0, /^[a-f0-9]+  /)
+            current_path = substr($0, RSTART + RLENGTH)
+
+            if (hash == last_hash) {
+                if (!printed_header) {
+                    print "\n[HASH: " hash "]"
+                    print "  ORIGINAL: " last_path
+                    printed_header = 1
+                }
+                print "  DUPLICATE: " current_path
+            } else {
+                printed_header = 0
+            }
+            last_hash = hash
+            last_path = current_path
+        }' > "$REPORT"
+
+    echo "--- Scan Complete ---"
+    echo "Results saved to: $REPORT"
+else
+    echo "No size collisions found."
+fi
+
+[ -f "$CANDIDATES" ] && rm "$CANDIDATES"
+
