@@ -1,0 +1,13 @@
+[Unit]
+Description=Claude Code UI (cloudcli)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /home/andres/.npm-global/lib/node_modules/@siteboon/claude-code-ui/server/cli.js start
+Restart=on-failure
+RestartSec=3
+Environment=PATH=/home/andres/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/bin
+
+[Install]
+WantedBy=default.target
