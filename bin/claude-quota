@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# claude-quota — headless scrape of Claude Code's /usage panel; emits JSON.
+#
+# Mechanism: detached GNU screen running `claude` in a fixed cache dir (trusted
+# on first run), stuff "/usage" + arrow-downs, hardcopy the pane, parse the bars.
+# Costs no tokens: the /usage panel populates without any API message.
+# Output keys: session, week_all, plus one per model-specific bar (e.g.
+# week_fable) — each {pct, resets}. Parse failures dump the raw capture to
+# stderr and exit 1 (loud, so format drift in `claude` gets noticed).
+set -euo pipefail
+
+command -v screen >/dev/null || { echo "claude-quota: needs GNU screen" >&2; exit 1; }
+
+DIR="${CLAUDE_QUOTA_DIR:-$HOME/.cache/claude-quota}"
+mkdir -p "$DIR"
+CAP="$DIR/capture-$$.txt"
+NAME="claude-quota-$$"
+
+cleanup() {
+  screen -S "$NAME" -X quit >/dev/null 2>&1 || true
+  [ "${KEEP_CAPTURE:-0}" = 1 ] || rm -f "$CAP"
+}
+trap cleanup EXIT
+
+cd "$DIR"
+screen -dmS "$NAME" claude
+
+snap() {
+  screen -S "$NAME" -X hardcopy "$CAP" 2>/dev/null && sleep 0.2 && tr -d '\0' <"$CAP" 2>/dev/null || true
+}
+
+# Wait for startup; accept the one-time trust prompt for the cache dir.
+ready=0
+for _ in $(seq 1 30); do
+  sleep 1
+  out=$(snap)
+  if grep -q "trust this folder" <<<"$out"; then
+    screen -S "$NAME" -X stuff $'\r'
+    continue
+  fi
+  if grep -qE "for shortcuts|shift\+tab|for agents" <<<"$out"; then ready=1; break; fi
+done
+[ "$ready" = 1 ] || { echo "claude-quota: claude did not reach prompt; last capture:" >&2; snap >&2; exit 1; }
+
+screen -S "$NAME" -X stuff '/usage'
+sleep 1.5
+screen -S "$NAME" -X stuff $'\r'
+
+for _ in $(seq 1 15); do
+  sleep 1
+  out=$(snap)
+  grep -q "Current session" <<<"$out" && break
+done
+# Scroll to bring the per-model weekly bars into the 80x24 pane.
+for _ in $(seq 1 8); do screen -S "$NAME" -X stuff $'\033[B'; sleep 0.15; done
+sleep 1
+snap >/dev/null
+
+python3 - "$CAP" <<'EOF'
+import json, re, sys, time
+
+text = open(sys.argv[1], errors="replace").read()
+result = {}
+pat = re.compile(
+    r"Current (session|week \(([^)]+)\))[^\n]*\n[^\n]*?(\d+)% used[^\n]*\n\s*Resets ([^\n]+)")
+for m in pat.finditer(text):
+    if m.group(1) == "session":
+        key = "session"
+    elif m.group(2).strip().lower() == "all models":
+        key = "week_all"
+    else:
+        key = "week_" + re.sub(r"[^a-z0-9]+", "_", m.group(2).strip().lower()).strip("_")
+    result[key] = {"pct": int(m.group(3)), "resets": m.group(4).strip()}
+
+if "session" not in result or "week_all" not in result:
+    sys.stderr.write("claude-quota: parse failed; raw capture follows:\n" + text + "\n")
+    sys.exit(1)
+
+result["captured_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+print(json.dumps(result, indent=2))
+EOF
