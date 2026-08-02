@@ -43,6 +43,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/claude-session-manager/host-agent/hooks/session_start.php"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
