@@ -176,6 +176,13 @@ the underlying code or flag the conflict, not to alter the test.
   full, or a fresh session is genuinely needed to avoid missing info/hallucination
   from an overloaded context. Don't offer this reflexively after every small chunk
   of finished work.
+- When a message is phrased as "Todo: ...", "next: ...", or "after [current thing],
+  do ...", treat it as a backlog note, not a request to context-switch immediately —
+  add it to the project's `todo` file and keep working the current item(s). Only
+  implement it right away if explicitly told to do so now ("do this now", "right
+  now", "go ahead and do it", etc.). Plain direct statements without that deferral
+  framing ("X should show Y", "the page doesn't have Z") are normal requests, not
+  backlog notes — implement those as usual.
 
 ## Memory scope discipline
 
@@ -211,6 +218,36 @@ leaving it as an inline literal — cheap now, and marks it for a future proper 
 - **Laravel projects:** `.env`/config files for environment-specific values,
   language files for user-facing text, DB-backed settings for anything
   admin-editable.
+
+## Per-project CLAUDE.md maintenance
+
+- Every project must have its own `CLAUDE.md` at the repo root documenting that
+  project's rules, requirements, and architecture. If one is noticed missing while
+  working in a project, proactively offer to create it (use the `init` skill).
+- When creating one, don't rely on codebase analysis alone — ask the user directly
+  about anything not confidently inferable from the code, to minimize assumptions
+  and repeated questions in later sessions. At minimum cover:
+  - Git workflow: branch model, remotes, whether it follows the standard
+    master/local/feature pattern from this file or something project-specific.
+  - Testing and linting: which tools (Pest, PHPUnit, Pint, PHPStan, Rector,
+    ESLint, etc.), how they're actually run (host vs. container, exact commands),
+    and which must pass before a commit is allowed.
+  - How the project is served/run locally: Docker vs. host, container names,
+    ports, `setup.sh`/`docker-compose.yml` presence, Traefik routing if used.
+  - Anything else project-specific worth capturing to make future sessions
+    smoother and more correct: production target (yes/no, for staleness rules),
+    deploy process, any non-standard conventions.
+- Keep it up to date at commit time: once Andres has confirmed he wants a commit
+  made, and before creating that commit, check whether the change is worth
+  documenting there and update it if so.
+- Minor/trivial changes don't need an entry. Things that do: refactors, new
+  routes/endpoints, architecture changes, new requirements or conventions.
+
+## Context window management
+
+When context is getting close to full, warn Andres proactively rather than letting
+it auto-compress silently. Offer to write a hand-off prompt file capturing the
+info/decisions agreed on so far in the session, ready to paste into a fresh session.
 
 ## Backlog files (todo / bugs.md)
 
