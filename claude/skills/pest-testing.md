@@ -21,6 +21,27 @@ own `.claude/project.md`).
 - Mock third-party/network calls with `Http::fake()` (or the relevant fake) rather than
   hitting real external services in tests.
 
+## Happy paths and sad paths
+
+This is the Pest-specific application of the general rule in the top-level
+`CLAUDE.md` ("Test coverage — happy paths and sad paths"), which applies to every
+test framework and project type, not just Pest/Laravel.
+
+- Every action/feature under test needs both: the happy path (valid input, expected
+  success) **and** sad paths (invalid input, failed validation, unauthorized access,
+  missing/failed dependencies, third-party failures) — not happy-path-only coverage.
+- A sad-path test must assert the *correct handled outcome* — a 422 with validation
+  errors, the specific exception type, a redirect with a flash error — not just "the
+  response came back" or "it didn't throw." A test that only checks
+  `assertStatus(302)` can still pass even if the underlying cause was an unrelated
+  500 that got masked upstream.
+- For HTTP/feature tests, explicitly rule out crashes on invalid input: assert the
+  response is not a server error (`assertOk()`/`assertStatus()`/absence of 500),
+  so an unhandled exception where validation should have caught the input gracefully
+  doesn't slip through as "didn't throw."
+- When auditing an existing suite, a file that only covers the happy path is
+  incomplete coverage — flag it, don't treat it as acceptable as-is.
+
 ## Database
 
 - Use `RefreshDatabase` trait on feature tests that touch the database.

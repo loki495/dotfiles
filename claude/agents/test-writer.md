@@ -53,12 +53,21 @@ describe('SomeAction', function () {
 ### Action tests (primary coverage target)
 - Instantiate the action and call `handle()` directly — don't go through HTTP
 - Assert on the return value (model, bool, DTO, etc.)
-- Cover the happy path and the main failure/edge cases
+- Cover the happy path **and** sad paths: invalid input, failed validation,
+  unauthorized access, missing/failed dependencies, third-party failures. Assert the
+  specific exception type or error result each sad path produces — not just that
+  `handle()` didn't return the happy-path value.
 - Place in `tests/Unit/Actions/SomeActionTest.php`
 
 ### Feature/HTTP tests (for route + request contract)
 - Use `RefreshDatabase` for any test that touches the database
 - Verify that the correct response is returned and that the action is called
+- Cover sad paths too: bad/missing request data should assert a 422 with the
+  expected validation errors (`assertInvalid()`), unauthorized access should assert
+  403/401, etc. — never just check the response "isn't the happy path," check it's
+  the *specific* handled error. Also assert it's not a 500 (`assertOk()`/explicit
+  status, not a bare "didn't throw") so an unhandled exception where validation
+  should have caught the input doesn't slip through unnoticed.
 - Don't duplicate business logic assertions — those belong in the action test
 - Place in `tests/Feature/SomeControllerTest.php`
 

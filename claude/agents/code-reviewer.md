@@ -37,6 +37,11 @@ Before reviewing anything:
 ### Tests
 - Pest syntax only: `it()`, `test()`, `describe()`, `expect()`
 - Business logic tested at the action level, not just through HTTP
+- Sad paths, not just happy paths: validation failures, unauthorized access, failed
+  dependencies/third-party calls must be covered, and must assert the specific
+  handled error (422 + errors, exception type, error redirect) — not just "isn't
+  the happy-path result." Flag tests that would still pass if the code 500'd
+  instead of handling the failure gracefully.
 - **Hard rule:** never suggest deleting, weakening, or skipping a test to make it pass
   — if a test is failing, the code needs fixing, not the test
 
@@ -75,6 +80,12 @@ don't break the registry-based architecture. Do not impose Laravel patterns.
 - Direct `$_GET`/`$_POST`/`$_REQUEST` access without sanitization
 - PHP syntax that won't run on the project's actual PHP version
 - vQmod mods that reference file paths no longer matching the source (stale mods)
+
+### Tests (only if the project has opted in to a bespoke/standalone harness)
+- Same rigor as the Laravel Tests checks above: happy path plus sad paths (bad
+  input, failed validation, unauthorized access), asserting the specific handled
+  error rather than just "not the happy path" — and flag anything that would still
+  pass if the underlying code produced a raw error/500 instead of a handled one.
 
 ---
 

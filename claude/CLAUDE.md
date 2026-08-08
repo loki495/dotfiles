@@ -160,6 +160,30 @@ to force a passing state — in hooks, in agents, or in normal conversation — 
 explicit confirmation from Andres first. If a test fails, the default action is to fix
 the underlying code or flag the conflict, not to alter the test.
 
+## Test coverage — happy paths and sad paths
+
+This is a general rule, not scoped to Laravel or OpenCart. It applies to any kind of
+test in any project on this machine, including stacks with no dedicated skill file
+here (Python, Node, Go, Rust, whatever comes up) and bespoke/ad-hoc suites with no
+formal framework at all — Pest, PHPUnit, Playwright, Vitest/Jest, pytest, a bespoke
+OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
+
+- Never stop at the happy path. Every test target also needs sad-path coverage:
+  invalid/malformed input, failed validation, unauthorized access, missing or
+  failing dependencies (DB down, third-party call fails), and any other side effect
+  in the code under test that can go wrong.
+- A sad-path test must assert the *specific expected handled outcome* — a
+  validation error with the right shape/status (e.g. 422 + field errors), the
+  correct exception type, an error flash/redirect, a graceful fallback — not just
+  "it didn't return the happy-path value" or "it didn't throw."
+- Explicitly rule out crashes: confirm the failure surfaces as a proper handled
+  error, not a 500 / uncaught exception / raw stack trace or error string leaking
+  onto the page. A test that only checks for *some* non-success response can still
+  pass while masking an unhandled crash underneath.
+- When writing new tests, include sad paths as standard practice, not an add-on.
+  When auditing/reviewing existing tests, treat happy-path-only coverage as
+  incomplete and flag it.
+
 ## Working style
 
 - For multi-step or multi-issue work (todo lists, audit findings, phased plans),
