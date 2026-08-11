@@ -222,3 +222,18 @@ window#waybar {
     background-color: rgba(55, 118, 180, 0.7);
     padding: 10px
 }
+
+/* TV bar (bar "tv" in config, output HDMI-A-1): bigger text for couch viewing distance */
+window#waybar.tv * {
+    font-size: 22px;
+}
+
+/* Focused-monitor indicator: flags the TV-focused mode where workspace
+   switching (focusworkspaceoncurrentmonitor) is known to be unreliable. */
+#custom-focused_monitor.laptop {
+    color: #a3be8c;
+}
+#custom-focused_monitor.tv {
+    color: #ebcb8b;
+    font-weight: bold;
+}

@@ -1,4 +1,7 @@
+[
 {
+    "output": "eDP-1",
+    "name": "laptop",
     "layer": "top", // Waybar at top layer
     "position": "top", // Waybar position (top|bottom|left|right)
     "height": 40,
@@ -8,10 +11,15 @@
 
     "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "custom/weather"],
-    "modules-right": ["custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["custom/focused_monitor", "custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
 
+    "custom/focused_monitor": {
+        "exec": "~/.config/waybar/scripts/focused_monitor.sh",
+        "interval": 1,
+        "return-type": "json"
+    },
     "hyprland/workspaces": {
         "format": "{icon}",
         "on-click": "activate",
@@ -28,8 +36,8 @@
             "8": "8",
             "9": "9",
             "10": "10",
-            "focused": "",
-            "default": ""
+            "focused": "",
+            "default": ""
         },
         "on-scroll-up": "hyprctl dispatch workspace e+1",
         "on-scroll-down": "hyprctl dispatch workspace e-1",
@@ -42,8 +50,8 @@
     "idle_inhibitor": {
         "format": "{icon}",
         "format-icons": {
-            "activated": "",
-            "deactivated": "",
+            "activated": "",
+            "deactivated": "",
         },
         "on-click":"exec ~/.config/hypr/scripts/idle_inhibitor.sh",
 
@@ -54,9 +62,9 @@
     },
     "clock": {
         "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
-        "format": " {:%a %d %b  %I:%M:%S %p}",	//12 hour format
-                                                //"format": " {:%a %d %b  %H:%M}",	//24 hour format
-        "format-alt": " {:%d/%m/%Y  %H:%M:%S}",
+        "format": " {:%a %d %b  %I:%M:%S %p}",	//12 hour format
+                                                //"format": " {:%a %d %b  %H:%M}",	//24 hour format
+        "format-alt": " {:%d/%m/%Y  %H:%M:%S}",
         //"max-length": 200
         "interval": 1,
         "on-click": "~/.config/waybar/scripts/OCV",
@@ -73,13 +81,13 @@
         "thermal-zone": 7,  // Check with: # cat /sys/class/hwmon/hwmon*/temp1_input
         "hwmon-path": "/sys/class/hwmon/hwmon7/temp1_input",
         "critical-threshold": 80,
-        "format-critical": "{temperatureC}°C ",
-        "format": "{temperatureC}°C "
+        "format-critical": "{temperatureC}°C ",
+        "format": "{temperatureC}°C "
     },
     "backlight": {
         // "device": "acpi_video1",
         "format": "{icon} {percent: >3}%",
-        "format-icons": ["", ""],
+        "format-icons": ["", ""],
         "on-scroll-down": "brightnessctl -c backlight set 1%-",
         "on-scroll-up": "brightnessctl -c backlight set +1%",
         "on-click": "~/.config/waybar/scripts/backlight-hint.sh"
@@ -91,24 +99,24 @@
             "critical": 15
         },
         "format": "{icon} {capacity: >3}%",
-        "format-icons": ["", "", "", "", ""]
+        "format-icons": ["", "", "", "", ""]
             // "format-good": "", // An empty format will hide the module
             // "format-full": "",
-            //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
+            //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
             //"format": "&#x202b;{icon}&#x202c; {capacity}%",
             //"format-icons": ["ﱉ","ﱊ","ﱌ","ﱍ","ﱋ"]
     },
     "network": {
-        //"interface": "wlp0s20f3", // (Optional) To force the use of this interface  "format-wifi": "  {essid}",
+        //"interface": "wlp0s20f3", // (Optional) To force the use of this interface  "format-wifi": "  {essid}",
         "format": "⚠Disabled",
-        "format-wifi": "",
-        "format-ethernet": "",
+        "format-wifi": "",
+        "format-ethernet": "",
         "format-linked": "{ifname} (No IP)",
         "format-disconnected": "⚠Disabled",
         "format-alt": "{ifname}: {ipaddr}/{cidr}",
         "family": "ipv4",
-        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%\nFreq: {frequency}MHz\nUp: {bandwidthUpBits} Down: {bandwidthDownBits}",
-        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}\n up: {bandwidthUpBits} down: {bandwidthDownBits}",
+        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%\nFreq: {frequency}MHz\nUp: {bandwidthUpBits} Down: {bandwidthDownBits}",
+        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}\n up: {bandwidthUpBits} down: {bandwidthDownBits}",
         //"min-length": 2,
         //"max-length": 2,
         "on-click": "nm-connection-editor"
@@ -142,23 +150,23 @@
     "pulseaudio": {
         "scroll-step": 3, // %, can be a float
         "format": "{icon} {volume}% {format_source}",
-        "format-bluetooth": "{volume}% {icon} {format_source}",
-        "format-bluetooth-muted": " {icon} {format_source}",
-        "format-muted": " {format_source}",
-        //"format-source": "{volume}% ",
-        //"format-source-muted": "",
-        "format-source": "",
-        "format-source-muted": "",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        //"format-source": "{volume}% ",
+        //"format-source-muted": "",
+        "format-source": "",
+        "format-source-muted": "",
         "format-icons": {
-            "headphone": "",
-            "alsa_output.usb-TTGK_Technology_USB_Audio_330223C2241018-00.analog-stereo": "",
-            "analog-stereo": "",
-            "hands-free": "",
-            "headset": "",
-            "phone": "",
-            "portable": "",
-            "car": "",
-            "default": ["", "", ""]
+            "headphone": "",
+            "alsa_output.usb-TTGK_Technology_USB_Audio_330223C2241018-00.analog-stereo": "",
+            "analog-stereo": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
         },
         "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
         "on-click-right": "pavucontrol"
@@ -189,7 +197,7 @@
         "return-type": "json"
     },
     "custom/sysinfo": {
-        "exec": "echo '{\"text\":\"\"}'",
+        "exec": "echo '{\"text\":\"\"}'",
         "return-type": "json",
         "on-click": "~/.config/waybar/scripts/toggle-sysinfo.sh"
     },
@@ -219,4 +227,94 @@
         "on-click": "~/.config/waybar/scripts/todo.sh add",
         "on-click-right": "~/.config/waybar/scripts/todo.sh edit"
     },
+},
+{
+    // Trimmed-down bar for the TV: no fixed width (auto-fills the output),
+    // fewer modules so it doesn't crowd at the TV's narrower logical resolution.
+    "output": "HDMI-A-1",
+    "name": "tv",
+    "layer": "top",
+    "position": "top",
+    "height": 40,
+    "spacing": 0,
+
+    "modules-left": ["hyprland/workspaces", "custom/focused_monitor"],
+    "modules-center": ["clock"],
+    "modules-right": ["pulseaudio", "network", "battery", "tray", "custom/power"],
+
+    "custom/focused_monitor": {
+        "exec": "~/.config/waybar/scripts/focused_monitor.sh",
+        "interval": 1,
+        "return-type": "json"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+            "1": "1", "2": "2", "3": "3", "4": "4", "5": "5",
+            "6": "6", "7": "7", "8": "8", "9": "9", "10": "10",
+            "focused": "",
+            "default": ""
+        },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+    },
+    "tray": {
+        "icon-size": 20,
+        "spacing": 5
+    },
+    "clock": {
+        "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
+        "format": " {:%a %d %b  %I:%M:%S %p}",
+        "interval": 1,
+        "on-click": "~/.config/waybar/scripts/OCV",
+    },
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity: >3}%",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "network": {
+        "format": "⚠Disabled",
+        "format-wifi": "",
+        "format-ethernet": "",
+        "format-linked": "{ifname} (No IP)",
+        "format-disconnected": "⚠Disabled",
+        "family": "ipv4",
+        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%",
+        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}",
+        "on-click": "nm-connection-editor"
+    },
+    "pulseaudio": {
+        "scroll-step": 3,
+        "format": "{icon} {volume}% {format_source}",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        "format-source": "",
+        "format-source-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "analog-stereo": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
+        "on-click-right": "pavucontrol"
+    },
+    "custom/power": {
+        "format":"⏻",
+        "on-click": "nwgbar",
+        "tooltip": false,
+    },
 }
+]
