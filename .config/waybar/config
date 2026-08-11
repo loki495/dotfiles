@@ -7,7 +7,7 @@
     "spacing":0,
 
     "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
-    "modules-center": ["clock", "custom/weather", "custom/optimus"],
+    "modules-center": ["clock", "custom/weather"],
     "modules-right": ["custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     // Modules configuration
@@ -121,7 +121,7 @@
             "updated": "󰂪",
         },
         "exec-if": "which waybar-module-pacman-updates",
-        "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200 --network-interval-seconds",
+        "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200",
         "on-click": "foot -e update"
     },
     "custom/power": {
@@ -191,7 +191,6 @@
     "custom/sysinfo": {
         "exec": "echo '{\"text\":\"\"}'",
         "return-type": "json",
-        "interval": 0,
         "on-click": "~/.config/waybar/scripts/toggle-sysinfo.sh"
     },
     "custom/keyboard_state": {
