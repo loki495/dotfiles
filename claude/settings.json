@@ -29,6 +29,40 @@
           {
             "type": "command",
             "command": "notify-send \"Claude Code\" \"$(cat | jq -r '.message // .last_assistant_message // \": Task done\"')\""
+          },
+          {
+            "type": "command",
+            "command": "/home/andres/.claude/scripts/track-activity.sh release"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/andres/.claude/scripts/track-activity.sh release"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
           }
         ]
       }
