@@ -240,7 +240,7 @@
 
     "modules-left": ["hyprland/workspaces", "custom/focused_monitor"],
     "modules-center": ["clock"],
-    "modules-right": ["pulseaudio", "network", "battery", "tray", "custom/power"],
+    "modules-right": ["pulseaudio", "network", "battery", "custom/laptop_screen", "tray", "custom/power"],
 
     "custom/focused_monitor": {
         "exec": "~/.config/waybar/scripts/focused_monitor.sh",
@@ -315,6 +315,11 @@
         "format":"⏻",
         "on-click": "nwgbar",
         "tooltip": false,
+    },
+    "custom/laptop_screen": {
+        "format": "󰌢",
+        "on-click": "~/.config/waybar/scripts/laptop_screen_toggle.sh",
+        "tooltip": "Toggle laptop screen on/off",
     },
 }
 ]
