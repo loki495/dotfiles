@@ -1,1 +1,4 @@
 - Add a brightness waybar module to the TV bar (output HDMI-A-1) in .config/waybar/config
+- Test whether the pre-Hyprland text VT console (Ctrl+Alt+F2) mirrors to the TV over HDMI; check font legibility if so
+- media: move pre-existing local-only dotfiles changes (bash/.bash_aliases, bashrc, install.sh, install_neovim.sh) onto a `local` branch, matching the documented branch model
+- media: symlink /srv/docker/docker-compose.yml into dotfiles (after the local-branch restructuring above) -- manual install only, not part of install.sh
