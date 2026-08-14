@@ -1,2 +1,1 @@
-- Add a brightness waybar module to the TV bar (output HDMI-A-1) in .config/waybar/config
 - Test whether the pre-Hyprland text VT console (Ctrl+Alt+F2) mirrors to the TV over HDMI; check font legibility if so
