@@ -71,5 +71,11 @@ hl.config({
     misc = {
         disable_hyprland_logo = true,
         font_family = "JetBrains Mono",
+
+        -- Backstop for the NVIDIA DPMS-off hang (see hypridle.conf): wake
+        -- monitors directly on input even if the wlopm on-resume call is
+        -- ever missed/racy. See hyprwm/Hyprland discussions #14234, #12583.
+        key_press_enables_dpms = true,
+        mouse_move_enables_dpms = true,
     },
 })
