@@ -14,16 +14,14 @@
 -- needs it available as a fallback. Trades battery life/heat for lower latency.
 hl.env("AQ_DRM_DEVICES", "/dev/dri/card1:/dev/dri/card2")
 
--- Forces linear (no-modifier) DRM buffers everywhere. Without this, eDP-1's
--- cross-GPU blit (NVIDIA-rendered frame -> Intel, since eDP-1 is wired to the
--- iGPU) intermittently fails with EGL_BAD_MATCH on eglCreateImageKHR when the
--- two GPUs negotiate incompatible tiling/compression modifiers (caught live:
--- Intel side allocated Y_TILED_CCS, import from the NVIDIA source failed) --
--- this was the confirmed cause of the panel going black-but-backlit and
--- unresponsive after DPMS/suspend/VT-switch resume. Linear buffers are a
--- format both GPUs always agree on. Costs some memory bandwidth; negligible
--- for a 2D compositor.
-hl.env("AQ_NO_MODIFIERS", "1")
+-- REVERTED 2026-08-17: caused Hyprland to crash-loop on startup (SIGABRT in
+-- Monitor::CMonitor::applyMonitorRule/onConnect, confirmed via
+-- systemd-coredump backtraces, 7 crashes in a few minutes) -- worse than the
+-- bug it was meant to fix. Do not re-enable without further investigation.
+-- Was trying to fix an intermittent EGL_BAD_MATCH on eglCreateImageKHR during
+-- eDP-1's cross-GPU blit (NVIDIA-rendered frame -> Intel, since eDP-1 is
+-- wired to the iGPU) after DPMS/suspend/VT-switch resume.
+-- hl.env("AQ_NO_MODIFIERS", "1")
 
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 
