@@ -83,6 +83,10 @@
           {
             "type": "command",
             "command": "php /home/andres/www/claude-session-manager/host-agent/hooks/pre_tool_use.php"
+          },
+          {
+            "type": "command",
+            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
           }
         ]
       }
