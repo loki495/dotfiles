@@ -325,7 +325,8 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 ## Skills available
 
 `laravel-conventions.md`, `livewire-components.md`, `pest-testing.md`,
-`opencart-legacy.md`, `frontend-stack.md`, `db-context.md`, `git-workflow.md`, `rector.md`
+`opencart-legacy.md`, `frontend-stack.md`, `db-context.md`, `git-workflow.md`, `rector.md`,
+`backup-setup.md`
 
 ## Agents available
 
