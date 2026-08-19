@@ -27,7 +27,9 @@ fi
 check_git_repo
 check_gitignore
 git_commit
+echo "about to pull"
 git_pull
+echo "done pulling"
 
 echo -e "${GREEN}Done${NC}"
 echo ""
