@@ -1,0 +1,128 @@
+#!/bin/bash
+
+SILENT_ECHOS=1
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+source $DIRNAME/../bash/lib/pushdpopd
+source $DIRNAME/common-git
+
+LOG_DIR=""
+DEFAULT_CONF="backup.conf"
+
+PROCESS_SUBFOLDERS=0
+
+BASE_FOLDER=()
+while [[ $# -gt 0 ]]
+do
+	key="$1"
+
+	case $key in
+		--process-subfolders)
+			PROCESS_SUBFOLDERS=1
+			shift # past argument
+			;;
+		--log-dir)
+			LOG_DIR=$2
+			shift
+			shift # past argument
+			;;
+		*)    # unknown option
+			BASE_FOLDER+=("$1") # save it in an array for later
+			shift # past argument
+			;;
+	esac
+done
+set -- "${BASE_FOLDER[@]}" # restore positional parameters
+
+usage () {
+	echo "Usage: check-backup <path-to-root-folder>"
+	exit
+}
+
+process_folder () {
+
+	pushd .
+
+	echo_info "Checking folder: $1"
+
+	LOG_FILE=
+	if [ ! -z "${LOG_DIR// }" ]
+	then
+		LOG_FILE="$LOG_DIR/"
+		LOG_FILE+=`basename $1`
+		LOG_FILE+=".log"
+		LOG_FILE=`realpath $LOG_FILE`
+
+		echo "" > $LOG_FILE
+		exec &>"$LOG_FILE"
+	fi
+
+	if [ -d "$1" ]
+	then
+		ROOT_PATH=`realpath $1`
+		cd $ROOT_PATH
+		echo "Processing: $ROOT_PATH"
+
+        if [ -f "$DEFAULT_CONF" ]
+        then
+            CONF_FILE="`pwd`/$DEFAULT_CONF"
+            source $CONF_FILE
+        else
+            echo_error "No default configuration file ($ROOT_PATH/backup.conf)"
+            echo "----------------------------------------------------------------"
+            popd
+            return
+        fi
+
+        cd $LOCAL_PATH
+        CONF_FILE="`pwd`/$DEFAULT_CONF"
+	else
+		echo_error "Directory \"$1\" does not exist. Aborting"
+		popd
+		return
+	fi
+
+    CHECK_BRANCH="master"
+    if [ ! -z "${UPSTREAM_GIT_BRANCH// }" ]
+    then
+        CHECK_BRANCH="$UPSTREAM_GIT_BRANCH"
+    fi
+
+    CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
+    if [ "$CURRENT_BRANCH" != $CHECK_BRANCH ]
+    then
+        git checkout $CHECK_BRANCH -q
+    fi
+
+    check_if_master_is_behind
+
+    if [ "$CURRENT_BRANCH" != $CHECK_BRANCH ]
+    then
+        git checkout "$CURRENT_BRANCH" -q
+    fi
+
+    cd ..
+    echo "Latest database: " `ls -t database/ | head -n 1`
+    echo "----------------------------------------------------------------"
+	popd
+}
+
+if [ $PROCESS_SUBFOLDERS -gt 0 ]
+then
+	echo "Processing subfolders of $BASE_FOLDER"
+	BASE_FOLDER=`find "$BASE_FOLDER" -maxdepth 1 -mindepth 1 -type d`
+else
+    if [ ${#BASE_FOLDER[@]} ]
+    then
+        BASE_FOLDER=`pwd`
+    fi
+fi
+
+for folder in $BASE_FOLDER
+do
+	process_folder $folder
+    exec &>/dev/tty
+done
+
+

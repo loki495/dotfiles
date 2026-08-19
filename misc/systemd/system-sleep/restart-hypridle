@@ -1,0 +1,22 @@
+#!/bin/sh
+# hypridle's idle timer can stop firing entirely after a real suspend/resume
+# cycle (known upstream bug: hyprwm/hypridle#73 -- the ext-idle-notifier
+# timer state doesn't reliably survive suspend). Confirmed live 2026-08-18:
+# one full dim -> suspend -> resume cycle completed fine, then hypridle
+# logged nothing at all for 10+ hours afterward despite continued physical
+# inactivity -- not even the 2.5min brightness dim fired again.
+#
+# Restarting hypridle after resume gives it a fresh idle-notifier
+# subscription. Installed as a systemd sleep hook (runs as root; re-execs as
+# the desktop user with the right Wayland env to reach the running
+# compositor). See /etc/systemd/system-sleep/ -- this file is symlinked
+# there, not copied, so edits here take effect immediately.
+case "$1" in
+    post)
+        runuser -u andres -- env \
+            XDG_RUNTIME_DIR=/run/user/1000 \
+            WAYLAND_DISPLAY=wayland-1 \
+            HYPRLAND_INSTANCE_SIGNATURE="$(ls -t /run/user/1000/hypr/ 2>/dev/null | head -1)" \
+            sh -c 'pkill hypridle; sleep 1; setsid hypridle >/tmp/hypridle-watch.log 2>&1 </dev/null &'
+        ;;
+esac

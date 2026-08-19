@@ -1,0 +1,184 @@
+services:
+
+  Bazarr:
+    container_name: "Bazarr"
+    environment:
+      - "PGID=1000"
+      - "UMASK=002"
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+    image: "ghcr.io/hotio/bazarr"
+    ports:
+      - "6767:6767/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/bazarr:/config"
+      - "/srv/media:/srv/media"
+
+  Jackett:
+    container_name: "Jackett"
+    environment:
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+      - "PGID=1000"
+      - "UMASK=002"
+    image: "ghcr.io/hotio/jackett"
+    ports:
+      - "9117:9117/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/jackett:/config"
+      - "/srv/media:/srv/media"
+
+  Nzbget:
+    container_name: "Nzbget"
+    environment:
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+      - "PGID=1000"
+      - "UMASK=002"
+    image: "ghcr.io/hotio/nzbget"
+    ports:
+      - "6789:6789/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/nzbget:/config"
+      - "/srv/media:/srv/media"
+
+  Prowlarr:
+    container_name: "Prowlarr"
+    environment:
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+      - "PGID=1000"
+      - "UMASK=002"
+    image: "ghcr.io/hotio/prowlarr"
+    ports:
+      - "9696:9696/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/prowlarr:/config"
+      - "/srv/media:/srv/media"
+
+  Radarr:
+    container_name: "Radarr"
+    environment:
+      - "UMASK=002"
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+      - "PGID=1000"
+    image: "ghcr.io/hotio/radarr"
+    ports:
+      - "7878:7878/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/radarr:/config"
+      - "/srv/media:/srv/media"
+
+  Sonarr:
+    container_name: "Sonarr"
+    environment:
+      - "PGID=1000"
+      - "UMASK=002"
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+    image: "ghcr.io/hotio/sonarr"
+    ports:
+      - "8989:8989/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/sonarr:/config"
+      - "/srv/media:/srv/media"
+
+  flaresolverr:
+    container_name: "flaresolverr"
+    environment:
+      - "LOG_LEVEL=info"
+      - "LOG_HTML=false"
+      - "CAPTCHA_SOLVER=none"
+      - "TZ=Etc/UTC"
+    image: "ghcr.io/flaresolverr/flaresolverr:latest"
+    ports:
+      - "8191:8191/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/flaresolverr:/config"
+      - "/srv/media:/srv/media"
+
+  qbittorrent:
+    container_name: "qbittorrent"
+    environment:
+      - "UMASK=002"
+      - "TZ=Etc/UTC"
+      - "PUID=1000"
+      - "PGID=1000"
+    image: "ghcr.io/hotio/qbittorrent"
+    ports:
+      - "8080:8080/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/srv/config/qbittorrent:/config"
+      - "/srv/media:/srv/media"
+
+  homeassistant:
+    container_name: "homeassistant"
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    volumes:
+      - "/srv/config/homeassistant:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/run/dbus:/run/dbus:ro"
+    restart: "unless-stopped"
+    privileged: true
+    network_mode: "host"
+
+  watchtower:
+    container_name: "watchtower"
+    ports:
+      - "8082:8080/tcp"
+    image: "containrrr/watchtower"
+    labels:
+      com.centurylinklabs.watchtower: "true"
+    command: "--include-restarting --http-api-update --http-api-periodic-polls --http-api-token \"REDACTED-ROTATE-ME\""
+    restart: "unless-stopped"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  esphome:
+    container_name: esphome
+    image: ghcr.io/esphome/esphome:stable
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - ./esphome:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  lazydocker-web:
+    image: lifailon/lazydocker-web:latest
+    platform: linux/arm64
+    container_name: lazydocker-web
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .lazydocker-web.env
+    ports:
+      - "${PORT:-3333}:${PORT:-3333}"
+
+
+  wol-wake:
+    container_name: "wol-wake"
+    image: "python:3.13-alpine"
+    command: "python3 /app/server.py"
+    environment:
+      - "TZ=Etc/UTC"
+      - "WOL_TOKEN=REDACTED-ROTATE-ME"
+      - "WOL_TARGET_MAC=00:00:00:00:00:00"
+      - "WOL_TARGET_IP=10.10.0.10"
+    ports:
+      - "8799:8799/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "./wol-wake/server.py:/app/server.py:ro"

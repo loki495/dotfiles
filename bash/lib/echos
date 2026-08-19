@@ -1,0 +1,58 @@
+# vi: ft=bash
+
+ECHOS_DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $ECHOS_DIRNAME/colors
+
+#Black        0;30     Dark Gray     1;30
+#Red          0;31     Light Red     1;31
+#Green        0;32     Light Green   1;32
+#Brown/Orange 0;33     Yellow        1;33
+#Blue         0;34     Light Blue    1;34
+#Purple       0;35     Light Purple  1;35
+#Cyan         0;36     Light Cyan    1;36
+#Light Gray   0;37     White         1;37
+
+if [ -z $SILENT_ECHOS ]
+then
+    SILENT_ECHOS=0
+fi
+
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo_info() {
+    if [ $SILENT_ECHOS -gt 0 ]
+    then
+        return
+    fi
+    >&2 echo -e "${BLUE}${@}${NC}"
+}
+echo_success() {
+    if [ $SILENT_ECHOS -gt 0 ]
+    then
+        return
+    fi
+    >&2 echo -e "${GREEN}${@}${NC}"
+}
+echo_error() {
+    >&2 echo -e "${RED}${@}${NC}"
+}
+ask() {
+    local prompt="${GREEN}$1${NC}"
+    local answer
+    read -rp "$(echo -e "$prompt") " answer
+    echo "$answer"
+}
+ask_yes_no() {
+    local prompt="${1:-Are you sure? [y/N]}"
+    local answer
+
+    answer=$(ask "$prompt")
+
+    case "$answer" in
+        [yY][eE][sS]|[yY]) return 0 ;;
+        *)                return 1 ;;
+    esac
+}

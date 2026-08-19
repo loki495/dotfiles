@@ -1,0 +1,145 @@
+# vi: ft=bash
+
+COMMON_DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $COMMON_DIRNAME/echos
+
+source $COMMON_DIRNAME/pushdpopd
+
+CONF_FILE=
+DEFAULT_CONF="backup.conf"
+SCRIPT_NAME=`basename "$0"`
+SSH_PORT=
+LAST_RESULT=
+
+try_default_config() {
+    echo_info "Trying default config path..."
+    if [ -f "$DEFAULT_CONF" ]
+    then
+        CONF_FILE="`pwd`/$DEFAULT_CONF"
+    else
+        echo_error "No default configuration file (backup.conf)"
+        usage
+        exit
+    fi
+}
+
+if [ -z "$(echo "${NEEDS_CONF:-}" | tr -d ' ')" ]
+then
+    if [ $# -eq 0 ]
+    then
+        try_default_config
+    else
+        if [[ "$1" == *.conf ]]
+        then
+            CONF_FILE="`pwd`/$DEFAULT_CONF"
+        else
+            try_default_config
+        fi
+    fi
+    echo_info "Using $CONF_FILE"
+    source $CONF_FILE
+fi
+
+if [ -z "$(echo "${NO_SSH:-}" | tr -d ' ')" ]
+then
+    echo_info "Checking basic SSH connectivity"
+else
+    return
+fi
+
+if [ -z "$(echo "${SSH_HOST:-}" | tr -d ' ')" ]
+then
+    echo_error "Error: No SSH_HOST value set"
+    exit
+fi
+
+echo_success "SSH Host found: $SSH_HOST"
+
+PORT_OVERRIDE=
+re='^[0-9]+$'
+
+if [[ $SSH_PORT =~ $re ]] ;
+then
+# SSH > 0
+    echo_success "SSH Port found: $SSH_PORT"
+    PORT_OVERRIDE=" -p $SSH_PORT"
+else
+    echo_error "SSH No port found... continuing..."
+fi
+
+SSH_KEY_OVERRIDE=
+if [ -z "$(echo "${SSH_KEY:-}" | tr -d ' ')" ]
+then
+    echo_error "SSH No key found... continuing..."
+else
+    echo_success "SSH Key found: $SSH_KEY"
+    SSH_KEY_OVERRIDE=" -i $SSH_KEY"
+fi
+
+if [ -z "$(echo "${SSH_USER:-}" | tr -d ' ')" ]
+then
+    SSH_BASE="ssh $SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE "
+else
+    SSH_BASE="ssh $SSH_USER@$SSH_HOST $PORT_OVERRIDE $SSH_KEY_OVERRIDE"
+fi
+
+if [ -z "$(echo "${NO_MYSQL:-}" | tr -d ' ')" ]
+then
+    echo_info "Checking MySQL variables set"
+else
+    return
+fi
+
+if [ -z "$(echo "${MYSQL_USER:-}" | tr -d ' ')" ]
+then
+    echo_error "Error: No MYSQL_USER value set"
+    exit
+fi
+
+if [ -z "$(echo "${MYSQL_DATABASE:-}" | tr -d ' ')" ]
+then
+    echo_error "Error: No MYSQL_DATABASE value set"
+    exit
+fi
+
+run_ssh_silent() {
+    echo_info $SSH_BASE $@
+    $SSH_BASE $@ 2>&1 > /dev/null
+    RESULT=$?
+    return $RESULT
+}
+run_ssh() {
+    echo_info $SSH_BASE $@
+    $SSH_BASE $@
+    RESULT=$?
+    return $RESULT
+}
+
+check_mycnf() {
+
+    MYCNF_FILENAME=".my.cnf.$MYSQL_DATABASE"
+
+    if [ ! -z "$(echo "${DELETE_MYCNF:-}" | tr -d ' ')" ]
+    then
+        echo_info "Deleting ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        run_ssh "rm -f \"${MYCNF_PATH}/${MYCNF_FILENAME}\""
+    fi
+
+    run_ssh_silent "ls -lha ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysqldump] ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysql] ${MYCNF_PATH}/${MYCNF_FILENAME}"
+    LAST_RESULT=$?
+
+    if [ $LAST_RESULT -gt 0 ]
+    then
+        echo_error "No ${MYCNF_PATH}/${MYCNF_FILENAME} with [mysqldump] found"
+        TOUCH="touch ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO1="echo \"[mysqldump]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO5="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        ECHO6="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
+        run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5 && $ECHO6"
+    else
+        echo_success "${MYCNF_PATH}/${MYCNF_FILENAME}"
+    fi
+}

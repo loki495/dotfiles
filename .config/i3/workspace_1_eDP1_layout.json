@@ -1,0 +1,61 @@
+{
+    "border": "normal",
+    "floating": "auto_off",
+    "layout": "tabbed",
+    "percent": 0.5,
+    "type": "con",
+    "nodes": [
+        {
+            "border": "pixel",
+            "current_border_width": 0,
+            "floating": "auto_off",
+            "geometry": {
+               "height": 724,
+               "width": 350,
+               "x": 10,
+               "y": 34
+            },
+            "name": "Contact List",
+            "percent": 1,
+            "swallows": [
+               {
+               "class": "^Trillian$",
+               "instance": "^trillian$",
+               "title": "^Contact\\ List$"
+               }
+            ],
+            "type": "con"
+        }
+    ]
+}
+
+{
+    "border": "normal",
+    "floating": "auto_off",
+    "layout": "tabbed",
+    "percent": 0.5,
+    "type": "con",
+    "nodes": [
+        {
+            "border": "pixel",
+            "current_border_width": 0,
+            "floating": "auto_off",
+            "geometry": {
+               "height": 724,
+               "width": 1346,
+               "x": 10,
+               "y": 34
+            },
+            "name": "haveanicedave1",
+            "percent": 1,
+            "swallows": [
+               {
+               "class": "^Trillian$",
+               "instance": "^trillian$",
+               "title": "^haveanicedave1$"
+               }
+            ],
+            "type": "con"
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+.old
+.log
+tags
+.env
+nvim/plugin
+nvim/lazy-lock.json
+

@@ -1,0 +1,815 @@
+SpecialKey     xxx term=bold guifg=Cyan
+EndOfBuffer    xxx links to NonText
+NonText        xxx term=bold ctermfg=12 gui=bold guifg=Blue
+Directory      xxx term=bold ctermfg=159 guifg=Cyan
+ErrorMsg       xxx term=standout ctermfg=15 ctermbg=1 guifg=White guibg=Red
+IncSearch      xxx term=reverse cterm=reverse gui=reverse guifg=#e6cb7e guibg=#ad0303
+Search         xxx term=reverse ctermfg=0 ctermbg=11 guifg=#000000 guibg=#9ff353
+MoreMsg        xxx term=bold ctermfg=121 gui=bold guifg=SeaGreen
+ModeMsg        xxx term=bold cterm=bold gui=bold
+LineNr         xxx term=underline ctermfg=11 guifg=#656532
+CursorLineNr   xxx term=bold ctermfg=11 gui=bold guifg=#ffff99
+Question       xxx term=standout ctermfg=121 gui=bold guifg=Green
+StatusLine     xxx term=bold,reverse cterm=bold,reverse gui=bold,reverse
+StatusLineNC   xxx term=reverse cterm=reverse gui=reverse
+VertSplit      xxx term=reverse cterm=reverse gui=reverse
+Title          xxx term=bold ctermfg=225 gui=bold guifg=Magenta
+Visual         xxx term=reverse ctermbg=242 guibg=DarkGrey
+VisualNOS      xxx cleared
+WarningMsg     xxx term=standout ctermfg=224 guifg=Red
+WildMenu       xxx term=standout ctermfg=0 ctermbg=11 guifg=Black guibg=Yellow
+Folded         xxx term=standout ctermfg=14 ctermbg=242 guifg=#505050 guibg=#000000
+FoldColumn     xxx term=standout ctermfg=14 ctermbg=242 guifg=Cyan guibg=Grey
+DiffAdd        xxx term=bold ctermbg=4 guibg=DarkBlue
+DiffChange     xxx term=bold ctermbg=5 guibg=DarkMagenta
+DiffDelete     xxx term=bold ctermfg=12 ctermbg=6 gui=bold guifg=Blue guibg=DarkCyan
+DiffText       xxx term=reverse cterm=bold ctermbg=9 gui=bold guibg=Red
+SignColumn     xxx term=standout ctermfg=14 ctermbg=242 guifg=Cyan guibg=Grey
+                   links to LineNr
+Conceal        xxx ctermfg=239 guifg=Grey30
+SpellBad       xxx term=reverse ctermbg=9 gui=undercurl guisp=Red
+SpellCap       xxx term=reverse ctermbg=12 gui=undercurl guisp=Blue
+SpellRare      xxx term=reverse ctermbg=13 gui=undercurl guisp=Magenta
+SpellLocal     xxx term=underline ctermbg=14 gui=undercurl guisp=Cyan
+Pmenu          xxx ctermfg=0 ctermbg=13 guifg=#f7f5a2 guibg=#005599
+PmenuSel       xxx ctermfg=242 ctermbg=0 guibg=DarkGrey
+PmenuSbar      xxx ctermbg=248 guibg=Grey
+PmenuThumb     xxx ctermbg=15 guibg=White
+TabLine        xxx term=underline cterm=underline ctermfg=15 ctermbg=242 guifg=#d4c274 guibg=#333333
+TabLineSel     xxx term=bold cterm=bold gui=bold guifg=#333333 guibg=#d4c274
+TabLineFill    xxx term=reverse cterm=reverse gui=reverse guifg=#000000 guibg=#000000
+CursorColumn   xxx term=reverse ctermbg=242 guifg=#000000 guibg=#000000
+CursorLine     xxx term=underline guibg=#000000
+ColorColumn    xxx term=reverse ctermbg=1 guibg=DarkRed
+QuickFixLine   xxx links to Search
+StatusLineTerm xxx term=bold,reverse cterm=bold ctermfg=0 ctermbg=121 gui=bold guifg=bg guibg=LightGreen
+StatusLineTermNC xxx term=reverse ctermfg=0 ctermbg=121 guifg=bg guibg=LightGreen
+Normal         xxx guifg=#c4c294 guibg=#1f1f1f
+MatchParen     xxx term=reverse ctermbg=6 guibg=DarkCyan
+ToolbarLine    xxx term=underline ctermbg=242 guibg=Grey50
+ToolbarButton  xxx cterm=bold ctermfg=0 ctermbg=7 gui=bold guifg=Black guibg=LightGrey
+Comment        xxx term=bold ctermfg=14 guifg=#80a0ff
+Constant       xxx term=underline ctermfg=13 guifg=#ffa0a0
+Special        xxx term=bold ctermfg=224 guifg=Orange
+Identifier     xxx term=underline cterm=bold ctermfg=14 guifg=#40ffff
+Statement      xxx term=bold ctermfg=11 gui=bold guifg=#f4f274
+PreProc        xxx term=underline ctermfg=81 guifg=#ff80ff
+Type           xxx term=underline ctermfg=121 gui=bold guifg=#60ff60
+Underlined     xxx term=underline cterm=underline ctermfg=81 gui=underline guifg=#80a0ff
+Ignore         xxx ctermfg=0 guifg=bg
+Error          xxx term=reverse ctermfg=15 ctermbg=9 guifg=White guibg=Red
+Todo           xxx term=standout ctermfg=0 ctermbg=11 guifg=Blue guibg=Yellow
+String         xxx links to Constant
+Character      xxx links to Constant
+Number         xxx links to Constant
+Boolean        xxx links to Constant
+Float          xxx links to Number
+Function       xxx guifg=#ff9695
+Conditional    xxx links to Statement
+Repeat         xxx links to Statement
+Label          xxx links to Statement
+Operator       xxx links to Statement
+Keyword        xxx links to Statement
+Exception      xxx links to Statement
+Include        xxx links to PreProc
+Define         xxx links to PreProc
+Macro          xxx links to PreProc
+PreCondit      xxx links to PreProc
+StorageClass   xxx links to Type
+Structure      xxx links to Type
+Typedef        xxx links to Type
+Tag            xxx links to Special
+SpecialChar    xxx links to Special
+Delimiter      xxx links to Special
+SpecialComment xxx links to Special
+Debug          xxx links to Special
+customFuncAndres xxx guifg=#00ff00 guibg=#ffffff
+phpFunctions   xxx links to Function
+vimGroup       xxx guifg=#ffff77
+hiVimGroup     xxx guifg=#ff4400
+vimCommand     xxx guifg=#00bb99
+vimHighlight   xxx guifg=#00f999
+IndentGuideDraw xxx cleared
+phpStructure   xxx guifg=#ff9695
+phpInclude     xxx guifg=#ff919a
+phpIdentifier  xxx guifg=#35a0d7
+phpStringSingle xxx guifg=#d5ff50
+phpStringDouble xxx guifg=#85ff44
+phpComment     xxx guifg=#999999
+phpDocTags     xxx guifg=#ffadad
+CoCWarningSign xxx guifg=#ffffff guibg=#888800
+CoCWarningVirtualText xxx guifg=#ffffff guibg=#888800
+CoCWarningLine xxx guifg=#ffffff guibg=#888800
+CoCWarningHighlight xxx gui=bold,underline guifg=#FFFFFF guibg=#aa0000
+CoCWarningFloat xxx guifg=#ffffff guibg=#888800
+CoCInfoSign    xxx guifg=#ffffff guibg=#000088
+CoCInfoVirtualText xxx guifg=#ffffff guibg=#000088
+CoCInfoLine    xxx guifg=#ffffff guibg=#000088
+CoCInfoHighlight xxx gui=bold,underline guifg=#FFFFFF guibg=#aa0000
+CoCInfoFloat   xxx guifg=#ffffff guibg=#000088
+CoCHintSign    xxx guifg=#ffffff guibg=#008800
+CoCHintVirtualText xxx guifg=#ffffff guibg=#008800
+CoCHintLine    xxx guifg=#ffffff guibg=#008800
+CoCHintHighlight xxx gui=bold,underline guifg=#FFFFFF guibg=#aa0000
+CoCHintFloat   xxx guifg=#ffffff guibg=#008800
+CoCErrorSign   xxx guifg=#ffffff guibg=#880000
+CoCErrorVirtualText xxx guifg=#ffffff guibg=#880000
+CoCErrorLine   xxx guifg=#ffffff guibg=#880000
+CoCErrorHighlight xxx gui=bold,underline guifg=#FFFFFF guibg=#aa0000
+CoCErrorFloat  xxx guifg=#ffffff guibg=#880000
+ExtraWhitespace xxx ctermbg=9 guibg=red
+WhiteOnRed     xxx ctermbg=9 guibg=red
+RainbowLevel0  xxx ctermbg=240 guibg=#333333
+RainbowLevel1  xxx ctermbg=239 guibg=#333300
+RainbowLevel2  xxx ctermbg=238 guibg=#0e1e0e
+RainbowLevel3  xxx ctermbg=237 guibg=#3a3a3a
+RainbowLevel4  xxx ctermbg=236 guibg=#303030
+RainbowLevel5  xxx ctermbg=235 guibg=#262626
+RainbowLevel6  xxx ctermbg=234 guibg=#1c1c1c
+RainbowLevel7  xxx ctermbg=233 guibg=#121212
+                   links to RainbowLevel0
+RainbowLevel8  xxx ctermbg=232 guibg=#080808
+                   links to RainbowLevel1
+GitGutterAddInvisible xxx guifg=bg
+GitGutterChangeInvisible xxx guifg=bg
+GitGutterDeleteInvisible xxx guifg=bg
+GitGutterChangeDeleteInvisible xxx links to GitGutterChangeInvisible
+GitGutterAddDefault xxx cleared
+GitGutterAdd   xxx links to GitGutterAddDefault
+GitGutterChangeDefault xxx cleared
+GitGutterChange xxx links to GitGutterChangeDefault
+GitGutterDeleteDefault xxx ctermfg=12 guifg=Blue
+GitGutterDelete xxx links to GitGutterDeleteDefault
+GitGutterChangeDelete xxx links to GitGutterChange
+GitGutterAddLine xxx links to DiffAdd
+GitGutterChangeLine xxx links to DiffChange
+GitGutterDeleteLine xxx links to DiffDelete
+GitGutterChangeDeleteLine xxx links to GitGutterChangeLine
+GitGutterAddLineNr xxx links to CursorLineNr
+GitGutterChangeLineNr xxx links to CursorLineNr
+GitGutterDeleteLineNr xxx links to CursorLineNr
+GitGutterChangeDeleteLineNr xxx links to CursorLineNr
+               xxx cleared
+RainbowLevel9  xxx links to RainbowLevel2
+RainbowLevel10 xxx links to RainbowLevel3
+RainbowLevel11 xxx links to RainbowLevel4
+RainbowLevel12 xxx links to RainbowLevel5
+RainbowLevel13 xxx links to RainbowLevel6
+vimTodo        xxx links to Todo
+vimStdPlugin   xxx cleared
+vimOption      xxx links to PreProc
+vimErrSetting  xxx links to vimError
+vimAutoEvent   xxx links to Type
+vimHLGroup     xxx links to vimGroup
+vimFuncName    xxx links to Function
+vimGlobal      xxx cleared
+vimSubst       xxx links to vimCommand
+vimComment     xxx links to Comment
+vimNumber      xxx links to Number
+vimAddress     xxx links to vimMark
+vimAutoCmd     xxx links to vimCommand
+vimEcho        xxx cleared
+vimIsCommand   xxx cleared
+vimExtCmd      xxx cleared
+vimFilter      xxx cleared
+vimLet         xxx links to vimCommand
+vimMap         xxx links to vimCommand
+vimMark        xxx links to Number
+vimSet         xxx cleared
+vimSyntax      xxx links to vimCommand
+vimUserCmd     xxx cleared
+vimCmdSep      xxx cleared
+vimVar         xxx links to Identifier
+vimFBVar       xxx links to vimVar
+vimInsert      xxx links to vimString
+vimBehaveModel xxx links to vimBehave
+vimBehaveError xxx links to vimError
+vimBehave      xxx links to vimCommand
+vimFTCmd       xxx links to vimCommand
+vimFTOption    xxx links to vimSynType
+vimFTError     xxx links to vimError
+vimFiletype    xxx cleared
+vimAugroup     xxx cleared
+vimExecute     xxx cleared
+vimNotFunc     xxx links to vimCommand
+vimFunction    xxx cleared
+vimFunctionError xxx links to vimError
+vimLineComment xxx links to vimComment
+vimSpecFile    xxx links to Identifier
+vimOper        xxx links to Operator
+vimOperParen   xxx cleared
+vimString      xxx links to String
+vimRegister    xxx links to SpecialChar
+vimCmplxRepeat xxx links to SpecialChar
+vimRegion      xxx cleared
+vimSynLine     xxx cleared
+vimNotation    xxx links to Special
+vimCtrlChar    xxx links to SpecialChar
+vimFuncVar     xxx links to Identifier
+vimContinue    xxx links to Special
+vimSetEqual    xxx cleared
+vimAugroupKey  xxx links to vimCommand
+vimAugroupError xxx links to vimError
+vimEnvvar      xxx links to PreProc
+vimFunc        xxx links to vimError
+vimParenSep    xxx links to Delimiter
+vimSep         xxx links to Delimiter
+vimOperError   xxx links to Error
+vimFuncKey     xxx links to vimCommand
+vimFuncSID     xxx links to Special
+vimAbb         xxx links to vimCommand
+vimEchoHL      xxx links to vimCommand
+vimNorm        xxx links to vimCommand
+vimSearch      xxx links to vimString
+vimUnmap       xxx links to vimMap
+vimUserCommand xxx links to vimCommand
+vimFuncBody    xxx cleared
+vimFuncBlank   xxx cleared
+vimPattern     xxx links to Type
+vimSpecFileMod xxx links to vimSpecFile
+vimEscapeBrace xxx cleared
+vimSetString   xxx links to vimString
+vimSubstRep    xxx cleared
+vimSubstRange  xxx cleared
+vimUserAttrb   xxx links to vimSpecial
+vimUserAttrbError xxx links to Error
+vimUserAttrbKey xxx links to vimOption
+vimUserAttrbCmplt xxx links to vimSpecial
+vimUserCmdError xxx links to Error
+vimUserAttrbCmpltFunc xxx links to Special
+vimCommentString xxx links to vimString
+vimPatSepErr   xxx links to vimError
+vimPatSep      xxx links to SpecialChar
+vimPatSepZ     xxx links to vimPatSep
+vimPatSepZone  xxx links to vimString
+vimPatSepR     xxx links to vimPatSep
+vimPatRegion   xxx cleared
+vimNotPatSep   xxx links to vimString
+vimStringEnd   xxx links to vimString
+vimStringCont  xxx links to vimString
+vimSubstTwoBS  xxx links to vimString
+vimSubstSubstr xxx links to SpecialChar
+vimCollection  xxx cleared
+vimSubstPat    xxx cleared
+vimSubst1      xxx links to vimSubst
+vimSubst2      xxx cleared
+vimSubstDelim  xxx links to Delimiter
+vimSubstRep4   xxx cleared
+vimSubstFlagErr xxx links to vimError
+vimCollClass   xxx cleared
+vimCollClassErr xxx links to vimError
+vimSubstFlags  xxx links to Special
+vimMarkNumber  xxx links to vimNumber
+vimPlainMark   xxx links to vimMark
+vimRange       xxx cleared
+vimPlainRegister xxx links to vimRegister
+vimSetMod      xxx links to vimOption
+vimSetSep      xxx links to Statement
+vimMapMod      xxx links to vimBracket
+vimMapLhs      xxx cleared
+vimAutoCmdSpace xxx cleared
+vimAutoEventList xxx cleared
+vimAutoCmdSfxList xxx cleared
+vimEchoHLNone  xxx links to vimGroup
+vimMapBang     xxx links to vimCommand
+vimMapRhs      xxx cleared
+vimMapModKey   xxx links to vimFuncSID
+vimMapModErr   xxx links to vimError
+vimMapRhsExtend xxx cleared
+vimMenuBang    xxx cleared
+vimMenuPriority xxx cleared
+vimMenuName    xxx links to PreProc
+vimMenuMod     xxx links to vimMapMod
+vimMenuNameMore xxx links to vimMenuName
+vimMenuMap     xxx cleared
+vimMenuRhs     xxx cleared
+vimBracket     xxx links to Delimiter
+vimUserFunc    xxx links to Normal
+vimElseIfErr   xxx links to Error
+vimBufnrWarn   xxx links to vimWarn
+vimNormCmds    xxx cleared
+vimGroupSpecial xxx links to Special
+vimGroupList   xxx cleared
+vimSynError    xxx links to Error
+vimSynContains xxx links to vimSynOption
+vimSynKeyContainedin xxx links to vimSynContains
+vimSynNextgroup xxx links to vimSynOption
+vimSynType     xxx links to vimSpecial
+vimAuSyntax    xxx cleared
+vimSynCase     xxx links to Type
+vimSynCaseError xxx links to vimError
+vimClusterName xxx cleared
+vimGroupName   xxx links to vimGroup
+vimGroupAdd    xxx links to vimSynOption
+vimGroupRem    xxx links to vimSynOption
+vimIskList     xxx cleared
+vimIskSep      xxx links to Delimiter
+vimSynKeyOpt   xxx links to vimSynOption
+vimSynKeyRegion xxx cleared
+vimMtchComment xxx links to vimComment
+vimSynMtchOpt  xxx links to vimSynOption
+vimSynRegPat   xxx links to vimString
+vimSynMatchRegion xxx cleared
+vimSynMtchCchar xxx cleared
+vimSynMtchGroup xxx cleared
+vimSynPatRange xxx links to vimString
+vimSynNotPatRange xxx links to vimSynRegPat
+vimSynRegOpt   xxx links to vimSynOption
+vimSynReg      xxx links to Type
+vimSynMtchGrp  xxx links to vimSynOption
+vimSynRegion   xxx cleared
+vimSynPatMod   xxx cleared
+vimSyncC       xxx links to Type
+vimSyncLines   xxx cleared
+vimSyncMatch   xxx cleared
+vimSyncError   xxx links to Error
+vimSyncLinebreak xxx cleared
+vimSyncLinecont xxx cleared
+vimSyncRegion  xxx cleared
+vimSyncGroupName xxx links to vimGroupName
+vimSyncKey     xxx links to Type
+vimSyncGroup   xxx links to vimGroupName
+vimSyncNone    xxx links to Type
+vimHiLink      xxx cleared
+vimHiClear     xxx links to vimHighlight
+vimHiKeyList   xxx cleared
+vimHiCtermError xxx links to vimError
+vimHiBang      xxx cleared
+vimHiGroup     xxx links to vimGroupName
+vimHiAttrib    xxx links to PreProc
+vimFgBgAttrib  xxx links to vimHiAttrib
+vimHiAttribList xxx links to vimError
+vimHiCtermColor xxx cleared
+vimHiFontname  xxx cleared
+vimHiGuiFontname xxx cleared
+vimHiGuiRgb    xxx links to vimNumber
+vimHiTerm      xxx links to Type
+vimHiCTerm     xxx links to vimHiTerm
+vimHiStartStop xxx links to vimHiTerm
+vimHiCtermFgBg xxx links to vimHiTerm
+vimHiGui       xxx links to vimHiTerm
+vimHiGuiFont   xxx links to vimHiTerm
+vimHiGuiFgBg   xxx links to vimHiTerm
+vimHiKeyError  xxx links to vimError
+vimHiTermcap   xxx cleared
+vimHiNmbr      xxx links to Number
+vimCommentTitle xxx links to PreProc
+vimCommentTitleLeader xxx cleared
+vimSearchDelim xxx links to Statement
+vimEmbedError  xxx links to vimError
+vimPythonRegion xxx cleared
+pythonStatement xxx links to Statement
+pythonFunction xxx links to Function
+pythonConditional xxx links to Conditional
+pythonRepeat   xxx links to Repeat
+pythonOperator xxx links to Operator
+pythonException xxx links to Exception
+pythonInclude  xxx links to Include
+pythonAsync    xxx links to Statement
+pythonDecorator xxx links to Define
+pythonDecoratorName xxx links to Function
+pythonDoctestValue xxx links to Define
+pythonMatrixMultiply xxx cleared
+pythonTodo     xxx links to Todo
+pythonComment  xxx links to Comment
+pythonQuotes   xxx links to String
+pythonEscape   xxx links to Special
+pythonString   xxx links to String
+pythonTripleQuotes xxx links to pythonQuotes
+pythonSpaceError xxx cleared
+pythonDoctest  xxx links to Special
+pythonRawString xxx links to String
+pythonNumber   xxx links to Number
+pythonBuiltin  xxx links to Function
+pythonAttribute xxx cleared
+pythonExceptions xxx links to Structure
+pythonSync     xxx cleared
+vimScriptDelim xxx links to Comment
+vimAugroupSyncA xxx cleared
+vimError       xxx links to Error
+vimKeyCodeError xxx links to vimError
+vimWarn        xxx links to WarningMsg
+vimAuHighlight xxx links to vimHighlight
+vimAutoCmdOpt  xxx links to vimOption
+vimAutoSet     xxx links to vimCommand
+vimCondHL      xxx links to vimCommand
+vimElseif      xxx links to vimCondHL
+vimFold        xxx links to Folded
+vimSynOption   xxx links to Special
+vimHLMod       xxx links to PreProc
+vimKeyCode     xxx links to vimSpecFile
+vimKeyword     xxx links to Statement
+vimSpecial     xxx links to Type
+vimStatement   xxx links to Statement
+airline_c1_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_x_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_x_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_x_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_y_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_y_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_y_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_z_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_z_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_z_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_term_inactive xxx ctermfg=85 ctermbg=232 guifg=#9cffd3 guibg=#202020
+airline_term_inactive_bold xxx term=bold cterm=bold ctermfg=85 ctermbg=232 gui=bold guifg=#9cffd3 guibg=#202020
+airline_term_inactive_red xxx ctermfg=160 ctermbg=232 guifg=#ff0000 guibg=#202020
+airline_error_inactive xxx ctermfg=232 ctermbg=160 guifg=#000000 guibg=#990000
+airline_error_inactive_bold xxx term=bold cterm=bold ctermfg=232 ctermbg=160 gui=bold guifg=#000000 guibg=#990000
+airline_error_inactive_red xxx ctermfg=160 ctermbg=160 guifg=#ff0000 guibg=#990000
+airline_a_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_a_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_a_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_b_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_b_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_b_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_c_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_c_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_c_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_warning_inactive xxx ctermfg=232 ctermbg=166 guifg=#000000 guibg=#df5f00
+airline_warning_inactive_bold xxx term=bold cterm=bold ctermfg=232 ctermbg=166 gui=bold guifg=#000000 guibg=#df5f00
+airline_warning_inactive_red xxx ctermfg=160 ctermbg=166 guifg=#ff0000 guibg=#df5f00
+airline_x      xxx ctermfg=27 ctermbg=234 guifg=#F5F5F5 guibg=#1C1C1C
+airline_x_bold xxx term=bold cterm=bold ctermfg=27 ctermbg=234 gui=bold guifg=#F5F5F5 guibg=#1C1C1C
+airline_x_red  xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_y      xxx ctermfg=144 ctermbg=237 guifg=#AFAF87 guibg=#5F5F5F
+airline_y_bold xxx term=bold cterm=bold ctermfg=144 ctermbg=237 gui=bold guifg=#AFAF87 guibg=#5F5F5F
+airline_y_red  xxx ctermfg=160 ctermbg=237 guifg=#ff0000 guibg=#5F5F5F
+airline_z      xxx ctermfg=15 ctermbg=27 guifg=#FFFFFF guibg=#5F87FF
+airline_z_bold xxx term=bold cterm=bold ctermfg=15 ctermbg=27 gui=bold guifg=#FFFFFF guibg=#5F87FF
+airline_z_red  xxx ctermfg=160 ctermbg=27 guifg=#ff0000 guibg=#5F87FF
+airline_term   xxx ctermfg=85 ctermbg=232 guifg=#9cffd3 guibg=#202020
+airline_term_bold xxx term=bold cterm=bold ctermfg=85 ctermbg=232 gui=bold guifg=#9cffd3 guibg=#202020
+airline_term_red xxx ctermfg=160 ctermbg=232 guifg=#ff0000 guibg=#202020
+airline_error  xxx ctermfg=232 ctermbg=160 guifg=#000000 guibg=#990000
+airline_error_bold xxx term=bold cterm=bold ctermfg=232 ctermbg=160 gui=bold guifg=#000000 guibg=#990000
+airline_error_red xxx ctermfg=160 ctermbg=160 guifg=#ff0000 guibg=#990000
+airline_a      xxx ctermfg=15 ctermbg=27 guifg=#FFFFFF guibg=#5F87FF
+airline_a_bold xxx term=bold cterm=bold ctermfg=15 ctermbg=27 gui=bold guifg=#FFFFFF guibg=#5F87FF
+airline_a_red  xxx ctermfg=160 ctermbg=27 guifg=#ff0000 guibg=#5F87FF
+airline_b      xxx ctermfg=144 ctermbg=237 guifg=#AFAF87 guibg=#5F5F5F
+airline_b_bold xxx term=bold cterm=bold ctermfg=144 ctermbg=237 gui=bold guifg=#AFAF87 guibg=#5F5F5F
+airline_b_red  xxx ctermfg=160 ctermbg=237 guifg=#ff0000 guibg=#5F5F5F
+airline_c      xxx ctermfg=27 ctermbg=234 guifg=#F5F5F5 guibg=#1C1C1C
+airline_c_bold xxx term=bold cterm=bold ctermfg=27 ctermbg=234 gui=bold guifg=#F5F5F5 guibg=#1C1C1C
+airline_c_red  xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_warning xxx ctermfg=232 ctermbg=166 guifg=#000000 guibg=#df5f00
+airline_warning_bold xxx term=bold cterm=bold ctermfg=232 ctermbg=166 gui=bold guifg=#000000 guibg=#df5f00
+airline_warning_red xxx ctermfg=160 ctermbg=166 guifg=#ff0000 guibg=#df5f00
+airline_c1_to_airline_x xxx guifg=#1C1C1C guibg=#1f1f1f
+airline_x_to_airline_y xxx guifg=#5F5F5F guibg=#1C1C1C
+airline_y_to_airline_z xxx guifg=#5F87FF guibg=#5F5F5F
+airline_a_to_airline_b xxx guifg=#5F87FF guibg=#5F5F5F
+airline_b_to_airline_c xxx guifg=#5F5F5F guibg=#1C1C1C
+airline_c_to_airline_x xxx guifg=#1C1C1C guibg=#1C1C1C
+ALEErrorSign   xxx links to Error
+ALEStyleErrorSign xxx links to ALEErrorSign
+ALEWarningSign xxx links to Todo
+ALEStyleWarningSign xxx links to ALEWarningSign
+ALEInfoSign    xxx links to ALEWarningSign
+ALESignColumnWithErrors xxx links to Error
+ALESignColumnWithoutErrors xxx links to LineNr
+ALEErrorLine   xxx cleared
+ALEWarningLine xxx cleared
+ALEInfoLine    xxx cleared
+ALEError       xxx links to SpellBad
+ALEStyleError  xxx links to ALEError
+ALEWarning     xxx links to SpellCap
+ALEStyleWarning xxx links to ALEWarning
+ALEInfo        xxx links to ALEWarning
+htmlError      xxx links to Error
+htmlSpecialChar xxx links to Special
+javaScriptExpression xxx links to javaScript
+htmlString     xxx links to String
+htmlValue      xxx links to String
+htmlTagN       xxx cleared
+htmlTagError   xxx links to htmlError
+htmlEndTag     xxx links to Identifier
+htmlArg        xxx links to Type
+htmlEvent      xxx links to javaScript
+htmlCssDefinition xxx links to Special
+htmlTag        xxx links to Function
+htmlTagName    xxx links to htmlStatement
+htmlSpecialTagName xxx links to Exception
+htmlCommentPart xxx links to Comment
+htmlCommentError xxx links to htmlError
+htmlComment    xxx links to Comment
+htmlPreStmt    xxx links to PreProc
+htmlPreError   xxx links to Error
+htmlPreAttr    xxx links to String
+htmlPreProc    xxx links to PreProc
+htmlPreProcAttrError xxx links to Error
+htmlPreProcAttrName xxx links to PreProc
+htmlLink       xxx links to Underlined
+javaScript     xxx links to Special
+htmlStrike     xxx term=strikethrough cterm=strikethrough gui=strikethrough
+htmlBoldUnderline xxx term=bold,underline cterm=bold,underline gui=bold,underline
+htmlBoldItalic xxx term=bold,italic cterm=bold,italic gui=bold,italic
+htmlBold       xxx term=bold cterm=bold gui=bold
+htmlBoldUnderlineItalic xxx term=bold,underline,italic cterm=bold,underline,italic gui=bold,underline,italic
+htmlBoldItalicUnderline xxx links to htmlBoldUnderlineItalic
+htmlUnderlineBold xxx links to htmlBoldUnderline
+htmlUnderlineItalic xxx term=underline,italic cterm=underline,italic gui=underline,italic
+htmlUnderline  xxx term=underline cterm=underline gui=underline
+htmlUnderlineBoldItalic xxx links to htmlBoldUnderlineItalic
+htmlUnderlineItalicBold xxx links to htmlBoldUnderlineItalic
+htmlItalicBold xxx links to htmlBoldItalic
+htmlItalicUnderline xxx links to htmlUnderlineItalic
+htmlItalic     xxx term=italic cterm=italic gui=italic
+htmlItalicBoldUnderline xxx links to htmlBoldUnderlineItalic
+htmlItalicUnderlineBold xxx links to htmlBoldUnderlineItalic
+htmlLeadingSpace xxx links to None
+htmlH1         xxx links to Title
+htmlH2         xxx links to htmlH1
+htmlH3         xxx links to htmlH2
+htmlH4         xxx links to htmlH3
+htmlH5         xxx links to htmlH4
+htmlH6         xxx links to htmlH5
+htmlTitle      xxx links to Title
+cssStyle       xxx cleared
+htmlHead       xxx links to PreProc
+javaScriptCommentTodo xxx links to Todo
+javaScriptLineComment xxx links to Comment
+javaScriptCommentSkip xxx cleared
+javaScriptComment xxx links to Comment
+javaScriptSpecial xxx links to Special
+javaScriptStringD xxx links to String
+javaScriptStringS xxx links to String
+javaScriptEmbed xxx links to Special
+javaScriptStringT xxx links to String
+javaScriptSpecialCharacter xxx links to javaScriptSpecial
+javaScriptNumber xxx links to javaScriptValue
+javaScriptRegexpString xxx links to String
+javaScriptConditional xxx links to Conditional
+javaScriptRepeat xxx links to Repeat
+javaScriptBranch xxx links to Conditional
+javaScriptOperator xxx links to Operator
+javaScriptType xxx links to Type
+javaScriptStatement xxx links to Statement
+javaScriptBoolean xxx links to Boolean
+javaScriptNull xxx links to Keyword
+javaScriptIdentifier xxx links to Identifier
+javaScriptLabel xxx links to Label
+javaScriptException xxx links to Exception
+javaScriptMessage xxx links to Keyword
+javaScriptGlobal xxx links to Keyword
+javaScriptMember xxx links to Keyword
+javaScriptDeprecated xxx links to Exception
+javaScriptReserved xxx links to Keyword
+javaScriptFunction xxx links to Function
+javaScriptBraces xxx links to Function
+javaScriptParens xxx cleared
+javaScriptCharacter xxx links to Character
+javaScriptValue xxx cleared
+javaScriptError xxx links to Error
+javaScrParenError xxx links to javaScriptError
+javaScriptDebug xxx links to Debug
+javaScriptConstant xxx links to Label
+htmlCssStyleComment xxx links to Comment
+htmlScriptTag  xxx links to htmlTag
+htmlEventSQ    xxx links to htmlEvent
+htmlEventDQ    xxx links to htmlEvent
+vbConditional  xxx links to Conditional
+vbOperator     xxx links to Operator
+vbBoolean      xxx links to Boolean
+vbConst        xxx links to Constant
+vbRepeat       xxx links to Repeat
+vbEvents       xxx links to Special
+vbFunction     xxx links to Identifier
+vbMethods      xxx links to PreProc
+vbStatement    xxx links to Statement
+vbKeyword      xxx links to Statement
+vbTodo         xxx links to Todo
+vbTypes        xxx links to Type
+vbDefine       xxx links to Constant
+vbNumber       xxx links to Number
+vbFloat        xxx links to Float
+vbString       xxx links to String
+vbComment      xxx links to Comment
+vbLineNumber   xxx links to Comment
+vbTypeSpecifier xxx links to Type
+vbError        xxx links to Error
+vbIdentifier   xxx links to Identifier
+cssTagName     xxx links to Statement
+cssSelectorOp  xxx links to Special
+cssSelectorOp2 xxx links to Special
+cssUnicodeEscape xxx links to Special
+cssStringQ     xxx links to String
+cssStringQQ    xxx links to String
+cssAttributeSelector xxx links to String
+cssClassNameDot xxx links to Function
+cssClassName   xxx links to Function
+cssIdentifier  xxx links to Function
+cssUnitDecorators xxx links to Number
+cssValueInteger xxx links to Number
+cssValueNumber xxx links to Number
+cssValueLength xxx links to Number
+cssValueAngle  xxx links to Number
+cssValueTime   xxx links to Number
+cssValueFrequency xxx links to Number
+cssColor       xxx links to Constant
+cssImportant   xxx links to Special
+cssCustomProp  xxx links to Special
+cssFunctionName xxx links to Function
+cssURL         xxx links to String
+cssFunction    xxx links to Constant
+cssFunctionComma xxx links to Function
+cssGradientAttr xxx links to cssAttr
+cssCommonAttr  xxx links to cssAttr
+cssAnimationProp xxx links to cssProp
+cssAnimationAttr xxx links to cssAttr
+cssBackgroundProp xxx links to cssProp
+cssBackgroundAttr xxx links to cssAttr
+cssBorderProp  xxx links to cssProp
+cssBorderAttr  xxx links to cssAttr
+cssBoxProp     xxx links to cssProp
+cssBoxAttr     xxx links to cssAttr
+cssCascadeProp xxx links to cssProp
+cssCascadeAttr xxx links to cssAttr
+cssColorProp   xxx links to cssProp
+cssDimensionProp xxx links to cssProp
+cssFlexibleBoxProp xxx links to cssProp
+cssFlexibleBoxAttr xxx links to cssAttr
+cssFontProp    xxx links to cssProp
+cssFontAttr    xxx links to cssAttr
+cssMultiColumnProp xxx links to cssProp
+cssMultiColumnAttr xxx links to cssAttr
+cssInteractProp xxx links to cssProp
+cssInteractAttr xxx links to cssAttr
+cssGeneratedContentProp xxx links to cssProp
+cssGeneratedContentAttr xxx links to cssAttr
+cssGridProp    xxx links to cssProp
+cssHyerlinkProp xxx links to cssProp
+cssListProp    xxx links to cssProp
+cssListAttr    xxx links to cssAttr
+cssPositioningProp xxx links to cssProp
+cssPositioningAttr xxx links to cssAttr
+cssPrintAttr   xxx links to cssAttr
+cssTableProp   xxx links to cssProp
+cssTableAttr   xxx links to cssAttr
+cssTextProp    xxx links to cssProp
+cssTextAttr    xxx links to cssAttr
+cssTransformProp xxx links to cssProp
+cssTransitionProp xxx links to cssProp
+cssTransitionAttr xxx links to cssAttr
+cssUIProp      xxx links to cssProp
+cssUIAttr      xxx links to cssAttr
+cssIEUIAttr    xxx links to cssAttr
+cssIEUIProp    xxx links to cssProp
+cssAuralProp   xxx links to cssProp
+cssAuralAttr   xxx links to cssAttr
+cssMobileTextProp xxx links to cssProp
+cssMediaProp   xxx links to cssProp
+cssMediaAttr   xxx links to cssAttr
+cssDefinition  xxx cleared
+cssKeyFrameProp xxx links to Constant
+cssPageMarginProp xxx links to cssAtKeyword
+cssPageProp    xxx links to cssProp
+cssFontDescriptorProp xxx links to cssProp
+cssFontDescriptorAttr xxx links to cssAttr
+cssBraces      xxx links to Function
+cssError       xxx links to Error
+cssAtRule      xxx links to Include
+cssAttrRegion  xxx cleared
+cssComment     xxx links to Comment
+cssVendor      xxx links to Comment
+cssHacks       xxx links to Comment
+cssNoise       xxx links to Noise
+cssBraceError  xxx links to Error
+cssAttrComma   xxx links to Special
+cssPseudoClassId xxx links to PreProc
+cssPseudoClassFn xxx cleared
+cssPseudoClass xxx cleared
+cssSpecialCharQQ xxx cleared
+cssSpecialCharQ xxx cleared
+cssAtKeyword   xxx links to PreProc
+cssAtRuleLogical xxx links to Statement
+cssMediaType   xxx links to Special
+cssPagePseudo  xxx links to PreProc
+cssDeprecated  xxx links to Error
+cssProp        xxx links to StorageClass
+cssContentForPagedMediaProp xxx links to cssProp
+cssLineboxProp xxx links to cssProp
+cssMarqueeProp xxx links to cssProp
+cssPagedMediaProp xxx links to cssProp
+cssPrintProp   xxx links to cssProp
+cssRubyProp    xxx links to cssProp
+cssSpeechProp  xxx links to cssProp
+cssRenderProp  xxx links to cssProp
+cssAttr        xxx links to Constant
+cssContentForPagedMediaAttr xxx links to cssAttr
+cssDimensionAttr xxx links to cssAttr
+cssGridAttr    xxx links to cssAttr
+cssHyerlinkAttr xxx links to cssAttr
+cssLineboxAttr xxx links to cssAttr
+cssMarginAttr  xxx links to cssAttr
+cssMarqueeAttr xxx links to cssAttr
+cssPaddingAttr xxx links to cssAttr
+cssPagedMediaAttr xxx links to cssAttr
+cssRubyAttr    xxx links to cssAttr
+cssSpeechAttr  xxx links to cssAttr
+cssTransformAttr xxx links to cssAttr
+cssRenderAttr  xxx links to cssAttr
+cssPseudoClassLang xxx links to Constant
+cssMediaComma  xxx links to Normal
+cssFontDescriptor xxx links to Special
+cssUnicodeRange xxx links to Constant
+Noise          xxx cleared
+cssLength      xxx cleared
+cssString      xxx cleared
+htmlStyleArg   xxx links to htmlString
+htmlStatement  xxx links to Statement
+None           xxx cleared
+htmlSpecial    xxx links to Special
+phpRegion      xxx cleared
+phpRegionAsp   xxx cleared
+phpRegionSc    xxx cleared
+sqlSpecial     xxx links to Special
+sqlKeyword     xxx links to sqlSpecial
+sqlOperator    xxx links to sqlStatement
+sqlStatement   xxx links to Statement
+sqlType        xxx links to Type
+Quote          xxx links to Special
+sqlString      xxx links to String
+sqlNumber      xxx links to Number
+sqlTodo        xxx links to Todo
+sqlComment     xxx links to Comment
+sqlFold        xxx cleared
+sqlFunction    xxx links to Function
+phpEnvVar      xxx links to Identifier
+phpIntVar      xxx links to Identifier
+phpCoreConstant xxx links to Constant
+phpConstant    xxx links to Constant
+phpMethods     xxx links to Function
+phpConditional xxx links to Conditional
+phpRepeat      xxx links to Repeat
+phpLabel       xxx links to Label
+phpStatement   xxx links to Statement
+phpKeyword     xxx links to Statement
+phpType        xxx links to Type
+phpOperator    xxx links to Operator
+phpRelation    xxx links to Operator
+phpMemberSelector xxx links to Structure
+phpVarSelector xxx links to Operator
+phpParent      xxx links to Delimiter
+phpIdentifierSimply xxx links to Identifier
+phpIdentifierComplexP xxx cleared
+phpIdentifierComplex xxx cleared
+phpBrackets    xxx links to Delimiter
+phpInterpSimpleError xxx links to Error
+phpInterpBogusDollarCurley xxx links to Error
+phpinterpSimpleBracketsInner xxx links to String
+phpInterpSimpleBrackets xxx cleared
+phpInterpSimple xxx cleared
+phpInterpVarname xxx links to Identifier
+phpInterpMethodName xxx cleared
+phpInterpSimpleCurly xxx links to Delimiter
+phpInterpDollarCurley1Helper xxx cleared
+phpInterpDollarCurly1 xxx links to Error
+phpInterpDollarCurley2Helper xxx cleared
+phpInterpDollarCurly2 xxx links to Error
+phpInterpComplex xxx cleared
+phpMethodsVar  xxx cleared
+phpDefine      xxx links to Define
+phpBoolean     xxx links to Boolean
+phpNumber      xxx links to Number
+phpFloat       xxx links to Float
+phpBackslashSequences xxx links to SpecialChar
+phpOctalError  xxx links to Error
+phpBackslashDoubleQuote xxx links to SpecialChar
+phpBackslashSingleQuote xxx links to SpecialChar
+phpTodo        xxx links to Todo
+phpBacktick    xxx links to String
+phpHereDoc     xxx cleared
+phpNowDoc      xxx cleared
+phpException   xxx links to Exception
+phpParentError xxx links to Error
+phpStorageClass xxx links to StorageClass
+phpFoldFunction xxx cleared
+phpFoldClass   xxx cleared
+phpFoldInterface xxx cleared
+phpFoldTry     xxx cleared
+phpFoldCatch   xxx cleared
+phpSCKeyword   xxx links to StorageClass
+phpFoldHtmlInside xxx cleared
+phpFCKeyword   xxx links to Define
+phpSpecialFunction xxx links to phpOperator
+phpClasses     xxx links to phpFunctions
+phpInterfaces  xxx links to phpConstant
+phpAssignByRef xxx links to Type
+phpComparison  xxx links to Statement
+phpDocCustomTags xxx links to Type
+phpDocTodo     xxx links to Todo
+phpBaselib     xxx links to Function
+phpIdentifierConst xxx links to Delimiter
+airline_c2_to_airline_x xxx guifg=#1C1C1C guibg=#1f1f1f
+airline_c2_inactive xxx ctermfg=239 ctermbg=234 guifg=#4E4E4E guibg=#1C1C1C
+airline_c2_inactive_bold xxx term=bold cterm=bold ctermfg=239 ctermbg=234 gui=bold guifg=#4E4E4E guibg=#1C1C1C
+airline_c2_inactive_red xxx ctermfg=160 ctermbg=234 guifg=#ff0000 guibg=#1C1C1C
+airline_c_to_airline_x_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_x_to_airline_y_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_c1_to_airline_x_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_a_to_airline_b_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_y_to_airline_z_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_c2_to_airline_x_inactive xxx guifg=#1C1C1C guibg=#1C1C1C
+airline_b_to_airline_c_inactive xxx guifg=#1C1C1C guibg=#1C1C1C

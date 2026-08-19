@@ -1,0 +1,333 @@
+[
+{
+    "output": "eDP-1",
+    "name": "laptop",
+    "layer": "top", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    "height": 40,
+    "width":1900,
+    "margin": "0 0 0 0",
+    "spacing":0,
+
+    "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
+    "modules-center": ["clock", "custom/weather"],
+    "modules-right": ["custom/focused_monitor", "custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+
+    // Modules configuration
+
+    "custom/focused_monitor": {
+        "exec": "~/.config/waybar/scripts/focused_monitor.sh",
+        "interval": 1,
+        "return-type": "json"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "focused": "",
+            "default": ""
+        },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+    },
+    "hyprland/window": {
+        "format": "{}",
+        "icon":true,
+        "icon-size" : 20
+    },
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "",
+            "deactivated": "",
+        },
+        "on-click":"exec ~/.config/hypr/scripts/idle_inhibitor.sh",
+
+    },
+    "tray": {
+        "icon-size": 20,
+        "spacing": 5
+    },
+    "clock": {
+        "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
+        "format": " {:%a %d %b  %I:%M:%S %p}",	//12 hour format
+                                                //"format": " {:%a %d %b  %H:%M}",	//24 hour format
+        "format-alt": " {:%d/%m/%Y  %H:%M:%S}",
+        //"max-length": 200
+        "interval": 1,
+        "on-click": "~/.config/waybar/scripts/OCV",
+    },
+    "cpu": {
+        "format": "🖳{usage}%",
+        "on-click": "foot -e htop"
+    },
+    "memory": {
+        "format": "🖴 {: >3}%",
+        "on-click": "foot -e htop"
+    },
+    "temperature": {
+        "thermal-zone": 7,  // Check with: # cat /sys/class/hwmon/hwmon*/temp1_input
+        "hwmon-path": "/sys/class/hwmon/hwmon7/temp1_input",
+        "critical-threshold": 80,
+        "format-critical": "{temperatureC}°C ",
+        "format": "{temperatureC}°C "
+    },
+    "backlight": {
+        // "device": "acpi_video1",
+        "format": "{icon} {percent: >3}%",
+        "format-icons": ["", ""],
+        "on-scroll-down": "brightnessctl -c backlight set 1%-",
+        "on-scroll-up": "brightnessctl -c backlight set +1%",
+        "on-click": "~/.config/waybar/scripts/backlight-hint.sh"
+    },
+    "battery": {
+        "states": {
+            // "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity: >3}%",
+        "format-icons": ["", "", "", "", ""]
+            // "format-good": "", // An empty format will hide the module
+            // "format-full": "",
+            //"format-icons": ["", "", "", "", "", "", "", "", "", ""]
+            //"format": "&#x202b;{icon}&#x202c; {capacity}%",
+            //"format-icons": ["ﱉ","ﱊ","ﱌ","ﱍ","ﱋ"]
+    },
+    "network": {
+        //"interface": "wlp0s20f3", // (Optional) To force the use of this interface  "format-wifi": "  {essid}",
+        "format": "⚠Disabled",
+        "format-wifi": "",
+        "format-ethernet": "",
+        "format-linked": "{ifname} (No IP)",
+        "format-disconnected": "⚠Disabled",
+        "format-alt": "{ifname}: {ipaddr}/{cidr}",
+        "family": "ipv4",
+        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%\nFreq: {frequency}MHz\nUp: {bandwidthUpBits} Down: {bandwidthDownBits}",
+        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}\n up: {bandwidthUpBits} down: {bandwidthDownBits}",
+        //"min-length": 2,
+        //"max-length": 2,
+        "on-click": "nm-connection-editor"
+    },
+    "custom/updates": {
+        "format": "{} {icon}",
+        "return-type": "json",
+        "format-icons": {
+            "has-updates": "󱍷",
+            "updated": "󰂪",
+        },
+        "exec-if": "which waybar-module-pacman-updates",
+        "exec": "waybar-module-pacman-updates --interval-seconds 5 --network-interval-seconds 7200",
+        "on-click": "foot -e update"
+    },
+    "custom/power": {
+        "format":"⏻",
+        "on-click": "nwgbar",
+        "tooltip": false,
+    },
+    "custom/launcher": {
+        "format":"    ",
+        "on-click": "exec nwg-drawer -c 7 -is 70 -spacing 23",
+        "tooltip": false,
+    },
+    "custom/network_traffic": {
+        "exec": "~/.config/waybar/scripts/network_traffic.sh",
+        "return-type": "json",
+        "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes} ⇡{bandwidthUpBytes}",    // optional
+    },
+    "pulseaudio": {
+        "scroll-step": 3, // %, can be a float
+        "format": "{icon} {volume}% {format_source}",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        //"format-source": "{volume}% ",
+        //"format-source-muted": "",
+        "format-source": "",
+        "format-source-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "alsa_output.usb-TTGK_Technology_USB_Audio_330223C2241018-00.analog-stereo": "",
+            "analog-stereo": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
+        "on-click-right": "pavucontrol"
+    },
+    "custom/lock": {
+        "exec": "echo \"🔒 Lock\"",
+        "on-click": "swaylock --color 000000",
+        "tooltip": "Click to lock screen"
+    },
+    "custom/weather": {
+        "exec": "curl 'https://wttr.in/Montebello?format=3'",
+        "interval": 900,
+        "on-click": "yad --html --uri='https://wttr.in/Montebello' --center --fixed --width=1000 --height=680 --timeout=60 --timeout-indicator=right"
+    },
+    "custom/window_status": {
+        "exec": "~/.config/waybar/scripts/hypr_status.sh",
+        "interval": 1,
+        "format": "{}"
+    },
+    "custom/gpu_temp": {
+        "exec": "~/.config/waybar/scripts/gpu_temp.sh",
+        "interval": 5,
+        "return-type": "json"
+    },
+    "custom/free_hd": {
+        "exec": "~/.config/waybar/scripts/free_hd.sh",
+        "interval": 10,
+        "return-type": "json"
+    },
+    "custom/sysinfo": {
+        "exec": "echo '{\"text\":\"\"}'",
+        "return-type": "json",
+        "on-click": "~/.config/waybar/scripts/toggle-sysinfo.sh"
+    },
+    "custom/keyboard_state": {
+        "numlock": false,
+        "capslock": true,
+        "format": "{icon}",
+        "format-capslock": "{icon}",
+        "format-icons": {
+            "locked": "🔒",
+            "unlocked": ""
+        }
+    },
+    "custom/brightness": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "brightnessctl | grep -Eo '[[:digit:]]+%'",
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "smooth-scrolling-threshold": 1     // optional: makes scrolling feel less 'chunky'
+    },
+    "custom/todo":
+    {
+        "exec": "~/.config/waybar/scripts/todo.sh",
+        "interval": 5,
+        "return-type": "json",
+        "on-click": "~/.config/waybar/scripts/todo.sh add",
+        "on-click-right": "~/.config/waybar/scripts/todo.sh edit"
+    },
+},
+{
+    // Trimmed-down bar for the TV: no fixed width (auto-fills the output),
+    // fewer modules so it doesn't crowd at the TV's narrower logical resolution.
+    "output": "HDMI-A-1",
+    "name": "tv",
+    "layer": "top",
+    "position": "top",
+    "height": 40,
+    "spacing": 0,
+
+    "modules-left": ["hyprland/workspaces", "custom/focused_monitor"],
+    "modules-center": ["clock"],
+    "modules-right": ["pulseaudio", "network", "battery", "custom/laptop_screen", "custom/brightness", "tray", "custom/power"],
+
+    "custom/focused_monitor": {
+        "exec": "~/.config/waybar/scripts/focused_monitor.sh",
+        "interval": 1,
+        "return-type": "json"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+            "1": "1", "2": "2", "3": "3", "4": "4", "5": "5",
+            "6": "6", "7": "7", "8": "8", "9": "9", "10": "10",
+            "focused": "",
+            "default": ""
+        },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+    },
+    "tray": {
+        "icon-size": 20,
+        "spacing": 5
+    },
+    "clock": {
+        "tooltip-format": "<big>{:%A, %d.%B %Y }</big>\n<tt><small>{calendar}</small></tt>",
+        "format": " {:%a %d %b  %I:%M:%S %p}",
+        "interval": 1,
+        "on-click": "~/.config/waybar/scripts/OCV",
+    },
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity: >3}%",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "network": {
+        "format": "⚠Disabled",
+        "format-wifi": "",
+        "format-ethernet": "",
+        "format-linked": "{ifname} (No IP)",
+        "format-disconnected": "⚠Disabled",
+        "family": "ipv4",
+        "tooltip-format-wifi": "  {ifname} @ {essid}\nIP: {ipaddr}\nStrength: {signalStrength}%",
+        "tooltip-format-ethernet": " {ifname}\nIP: {ipaddr}",
+        "on-click": "nm-connection-editor"
+    },
+    "pulseaudio": {
+        "scroll-step": 3,
+        "format": "{icon} {volume}% {format_source}",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        "format-source": "",
+        "format-source-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "analog-stereo": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "footclient -T waybar_alsamixer -e alsamixer -M",
+        "on-click-right": "pavucontrol"
+    },
+    "custom/power": {
+        "format":"⏻",
+        "on-click": "nwgbar",
+        "tooltip": false,
+    },
+    "custom/laptop_screen": {
+        "format": "󰌢",
+        "on-click": "~/.config/waybar/scripts/laptop_screen_toggle.sh",
+        "tooltip": "Toggle laptop screen on/off",
+    },
+    "custom/brightness": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "brightnessctl | grep -Eo '[[:digit:]]+%'",
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "smooth-scrolling-threshold": 1     // optional: makes scrolling feel less 'chunky'
+    },
+}
+]

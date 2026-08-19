@@ -1,0 +1,220 @@
+# vim: set filetype=sh :
+
+
+
+GIT_COMMAND="git"
+
+if ! [ -z "${GIT_DIR// }" ]
+then
+    GIT_COMMAND="GIT_DIR=${GIT_DIR} $GIT_COMMAND"
+fi
+if ! [ -z "${GIT_WORK_TREE// }" ]
+then
+    GIT_COMMAND="GIT_WORK_TREE=${GIT_WORK_TREE} $GIT_COMMAND"
+fi
+
+check_htaccess_blocking_git() {
+    # check .htaccess
+    echo -e "${GREEN}Checking for code in $SSH_BASE_PATH$SSH_PATH/.htaccess${NC}"
+    RESULT=$(ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    cd \"$SSH_BASE_PATH$SSH_PATH\"
+    cat .htaccess | grep \"RedirectMatch 404 /\\\\.git\"")
+
+    echo_info "Result: $RESULT"
+
+    if [ -z "${RESULT// }" ]
+    then
+        echo "Not found, adding..."
+        run_ssh "echo \"RedirectMatch 404 /\\.git\" >> \"$SSH_BASE_PATH$SSH_PATH/.htaccess\""
+    else
+        echo "Found, nothing to do..."
+    fi
+}
+
+check_gitignore() {
+    # check gitignore
+    echo -e "${GREEN}Checking for .gitignore${NC}"
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    cd \"$SSH_BASE_PATH$SSH_PATH\"
+    ls -lha .gitignore"
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}NO .gitignore${NC}"
+        scp $SSH_KEY_OVERRIDE $PORT_OVERRIDE /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
+        echo -e "${GREEN}$CMD ${NC}"
+    else
+        echo -e "${GREEN}.gitignore found${NC}"
+    fi
+}
+
+check_git_repo() {
+
+    # check git repo
+    echo -e "${GREEN}Checking for valid repo on $SSH_BASE_PATH$SSH_PATH${NC}"
+    ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    cd \"$SSH_BASE_PATH$SSH_PATH\"; $GIT_COMMAND rev-parse --is-inside-work-tree"
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}GIT REPO NOT FOUND${NC}"
+
+        # git repo create
+        echo -e "${GREEN}Creating initial commit${NC}"
+        ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+        cd \"$SSH_BASE_PATH$SSH_PATH\"
+        GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND init"
+
+        COMMIT_MESSAGE="Initial Commit"
+    else
+        echo -e "${GREEN}GIT REPO FOUND${NC}"
+
+        COMMIT_MESSAGE="BACKUP FOR "`date +"%m/%d/%Y"`
+    fi
+}
+
+git_commit() {
+
+    if [[ ! -z "${1// }" ]]
+    then
+        COMMIT_MESSAGE="$1"
+    else
+        COMMIT_MESSAGE="Auto-commit - "`date +"%m/%d/%Y"`
+    fi
+
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.name"
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}No Global user name / email set. Setting...${NC}"
+        ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+        GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.name \"Andres Crucitti\"
+        GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.email \"dasc495@gmail\""
+    fi
+
+    #check git status
+
+    echo_info "Checking git status"
+    CHANGES_PENDING=$(run_ssh "cd $SSH_BASE_PATH$SSH_PATH && $GIT_COMMAND status --porcelain")
+
+    if [ -z "${CHANGES_PENDING// }" ]
+    then
+        echo "No changes"
+        return
+    else
+        echo "There are changes... committing..."
+        echo "CHANGES: $CHANGES_PENDING"
+    fi
+
+    #git commit
+    ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+    cd \"$SSH_BASE_PATH$SSH_PATH\"
+    GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND add .
+    GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND commit -m \"$COMMIT_MESSAGE\""
+    echo -e "${GREEN}Commit created${NC}"
+
+}
+
+git_clean_local() {
+    echo -e "${GREEN}Checking for local repo at \"${LOCAL_BASE}/${LOCAL_PATH}/.git\"${NC}"
+    pwd
+    ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}No local found, cloning repo into $LOCAL_PATH${NC}"
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "cd \"$SSH_BASE_PATH$SSH_PATH\"; pwd"`
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
+    else
+        echo -e "${GREEN}Local git found... pulling latest commit${NC}"
+        cd $LOCAL_BASE/$LOCAL_PATH
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull
+    fi
+}
+
+git_pull() {
+
+    UPSTREAM_BRANCH="master"
+    if [ ! -z "${UPSTREAM_GIT_BRANCH// }" ]
+    then
+        UPSTREAM_BRANCH="$UPSTREAM_GIT_BRANCH"
+    fi
+
+    echo -e "${GREEN}Checking for local repo at \"${LOCAL_BASE}/${LOCAL_PATH}/.git\"${NC}"
+    pwd
+    ls -lh $LOCAL_BASE/$LOCAL_PATH/.git
+
+    if [ $? -ne 0 ]
+    then
+        echo -e "${GREEN}No local found, cloning repo into $LOCAL_PATH${NC}"
+        SSH_FULLPATH=`ssh -t $SSH_KEY_OVERRIDE $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "cd \"$SSH_BASE_PATH$SSH_PATH\"; pwd"`
+        GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git clone -b $UPSTREAM_BRANCH ssh://$SSH_USER@$SSH_HOST:$SSH_PORT$SSH_FULLPATH $LOCAL_PATH
+    else
+        echo -e "${GREEN}Local git found at \"$LOCAL_BASE/$LOCAL_PATH\"...${NC}"
+        cd $LOCAL_BASE/$LOCAL_PATH
+
+		CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
+		if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
+		then
+			CHANGES_PENDING_OTHER_BRANCH=$(git status --porcelain)
+
+			if [ ! -z "${CHANGES_PENDING_OTHER_BRANCH// }" ]
+			then
+				git stash
+			fi
+			git checkout $UPSTREAM_BRANCH
+		fi
+
+        CHANGES_PENDING=$(git status --porcelain)
+
+        if [ -z "${CHANGES_PENDING// }" ]
+        then
+            echo "No changes"
+        else
+            echo "There are changes... committing to custom branch..."
+            echo "CHANGES: $CHANGES_PENDING"
+            BRANCH_NAME="Pre-pull on "`date '+%F'`
+            echo "New branch \"$BRANCH_NAME\""
+            git checkout -b "$BRANCH_NAME"
+            git add .
+            git commit -m "$BRANCH_NAME"
+        fi
+
+        if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
+        then
+            git checkout $UPSTREAM_BRANCH
+        fi
+
+        echo -e "${GREEN}Pulling latest commit${NC}"
+        GIT_EDITOR=true GIT_SSH_COMMAND="ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes" git pull origin $UPSTREAM_BRANCH --rebase -X theirs
+
+        if [ "$CURRENT_BRANCH" != $UPSTREAM_BRANCH ]
+        then
+            echo "Switching back to $CURRENT_BRANCH"
+            git checkout $CURRENT_BRANCH
+            GIT_EDITOR=true git rebase $UPSTREAM_BRANCH -X theirs
+            if [ ! -z "${CHANGES_PENDING_OTHER_BRANCH// }" ]
+            then
+                git stash pop
+            fi
+        fi
+    fi
+}
+
+check_if_master_is_behind() {
+	UPSTREAM=${1:-'@{u}'}
+	LOCAL=$(git rev-parse @)
+	REMOTE=$(git rev-parse "$UPSTREAM")
+	BASE=$(git merge-base @ "$UPSTREAM")
+    CURRENT_BRANCH=$(git branch | grep ^* | awk '{ print $2 }')
+
+	if [ $LOCAL = $REMOTE ]; then
+		echo "$CURRENT_BRANCH: Up-to-date"
+	elif [ $LOCAL = $BASE ]; then
+		echo "$CURRENT_BRANCH: Need to pull"
+	elif [ $REMOTE = $BASE ]; then
+		echo "$CURRENT_BRANCH: Need to push"
+	else
+		echo "$CURRENT_BRANCH: Diverged"
+	fi
+}

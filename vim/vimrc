@@ -1,0 +1,40 @@
+" se
+
+if &term =~# '256color' && ( &term =~# '^screen'  || &term =~# '^tmux' )
+    let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+    let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+    set termguicolors
+endif
+
+let mapleader = ','
+
+let g:plug_threads = 1
+let g:ale_completion_enabled = 1
+let g:ale_fixers = {
+\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   'javascript': ['eslint'],
+\}
+let g:ale_fix_on_save = 1
+
+so ~/dotfiles/vim/functions.vim
+
+call plug#begin('~/.vim/plugged')
+source ~/dotfiles/vim/plugins.vim
+call SourceIfExists("~/.vim.plugins.local")
+call plug#end()
+
+so ~/dotfiles/vim/plugins.settings.vim
+
+so ~/dotfiles/vim/general.vim
+
+so ~/dotfiles/vim/colors/ifdef.vim
+
+so ~/dotfiles/vim/mappings.vim
+
+call SourceIfExists("~/.vimrc.local")
+
+" Load .vimrc in the base directory of a git repo, if it exists
+let $git_vimrc= expand(system("echo -n $(git rev-parse --show-toplevel)/.vimrc"))
+if filereadable($git_vimrc) && $git_vimrc != expand("$HOME/.vimrc")
+    source $git_vimrc
+endif

@@ -1,0 +1,81 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+
+IGNORE_MODULES=("")
+VALID_ACTIONS=("list-modules" "list-module-files" "module")
+ACTION=""
+
+usage() {
+    if [ ! -z "$1" ]
+    then
+        echo_error $1
+    fi
+
+    echo "Usage:
+    oc ACTION [MODULE_NAME] [FOLDER]
+
+Actions:
+    list-modules       list modules found
+    list-module-files  list files from module MODULE_NAME
+    module             make a tgz file with files for MODULE_NAME"
+
+    exit
+}
+
+if [[ " ${VALID_ACTIONS[@]} " =~ " $1 " ]]
+then
+    ACTION=$1
+    shift
+fi
+
+if [ -z "${ACTION// }" ]
+then
+    usage "Invalid action: \"$1\""
+fi
+
+while [[ $# -gt 0 ]]
+do
+	key="$1"
+
+	case $key in
+		--process-subfolders)
+			PROCESS_SUBFOLDERS=1
+			shift # past argument
+			;;
+		--log-dir)
+			LOG_DIR=$2
+			shift
+			shift # past argument
+			;;
+		*)    # unknown option
+			BASE_FOLDER+=("$1") # save it in an array for later
+			shift # past argument
+			;;
+	esac
+done
+
+exit
+
+module_NAME=$1
+OUTPUT_FILE=$2
+
+ADMIN_FOLDER="admin"
+
+if [ ! -z "${3// }" ]
+then
+    ADMIN_FOLDER=$3
+fi
+
+get_module_files $module_NAME
+echo_info "Combining into module..."
+find "$ADMIN_FOLDER" -name "$module_NAME.php" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find "$ADMIN_FOLDER" -name "$module_NAME.tpl" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find catalog -name "$module_NAME.tpl" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find catalog -name "$module_NAME.php" -exec tar -uvf $OUTPUT_FILE.tar {} \;
+find vqmod/xml -name "$module_NAME.xml" -exec tar -uvf $OUTPUT_FILE.tar {} \; 
+echo_info "Compressing output..."
+gzip "$OUTPUT_FILE.tar" -f
+echo_success "DONE"
+echo_info "Result: $OUTPUT_FILE.tar.gz"

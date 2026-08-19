@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== $(date) ==="
+
+# pacman cache
+paccache -r
+
+# remove uninstalled package cache
+paccache -ruk0
+
+# Docker
+docker system prune -af
+
+# journal
+journalctl --vacuum-time=14d
+
+# tmp
+find /tmp -mindepth 1 -mtime +7 -delete
+find /var/tmp -mindepth 1 -mtime +30 -delete
+
+echo "Done."

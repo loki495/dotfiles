@@ -1,0 +1,29 @@
+[user]
+	email = you@example.com
+	name = Andres Crucitti
+[http]
+	sslVerify = false
+[core]
+	quotepath = false
+	commitGraph = true
+	editor = "/home/andres/nvim/bin/nvim"
+[gc]
+	writeCommitGraph = true
+[receive]
+	denyCurrentBranch = updateInstead
+[alias]
+    conflicts = diff --name-only --diff-filter=U
+[log]
+	date = local
+[init]
+	defaultBranch = master
+[commit]
+    verbose = true
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential

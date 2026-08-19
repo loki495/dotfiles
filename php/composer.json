@@ -1,0 +1,13 @@
+{
+    "name": "loki495/php-lib",
+    "type": "library",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "loki495\\": "src"
+        },
+        "files": [
+            "src/Helpers/helpers.php"
+        ]
+    }
+}

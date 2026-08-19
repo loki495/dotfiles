@@ -1,0 +1,227 @@
+# GLOBAL SETTINGS
+scan_timeout = 50
+command_timeout = 500
+
+# Which is equivalent to
+format = """
+$username\
+$hostname\
+$localip\
+$shlvl\
+$singularity\
+$kubernetes\
+${custom.dir_home}\
+${custom.git_root}\
+${custom.git_path}\
+$vcsh\
+$fossil_branch\
+$fossil_metrics\
+$git_branch\
+$git_commit\
+$git_state\
+$git_metrics\
+$git_status\
+$hg_branch\
+$hg_state\
+$pijul_channel\
+$docker_context\
+$package\
+$c\
+$cmake\
+$cobol\
+$daml\
+$dart\
+$deno\
+$dotnet\
+$elixir\
+$elm\
+$erlang\
+$fennel\
+$fortran\
+$gleam\
+$golang\
+$guix_shell\
+$haskell\
+$haxe\
+$helm\
+$java\
+$julia\
+$kotlin\
+$gradle\
+$lua\
+$nim\
+$nodejs\
+$ocaml\
+$opa\
+$perl\
+$php\
+$pulumi\
+$purescript\
+$python\
+$quarto\
+$raku\
+$rlang\
+$red\
+$ruby\
+$rust\
+$scala\
+$solidity\
+$swift\
+$terraform\
+$typst\
+$vlang\
+$vagrant\
+$zig\
+$buf\
+$nix_shell\
+$conda\
+$meson\
+$spack\
+$memory_usage\
+$aws\
+$gcloud\
+$openstack\
+$azure\
+$nats\
+$direnv\
+$env_var\
+$mise\
+$crystal\
+$cmd_duration\
+$line_break\
+$jobs\
+$battery\
+$time\
+$status\
+$os\
+$container\
+$netns\
+$shell\
+$character"""
+
+
+[pijul_channel]
+disabled = true
+
+## FIRST LINE/ROW: Info & Status
+# First param ─┌
+[username]
+format = " [$user]($style)@"
+show_always = true
+style_root = "bold red"
+style_user = "bold red"
+
+# Second param
+[hostname]
+format = "[$hostname]($style) in "
+ssh_only = false
+style = "bold dimmed red"
+trim_at = "-"
+
+# Third param
+[directory]
+style = "purple"
+truncate_to_repo = false
+truncation_length = 0
+truncation_symbol = ""
+repo_root_format = '[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) '
+before_repo_root_style = "dimmed white"
+repo_root_style = "bright white"
+disabled = true
+
+# Fourth param
+[sudo]
+disabled = false
+
+# Before all the version info (python, nodejs, php, etc.)
+[git_status]
+ahead = ""
+behind = ""
+deleted = ""
+diverged = "D"
+stashed = 'S'
+style = "white"
+ignore_submodules = true 
+
+# Last param in the first line/row
+[cmd_duration]
+format = "took [$duration]($style)"
+min_time = 1
+
+## SECOND LINE/ROW: Prompt
+# Somethere at the beginning
+[battery]
+charging_symbol = ""
+disabled = true
+discharging_symbol = ""
+full_symbol = ""
+
+[[battery.display]] # "bold red" style when capacity is between 0% and 15%
+disabled = true
+style = "bold red"
+threshold = 15
+
+[[battery.display]] # "bold yellow" style when capacity is between 15% and 50%
+disabled = true
+style = "bold yellow"
+threshold = 50
+
+[[battery.display]] # "bold green" style when capacity is between 50% and 80%
+disabled = true
+style = "bold green"
+threshold = 80
+
+# Prompt: optional param 1
+[time]
+disabled = true
+format = " 🕙 $time($style)\n"
+style = "bright-white"
+time_format = "%T"
+
+# Prompt: param 2
+[character]
+error_symbol = " [×](bold red)"
+success_symbol = " [❯](bold green)"
+
+# SYMBOLS
+[status]
+format = '[\[$symbol$status_common_meaning$status_signal_name$status_maybe_int\]]($style)'
+map_symbol = true
+pipestatus = true
+symbol = "🔴"
+
+
+[git_branch]
+symbol = ""
+style = "#70aff5"
+format = '[\($symbol$branch(:$remote_branch)\)]($style) '
+
+[git_state]
+disabled = false
+
+[custom.dir_home]
+detect_files = []
+detect_folders = []
+detect_extensions = []
+command = "echo '~'"
+shell = [ "bash" ]
+when = ''' test "$HOME" = "$PWD" '''
+format = "[$output](bold green) "
+
+[custom.git_root]
+detect_files = []
+detect_folders = []
+detect_extensions = []
+command = '~/dotfiles/bin/git-root-path.php --root'
+shell = [ "bash" ]
+when = ''' test "$HOME" != "$PWD" '''
+format = "[$output](bold underline cyan)"
+
+[custom.git_path]
+detect_files = []
+detect_folders = []
+detect_extensions = []
+command = '~/dotfiles/bin/git-root-path.php --path'
+shell = [ "bash" ]
+when = ''' test "$HOME" != "$PWD" '''
+format = "[$output](bold green) "

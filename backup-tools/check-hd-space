@@ -1,0 +1,109 @@
+#!/bin/bash
+
+DIRNAME="${0%/*}"
+source $DIRNAME/../bash/lib/echos
+source $DIRNAME/../bash/lib/pushdpopd
+
+bytes2kb() {
+    local retval=`numfmt --to iec --format "%8.2f" $1`
+    echo "$retval"
+}
+
+usage() {
+    echo "Usage: check-hd-space <full|local>"
+    echo "          if arg1 is \"full\", use hardcoded list"
+    echo "          if arg1 is \"local\", get this machine's free hd space"
+    echo "          if arg1 is empty, use current folder"
+    exit
+}
+
+check_current_folder() {
+    PATH=$PATH:/usr/bin
+
+    source $DIRNAME/../bash/lib/common
+
+    if [ -z "${DRIVE+x}" ]
+    then
+        echo "Error: No DRIVE value set"
+        return
+    fi
+
+    if [ -z "${KEY// }" ]
+    then
+        KEY_OVERRIDE=""
+    else
+        KEY_OVERRIDE="-i $KEY"
+    fi
+
+    FREE_SPACE=`run_ssh df -B1 | $(which grep) $DRIVE | $(which awk) '{print $4}'`
+    FREE_SPACE="${FREE_SPACE:-0}"
+    FREE_SPACE_KB=`echo $(bytes2kb $FREE_SPACE) | sed -e 's/^[[:space:]]*//'`
+    DRIVE_MIN_KB=`echo $(bytes2kb $DRIVE_MIN) | sed -e 's/^[[:space:]]*//'`
+
+    echo_info "Free Space ($DRIVE): $FREE_SPACE_KB (Min: $DRIVE_MIN_KB)"
+
+    if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
+    then
+        echo_error "Not enough free space (MIN = $DRIVE_MIN_KB)!"
+        >&2 echo -en "${BLUE}Sending email...${NC}"
+        (
+            echo "Subject: $SITE_DOMAIN - Free Space Check"
+            echo "LOW HD SPACE WARNING - $FREE_SPACE_KB left free"
+        ) | ssmtp you@example.com
+        echo_info "SENT"
+
+    fi
+
+    echo -e "${GREEN}Done with `pwd`${NC}"
+    echo ""
+}
+
+check_local() {
+    DRIVE_MIN=5000000
+
+    ROOT_DEVICE="root"
+    DEVICE="${1:-$ROOT_DEVICE}"
+
+    FREE_SPACE=`df -B1 | grep /dev/$DEVICE | awk '{print $4}'`
+    FREE_SPACE="${FREE_SPACE:-0}"
+    FREE_SPACE_KB=$(bytes2kb $FREE_SPACE)
+
+    echo_info "Free Space (/dev/$DEVICE): $FREE_SPACE_KB"
+
+    if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
+    then
+        echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
+        echo "LOW HD SPACE WARNING - $FREE_SPACE left free" | mail -s "Free Space Check - BACKUPS" you@example.com
+
+    fi
+
+    echo -e "${GREEN}Done with local backup machine${NC}"
+    echo ""
+}
+
+check_all_sites() {
+    SITES=( "site-c.example.com" "site-e.example.com" "site-f.example.com" "site-a.example.com" "site-g.example.com")
+    for folder in ${SITES[@]}
+    do
+        pushd .
+        echo "Going to /home/ubuntu/backups/$folder"
+        cd /home/ubuntu/backups/$folder
+        $DIRNAME/check-hd-space
+        popd
+        exec &>/dev/tty
+    done
+}
+
+if [ "$1" == "full" ]
+then
+    check_all_sites
+    exit
+else
+    if [ "$1" == "local" ]
+    then
+        check_local $2
+        exit
+    fi
+fi
+
+check_current_folder

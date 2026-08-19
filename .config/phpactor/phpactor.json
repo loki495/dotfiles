@@ -1,0 +1,31 @@
+{
+    "indexer.include_patterns": [
+        "**/*.php"
+    ],
+    "indexer.exclude_patterns": [
+        "vendor/**/Tests/**/*",
+        "storage",
+        "vendor/composer",
+        "vendor/bin",
+        "node_modules"
+    ],
+    "indexer.stub_paths": [],
+    "indexer.poll_time": 5000,
+
+    "language_server.catch_errors": true,
+    "language_server.enable_workspace": true,
+    "language_server.diagnostics_on_update": false,
+    "language_server.diagnostics_on_save": true,
+    "language_server.diagnostics_on_open": true,
+    "language_server.diagnostic_exclude_paths": [],
+    "language_server.diagnostic_ignore_codes": [],
+
+    "language_server_completion.trim_leading_dollar": true,
+
+    "code_transform.import_globals": true,
+    "code_transform.refactor.generate_accessor.prefix": "get",
+    "code_transform.refactor.generate_mutator.prefix": "set",
+
+    "language_server_phpstan.enabled": false
+}
+
