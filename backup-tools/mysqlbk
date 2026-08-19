@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+#set -euo pipefail
 
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/common
@@ -12,23 +14,65 @@ else
     FORCED_USER="--user $MYSQL_USER"
 fi
 
-# MYSQL_EXCLUDED_TABLES=(
-# table1
-# table2
-# table3
-# table4
-# tableN   
-# )
- 
-IGNORED_TABLES_STRING=''
-for TABLE in "${MYSQL_EXCLUDED_TABLES[@]}"
-do :
-   IGNORED_TABLES_STRING+=" --ignore-table=${MYSQL_DATABASE}.${TABLE}"
-done
-
 MYCNF_FULL_PATH="$MYCNF_PATH/.my.cnf.$MYSQL_DATABASE"
 
-echo "Getting mysql backup"
-OPTIONS="--defaults-file=$MYCNF_FULL_PATH --no-tablespaces --databases $MYSQL_DATABASE $FORCED_USER --default-character-set=utf8 --opt --single-transaction --routines --triggers --events --no-create-db --add-drop-table --complete-insert --tz-utc $IGNORED_TABLES_STRING "
+BACKUP_DIR=$(pwd)"/database"
+MAX_PARALLEL=4
 
-run_ssh mysqldump  $OPTIONS  | gzip -9 > $MYSQLDUMP_FILE
+# Get tables from remote
+TABLES=$(run_ssh 'mysql --defaults-file='$MYCNF_FULL_PATH' -N -e "SHOW TABLES FROM '$MYSQL_DATABASE'"')
+
+# Convert to grep pattern
+EXCLUDE_PATTERN=$(printf "%s\n" "${MYSQL_EXCLUDED_TABLES[@]}" | paste -sd '|')
+
+if [ -n "$EXCLUDE_PATTERN" ]; then
+  TABLE_LIST=($(echo "$TABLES" | grep -vE "^($EXCLUDE_PATTERN)$"))
+else
+  TABLE_LIST=($TABLES)
+fi
+
+TOTAL=${#TABLE_LIST[@]}
+echo "✅ Found $TOTAL tables in $MYSQL_DATABASE"
+
+DATE_DIR=$(date +%Y-%m-%d)
+mkdir -p "${BACKUP_DIR}/${DATE_DIR}"
+
+export BACKUP_DIR MYSQL_DATABASE MYCNF_FULL_PATH FORCED_USER IGNORED_TABLES_STRING TOTAL DATE_DIR TABLE_LIST DIRNAME
+
+# Generate index|table pairs for xargs
+i=0
+for TABLE in "${TABLE_LIST[@]}"; do
+  i=$((i + 1))
+  echo "$i|$TABLE"
+done | xargs -n1 -P "$MAX_PARALLEL" bash -c '
+  IFS="|" read -r INDEX TABLE <<< "$1"
+
+  source $DIRNAME/../bash/lib/common
+
+  OUT_FILE="${BACKUP_DIR}/${DATE_DIR}/${MYSQL_DATABASE}:${TABLE}.sql.gz"
+
+  echo "📍 $INDEX/'"$TOTAL"' - $TABLE..."
+
+  run_ssh mysqldump \
+    --defaults-file='"$MYCNF_FULL_PATH"' \
+    --no-tablespaces \
+    --databases '"$MYSQL_DATABASE"' \
+    '"$FORCED_USER"' \
+    --default-character-set=utf8 \
+    --opt \
+    --single-transaction \
+    --routines \
+    --triggers \
+    --events \
+    --no-create-db \
+    --add-drop-table \
+    --complete-insert \
+    --tz-utc \
+    --skip-routines \
+    --skip-events \
+    --tables $TABLE \
+  | gzip -9 > "$OUT_FILE"
+
+  echo "✅  $INDEX/'"$TOTAL"' - $TABLE Done."
+' bash
+
