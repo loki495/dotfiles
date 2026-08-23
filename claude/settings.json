@@ -1,4 +1,5 @@
 {
+  "model": "sonnet",
   "hooks": {
     "PostToolUse": [
       {
@@ -35,6 +36,15 @@
             "command": "/home/andres/.claude/scripts/track-activity.sh release"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/claude-session-manager/host-agent/hooks/stop.php"
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -63,6 +73,15 @@
           {
             "type": "command",
             "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/claude-session-manager/host-agent/hooks/user_prompt_submit.php"
           }
         ]
       }
@@ -101,6 +120,17 @@
           }
         ]
       }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/claude-session-manager/host-agent/hooks/permission_request.php"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -114,6 +144,5 @@
   "agentPushNotifEnabled": true,
   "TrustedDirectories": [
     "/home/andres/www"
-  ],
-  "model": "sonnet"
+  ]
 }

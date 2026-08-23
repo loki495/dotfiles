@@ -72,3 +72,15 @@ echo ""
 csm_json=$(printf '%s' "$csm_statusline_input" | jq -c '{session_id: .session_id, ctx_pct: .context_window.used_percentage, git_worktree: (.workspace.git_worktree // .worktree.name)} | with_entries(select(.value != null))' 2>/dev/null)
 [ -n "$csm_json" ] && [ "$csm_json" != "{}" ] && printf "\033[2mcsm-data:%s\033[0m\n" "$csm_json"
 # <<< claude-session-manager: session-id marker <<<
+
+# >>> claude-session-manager: quota state capture (managed, safe to delete) >>>
+csm_quota_file='/home/andres/www/claude-session-manager/host-agent/state/quota-live-state.json'
+csm_quota_new=$(printf '%s' "$csm_statusline_input" | jq -c '{five_hour: .rate_limits.five_hour, seven_day: .rate_limits.seven_day} | with_entries(select(.value != null))' 2>/dev/null)
+if [ -n "$csm_quota_new" ] && [ "$csm_quota_new" != "{}" ]; then
+  mkdir -p "$(dirname "$csm_quota_file")" 2>/dev/null
+  csm_quota_prev=$(cat "$csm_quota_file" 2>/dev/null | jq -c '.' 2>/dev/null)
+  [ -z "$csm_quota_prev" ] && csm_quota_prev='{}'
+  csm_quota_tmp="$csm_quota_file.tmp.$$"
+  jq -cn --argjson prev "$csm_quota_prev" --argjson new "$csm_quota_new" --argjson now "$(date +%s)" '{session: (if ($new.five_hour == null) then $prev.session elif ($prev.session == null) or ($new.five_hour.used_percentage >= $prev.session.pct) or ($new.five_hour.resets_at != $prev.session.resets_at) then {pct: ($new.five_hour.used_percentage | round), resets_at: $new.five_hour.resets_at} else $prev.session end), week_all: (if ($new.seven_day == null) then $prev.week_all elif ($prev.week_all == null) or ($new.seven_day.used_percentage >= $prev.week_all.pct) or ($new.seven_day.resets_at != $prev.week_all.resets_at) then {pct: ($new.seven_day.used_percentage | round), resets_at: $new.seven_day.resets_at} else $prev.week_all end), captured_at: $now} | with_entries(select(.value != null))' > "$csm_quota_tmp" 2>/dev/null && mv "$csm_quota_tmp" "$csm_quota_file"
+fi
+# <<< claude-session-manager: quota state capture <<<
