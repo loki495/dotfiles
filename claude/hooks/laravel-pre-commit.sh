@@ -10,14 +10,20 @@ set -euo pipefail
 
 COMPOSE="docker-compose.yml"
 if [[ ! -f "$COMPOSE" ]]; then
-    echo "pre-commit: no docker-compose.yml found in project root, skipping checks"
+    echo "=========================================================="
+    echo "pre-commit: no docker-compose.yml in project root."
+    echo "SKIPPING Pint/PHPStan/Rector/Pest -- this commit is NOT checked."
+    echo "=========================================================="
     exit 0
 fi
 
 CONTAINER=$(grep -o 'container_name: [^[:space:]]*' "$COMPOSE" | grep -v vite | head -1 | awk '{print $2}')
 if [[ -z "$CONTAINER" ]]; then
-    echo "pre-commit: could not determine container name from docker-compose.yml"
-    exit 0
+    echo "pre-commit: docker-compose.yml exists but no container_name could be"
+    echo "parsed from it -- this looks like a setup problem, not an intentional"
+    echo "no-Docker project. Blocking rather than silently skipping checks."
+    echo "Fix docker-compose.yml (or this hook's parsing) before committing."
+    exit 1
 fi
 
 # Get staged PHP files only (NUL-delimited to survive spaces/leading-dashes in filenames)
