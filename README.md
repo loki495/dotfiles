@@ -1,57 +1,168 @@
 # Dotfiles
 
-This repository contains my personal dotfiles, managing the configuration for various tools and applications on my Linux system.
+Personal dotfiles for an Arch/Garuda Linux desktop (Hyprland + waybar) and a set of
+PHP/Laravel/OpenCart dev-tooling scripts. Managed as a single repo, symlinked into
+place by `install.sh`.
 
 ## Installation
 
 ### Prerequisites
 
-Ensure you have the following tools installed on your system:
-*   `git`
-*   `curl`
-*   `wget`
-*   `tar`
+`git`, `curl`, `wget`, `tar`.
 
 ### Steps
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/yourusername/dotfiles.git ~/.dotfiles # Replace with your actual repo URL
-    cd ~/.dotfiles
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone git@github.com:loki495/dotfiles ~/dotfiles
+   cd ~/dotfiles
+   ```
 
-2.  **Run the main installation script:**
-    This script will symlink various configuration files and handle the installation of Neovim.
+2. **Run the main installation script:**
+   ```bash
+   ./install.sh
+   ```
+   Symlinks the configs below into place (`~/.config/*`, `~/.bashrc`, `~/.vimrc`, etc.)
+   and prompts for how to install Neovim:
+   - **User-local (`--user`):** installs to `$HOME/.local/share/nvim`, symlinked to
+     `$HOME/.local/bin/nvim`. Make sure `$HOME/.local/bin` is on `PATH`.
+   - **Global (`--global`, needs `sudo`):** installs to `/opt/nvim`, symlinked to
+     `/usr/local/bin/nvim`.
 
-    ```bash
-    ./install.sh
-    ```
+   To install/reinstall Neovim on its own later: `./install_neovim.sh --user` or
+   `sudo ./install_neovim.sh --global`.
 
-    During the execution of `install.sh`, you will be prompted to choose how to install Neovim:
-    *   **User-local installation (`--user`):** Neovim will be installed to `$HOME/.local/share/nvim`, and its executable will be symlinked to `$HOME/.local/bin/nvim`. You will need to ensure that `$HOME/.local/bin` is in your system's `PATH` environment variable.
-    *   **Global installation (`--global`):** Neovim will be installed to `/opt/nvim`, and its executable will be symlinked to `/usr/local/bin/nvim`. This option requires `sudo` privileges.
+### Post-install
 
-    If you skip the Neovim application installation, you can run it manually later:
-    *   For user-local: `./install_neovim.sh --user`
-    *   For global: `sudo ./install_neovim.sh --global`
+- **Vim:** open Vim and run `:PlugInstall`.
+- **Neovim:** plugins install automatically on first run via lazy.nvim.
 
-### Post-Installation Steps
+## Repository structure
 
-*   **Vim Plugins:** After the `install.sh` script completes, open Vim and run `:PlugInstall` to install all configured plugins (If needed/wanted, Neovim should install plugins on first run via Lazy)
-*   **Neovim `PATH` (for user-local install):** If you chose the user-local installation for Neovim, ensure that `$HOME/.local/bin` is added to your shell's `PATH`. The `install.sh` script should have handled linking your `.bashrc`, which hopefully includes this.
+### Desktop (`.config/`)
 
-## Repository Structure
+Hyprland + waybar is the live desktop environment; a prior i3/sway/polybar-based
+setup has been removed (see "Removed" below).
 
-*   `.config/`: Contains configurations for applications using the XDG Base Directory Specification (e.g., Alacritty, Dunst, Fish, Hyprland, Polybar, Rofi, Waybar).
-*   `bash/`: Bash-related configurations, including `bashrc` and `dircolors`.
-*   `bin/`: Custom scripts and executables.
-*   `git/`: Git configuration.
-*   `misc/`: Miscellaneous files and scripts.
-*   `nvim/`: Neovim configuration files.
-*   `php/`: PHP-related configurations and scripts.
-*   `utils/`: Utility scripts.
-*   `vim/`: Legacy Vim configuration files.
-*   `install.sh`: The main installation script.
-*   `install_neovim.sh`: Script specifically for installing the Neovim application.
+- `hypr/` — Hyprland compositor config. **Lua-based** (`hyprland.lua` +
+  `settings/*.lua`) since Hyprland 0.57 dropped the old hyprlang `.conf` format;
+  `settings/` is split by concern (binds, look, rules, autostart, input). `scripts/`
+  holds helper scripts invoked from binds/autostart (screenshot, lock, idle,
+  dock-toggle, etc.). `hypridle.conf` is a separate daemon (hypridle) that still
+  uses its own `.conf` format — unrelated to the compositor's own config format.
+- `waybar/` — status bar config + `scripts/` (workspace buttons, brightness,
+  network, todo tray, etc.), with separate profiles for the laptop panel (`eDP-1`)
+  and TV output (`HDMI-A-1`).
+- `fish/` — Fish shell config, aliases, tab-completions, Catppuccin Mocha theme.
+- `alacritty/` — terminal emulator config.
+- `wireplumber/` — PipeWire/WirePlumber audio routing rules.
+- `phpactor/` — PHP language server config (used by both editor configs below).
+- `systemd/user/` — user units: clipboard sync, a Unison dev-sync job, the Claude
+  Session Manager host agent (socket-activated) + its push-check timer, and a
+  `cloudcli` (Claude Code UI) unit.
 
-This `README.md` aims to make your dotfiles more maintainable and user-friendly.
+### Editors
+
+- `nvim/` — Neovim config (Lua). `lua/andres/` is the main tree: `lazy.lua`
+  (plugin manager bootstrap + spec list), `remap.lua`, `autocmds.lua`,
+  `functions.lua` (custom user commands), `php_dev.lua` (helpers for building/
+  testing a local `php-src` checkout). `after/plugin/*.lua` holds per-plugin
+  config (fugitive, harpoon, telescope, treesitter, undotree, oil, lsp, etc.).
+- `vim/` — plain-Vim config (`vimrc` + `general/mappings/functions/plugins/
+  statusline.vim`, `colors/`). Actively maintained in parallel with `nvim/`, not
+  superseded by it — `install.sh` sets up both.
+
+### Shell & install
+
+- `bash/` — `bashrc`, `dircolors`, and `lib/{common,colors,echos,pushdpopd}` —
+  shared helpers sourced by the backup-tools scripts (SSH/MySQL config loading,
+  colored output, pushd/popd wrappers).
+- `install.sh` / `install_neovim.sh` — top-level dotfiles installer and standalone
+  Neovim installer (see Installation above).
+- `weekly-cleanup` — cron script: prunes pacman cache, dangling Docker
+  images/volumes, old journal logs, `/tmp`.
+- `log-notifications.sh` — tails desktop notification bodies via `dbus-monitor`
+  (dev/debug tool, not wired into any service).
+
+### `bin/` — personal CLI utilities
+
+Git helpers (`git-rr`, `git-summary`, `rebase-chain`, `git-root-path.php`), PHP
+dev-tool wrappers (`phpactor`, `phpcs`, `phpcbf`, `composer`, `phpbrew`), system
+utilities (`battery_level_alarm.sh`, `hybrid-sleep`, `pulseaudio-control`,
+`reboot-needed-check.sh`, `find-dupes`, `clear-hd-space.php`), an OpenCart
+package-mapping tool (`oc`), Claude Code/tmux helpers (`claude-quota`,
+`tmux-sessions`, `mcphost`, `boost-query.sh`), a Docker SQL-import helper
+(`import-sqlgz-files-docker.sh`), and misc desktop scripts (`new-reddit-wallpaper`,
+`dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).
+
+`rg` and `todo-tray` are compiled binaries committed directly to the repo rather
+than built from source or installed via package manager — worth revisiting.
+
+### `backup-tools/` — remote-site backup/clone toolkit
+
+Bespoke toolkit for pulling git repos + MySQL dumps from ~44 remote sites into
+`~/backups/<site>/`. See `backup-tools/README.md` for the full `backup.conf`
+schema and behavior notes (including that `pull` can auto-commit uncommitted
+changes on the **remote** site). Highlights: `mysqlbk` (per-table parallel dump),
+`full-backup`/`check-backup` (orchestration/status), `clone-site` (clone a site
+into a fresh local/remote target), `push`/`pull` (git sync), `check-*` (health
+checks: disk space, stale backups, htaccess, etc.), OpenCart packaging
+(`oc-package`, `oc-copy`).
+
+### PHP (`php/`)
+
+A small installable PSR-4 package (`loki495/php-lib`, see `composer.json`):
+- `src/Core/Config.php` — INI-file config loader.
+- `src/Helpers/HDCleaner.php` — used by `bin/clear-hd-space.php` to prune old
+  OpenCart error logs, sessions, and DB backup files by age.
+- `src/Helpers/helpers.php` — global helpers (`dd()`, `echo_color()`,
+  `fix_home_dir()`).
+
+`opencart/dirs-list.txt` / `file-list.txt` — a reference manifest of a stock
+OpenCart 1.5.x install's directory/file structure, used by backup-tools scripts
+for change detection. Not executable code.
+
+### Claude Code config (`claude/`, `.claude/`)
+
+Gets symlinked into `~/.claude/`. `CLAUDE.md` — global cross-project developer
+context (machine layout, git branch model, tooling policy). `RTK.md` — reference
+for the `rtk` token-saving CLI proxy hook. `agents/` (code-reviewer, git-helper,
+legacy-auditor, test-writer), `commands/` (`cherry-pick-to`, `commits`,
+`project-bootstrap`), `hooks/` (Laravel Pint/PHPStan/Rector/Pest automation on
+write and pre-commit), `skills/` (git workflow, Laravel/Livewire/Pest/OpenCart/
+Rector/DB/frontend conventions). `statusline-command.sh` — custom statusline.
+`.claude/settings.local.json` — this repo's own local permission allowlist.
+`.mcphost.yml` — config for `mcphost` (local LLM agent host): MCP server
+definitions and model params (currently Ollama `gemma:7b`).
+
+### Other
+
+- `git/` — `.gitconfig` + bash git-completion script.
+- `misc/cron/cronlog.php` — PHP wrapper for logging cron job output.
+- `misc/docker/setup-dev-container.sh` — provisions a legacy-PHP Apache/Docker
+  dev container.
+- `misc/systemd/system-sleep/restart-hypridle` — restarts `hypridle` after
+  resume (upstream idle-notifier bug workaround); correctly kills any prior
+  instance before relaunching.
+- `utils/kodi-db/` — Docker-based Kodi media DB puller/updater
+  (`pull-and-update.sh`, `update-db.py`).
+
+## Removed
+
+An older i3/sway/polybar/rofi/dunst/picom-based desktop setup (untouched since
+2022–mid-2025, fully superseded by the Hyprland+waybar config above) has been
+removed from the repo, along with a vendored ~100-file Hyprland "brain" preset
+framework whose theme-picker (`brain.sh`) wrote to hyprlang `.conf` files the
+Lua-based config no longer reads. The one still-functional script from that
+tree (`nwg_dock_toggle.sh`) was kept and moved to `hypr/scripts/`.
+
+## Known rough edges
+
+- `backup-tools`/`mysqlbk` and `clone-site` build remote SSH/mysqldump commands
+  via unquoted string concatenation rather than arrays — fragile against
+  spaces/metacharacters in config values. Low practical risk today (inputs come
+  from trusted local `.conf` files, not untrusted input) but a real fragility if
+  ever touched; a full fix means restructuring `run_ssh`/`run_ssh_silent` to take
+  array args across every call site.
+- `bin/rg` and `bin/todo-tray` are compiled binaries checked into git rather than
+  built or installed normally.
