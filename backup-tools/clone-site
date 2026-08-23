@@ -27,7 +27,7 @@ fi
 echo
 
 process_local_code() {
-    if [ -z ${LOCAL_PATH+x} ]
+    if [ -n "${LOCAL_PATH:-}" ]
     then
         rm -rf "./$LOCAL_PATH"
     fi
@@ -57,12 +57,12 @@ process_local_code() {
 }
 
 process_local_sql() {
-    if [ -z ${TMP_SQL_NAME+x} ]
+    if [ -n "${TMP_SQL_NAME:-}" ]
     then
         rm -f "./${TMP_SQL_NAME}"
     fi
 
-    if [ -z ${MYSQL_DATABASE+x} ]
+    if [ -n "${MYSQL_DATABASE:-}" ]
     then
         rm -f "./${MYSQL_DATABASE}.sql.gz"
     fi

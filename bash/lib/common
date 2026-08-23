@@ -31,7 +31,7 @@ then
     else
         if [[ "$1" == *.conf ]]
         then
-            CONF_FILE="`pwd`/$DEFAULT_CONF"
+            CONF_FILE="`realpath "$1"`"
         else
             try_default_config
         fi
@@ -125,20 +125,17 @@ check_mycnf() {
         run_ssh "rm -f \"${MYCNF_PATH}/${MYCNF_FILENAME}\""
     fi
 
-    run_ssh_silent "ls -lha ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysqldump] ${MYCNF_PATH}/${MYCNF_FILENAME} && grep [mysql] ${MYCNF_PATH}/${MYCNF_FILENAME}"
+    run_ssh_silent "ls -lha ${MYCNF_PATH}/${MYCNF_FILENAME} && grep -F '[mysqldump]' ${MYCNF_PATH}/${MYCNF_FILENAME} && grep -F '[mysql]' ${MYCNF_PATH}/${MYCNF_FILENAME}"
     LAST_RESULT=$?
 
     if [ $LAST_RESULT -gt 0 ]
     then
         echo_error "No ${MYCNF_PATH}/${MYCNF_FILENAME} with [mysqldump] found"
-        TOUCH="touch ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO1="echo \"[mysqldump]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO2="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO3="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO4="echo \"[mysql]\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO5="echo \"user=\\\"$MYSQL_USER\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        ECHO6="echo \"password=\\\"$MYSQL_PASSWORD\\\"\" >> ${MYCNF_PATH}/${MYCNF_FILENAME}"
-        run_ssh_silent "$TOUCH && $ECHO1 && $ECHO2 && $ECHO3 && $ECHO4 && $ECHO5 && $ECHO6"
+        # Written via stdin rather than as command-line args, so the password
+        # never appears in `ps` output on the remote host, even briefly.
+        printf '[mysqldump]\nuser="%s"\npassword="%s"\n[mysql]\nuser="%s"\npassword="%s"\n' \
+            "$MYSQL_USER" "$MYSQL_PASSWORD" "$MYSQL_USER" "$MYSQL_PASSWORD" \
+            | $SSH_BASE "cat > \"${MYCNF_PATH}/${MYCNF_FILENAME}\""
     else
         echo_success "${MYCNF_PATH}/${MYCNF_FILENAME}"
     fi

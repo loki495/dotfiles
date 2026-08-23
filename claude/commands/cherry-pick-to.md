@@ -33,7 +33,7 @@ Cherry-pick one or more commits from the current branch into a target branch, pu
 
 5. **Cherry-pick the commits** — apply each in order onto the now-synced target branch. If a conflict occurs, stop, show the conflict status, and ask the user how to proceed (resolve manually, skip the commit, or abort the whole operation).
 
-6. **Push to upstream** — `git push origin <target-branch>`. If the push is rejected (non-fast-forward), stop and explain — do NOT force-push without explicit user confirmation.
+6. **Push to upstream** — before pushing, state the exact branch and remote (`<target-branch>` → `origin`) and get explicit confirmation; commit selection was approved back in step 2, but state can have changed since (rebase, conflict resolution), so confirm again right here. Then `git push origin <target-branch>`. If the push is rejected (non-fast-forward), stop and explain — do NOT force-push without explicit user confirmation.
 
 7. **Return to original branch** — `git checkout <original-branch>`.
 

@@ -14,7 +14,7 @@ class HDCleaner {
         $path = fix_home_dir($dir['path']);
         $days = $dir['days'];
         echo_color("Deleting sessions in $path older than $days days\n", 'info');
-        $cmd = "find $path -type f -mtime +$days -delete";
+        $cmd = 'find ' . escapeshellarg($path) . ' -type f -mtime ' . escapeshellarg("+$days") . ' -delete';
 
         exec($cmd, $output);
 	print_r($output);
@@ -25,10 +25,10 @@ class HDCleaner {
         $days = $dir['days'];
         $ext = $dir['extension'] ?? '';
         echo_color("Deleting database *${ext} files in $path older than $days days\n", 'info');
-	$cmd = "find $path -type f -mtime +$days";
+	$cmd = 'find ' . escapeshellarg($path) . ' -type f -mtime ' . escapeshellarg("+$days");
 	if ($ext)
-	    $cmd .= " -name \"*.{$ext}\" ";
-	$cmd .= " -delete";
+	    $cmd .= ' -name ' . escapeshellarg("*.{$ext}");
+	$cmd .= ' -delete';
 
         exec($cmd, $output);
 	print_r($output);

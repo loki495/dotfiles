@@ -50,7 +50,7 @@ else # INSTALL_TYPE is "user"
     mkdir -p "$HOME/.local/share/nvim"
     mkdir -p "$HOME/.local/bin"
     # Remove existing installation
-    rm -rf "$HOME/.local/share/nvim/*"
+    rm -rf "$HOME/.local/share/nvim"/*
     # Move files
     mv nvim-linux-x86_64/* "$HOME/.local/share/nvim/"
     # Create symlink

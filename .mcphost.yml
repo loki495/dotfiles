@@ -95,6 +95,6 @@ mcpServers:
 #temperature: 0.2
 
 model: "ollama:gemma:7b"
-#pu: true
-ax_tokens: 2048
-emperature: 0.2
+cpu: true
+max_tokens: 2048
+temperature: 0.2

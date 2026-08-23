@@ -50,10 +50,9 @@ vim.api.nvim_create_user_command('AndresRebaseDiff',
             return
         end
 
-        local cmd = "git show -p " .. second_word
         vim.notify(second_word, vim.log.levels.INFO);
 
-        local output = vim.fn.systemlist(cmd)
+        local output = vim.fn.systemlist({ "git", "show", "-p", second_word })
 
         local buf = vim.api.nvim_create_buf(false, true) -- no file, scratch buffer
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, output)
