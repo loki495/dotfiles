@@ -293,6 +293,24 @@ leaving it as an inline literal — cheap now, and marks it for a future proper 
 - Minor/trivial changes don't need an entry. Things that do: refactors, new
   routes/endpoints, architecture changes, new requirements or conventions.
 
+## Feature atlas (feature/subsystem inventory)
+
+Any project can opt into a maintained inventory of its own features/subsystems via the
+`feature-atlas` skill family (`/feature-atlas`, `/feature-atlas-subsystem`,
+`/feature-atlas-report`, backed by the `feature-atlas-mapper/scout/auditor/synthesizer` agents).
+Once run, `.claude/feature-atlas/` in that project is the source of truth for what
+features/subsystems exist, their ownership boundaries, interfaces, dependencies, data model, and
+standing maintainability findings — do not re-derive this from scratch by re-reading the whole
+codebase when it's already there; read it first, and trust it over guessing.
+
+- First run in a project writes a pointer section into that project's own `CLAUDE.md` (with
+  confirmation) so future sessions know it exists.
+- Keep it current: after adding, removing, or substantially changing a feature, run
+  `/feature-atlas-subsystem <name>` for just that piece (cheap) rather than letting the atlas
+  drift stale. Before a refactor spanning multiple subsystems, or periodically, prefer the full
+  `/feature-atlas` update pass. If a project's atlas looks stale relative to recent commits,
+  proactively suggest re-running it rather than silently working around a stale inventory.
+
 ## Context window management
 
 When context is getting close to full, warn Andres proactively rather than letting
@@ -332,7 +350,10 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 
 `code-reviewer` (dual ruleset: Laravel strict / OpenCart safe), `git-helper`
 (push-safety + branch model enforcement), `legacy-auditor` (OpenCart read-only scanner),
-`test-writer` (Pest only, subagent)
+`test-writer` (Pest only, subagent), `feature-atlas-mapper` (whole-repo subsystem-boundary
+discovery), `feature-atlas-scout` (per-subsystem deep static analysis), `feature-atlas-auditor`
+(per-subsystem maintainability audit), `feature-atlas-synthesizer` (cross-subsystem validation +
+report)
 
 ## Commands available
 
@@ -340,5 +361,16 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 existing `~/www/` docker-compose patterns to generate new project docker-compose +
 Traefik config + setup.sh, adds composer script wrappers, writes `.claude/project.md`
 when worktree/branch structure is ambiguous.
+
+`/feature-atlas` — discovers and audits every feature/subsystem in the current project
+(frontend + backend), writing `.claude/feature-atlas/` as the project's source of truth for its
+feature inventory and standing maintainability findings. Re-runnable; only refreshes what
+changed. See "Feature atlas" section above.
+
+`/feature-atlas-subsystem <name>` — refreshes one subsystem's entry cheaply, without rescanning
+the whole codebase.
+
+`/feature-atlas-report` — re-validates and re-ranks findings from existing subsystem audits into
+`REPORT.md`, without rescanning any code.
 
 @RTK.md
