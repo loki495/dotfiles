@@ -4,8 +4,6 @@
 
 local mainMod = "SUPER"
 
--- G-Hyprland brain script (from hyprland.conf)
-hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("footclient -w 750x600 -T G-Hyprland -e ~/.config/hypr/brain/brain.sh"))
 hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("footclient -e ~/.local/bin/bear/implement_gum.sh disable"))
 
 -- Wallpaper daemon restart (from background.conf)
@@ -135,7 +133,7 @@ hl.bind("SHIFT + Print", hl.dsp.exec_cmd([[grimblast save area && notify-send Se
 hl.bind("ALT + Print", hl.dsp.exec_cmd([[grimblast save active && notify-send Active\ window captured]]))
 hl.bind("ALT + SHIFT + Print", hl.dsp.exec_cmd([[grimblast output active && notify-send Output captured]]))
 
-hl.bind("ALT + SHIFT + H", hl.dsp.exec_cmd("~/.config/hypr/brain/scripts/nwg_dock_toggle.sh"))
+hl.bind("ALT + SHIFT + H", hl.dsp.exec_cmd("~/.config/hypr/scripts/nwg_dock_toggle.sh"))
 
 -- Special workspace (scratchpad) -- preserved exactly as originally written,
 -- including the repeated/redundant-looking toggle+move sequence.
