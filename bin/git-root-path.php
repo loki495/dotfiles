@@ -1,5 +1,7 @@
-#!/bin/env php
+#!/usr/bin/env php
 <?php
+
+declare(strict_types=1);
 
 $type = preg_replace('/^--/','',$argv[1]);
 if (!$type) exit;

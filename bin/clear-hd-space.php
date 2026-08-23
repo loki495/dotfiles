@@ -1,7 +1,9 @@
 #!/usr/bin/php
 <?php
 
-include $_SERVER['HOME'] . '/dotfiles/php/vendor/autoload.php';
+declare(strict_types=1);
+
+include __DIR__ . '/../php/vendor/autoload.php';
 
 use loki495\Core\Config;
 use loki495\Helpers\HDCleaner;
@@ -12,9 +14,12 @@ $config->addFile('~/.config/general/storage.ini');
 $clean_dirs = $config->get('clean-dirs');
 
 foreach ($clean_dirs as $dir) {
-
-    $cleaner = 'clean_' . $dir['type'];
-    HDCleaner::$cleaner($dir);
+    match ($dir['type']) {
+        'opencart1' => HDCleaner::clean_opencart1($dir),
+        'sessions' => HDCleaner::clean_sessions($dir),
+        'backup_database' => HDCleaner::clean_backup_database($dir),
+        default => throw new \InvalidArgumentException("Unknown clean type: {$dir['type']}"),
+    };
 }
 
 /*

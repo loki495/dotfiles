@@ -1,23 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace loki495\Core;
 
 class Config {
 
-    public $data = [];
+    public array $data = [];
 
-    public function __construct() {
-    }
-
-    public function addFile($fn) {
+    public function addFile(string $fn): void {
         $fn = fix_home_dir($fn);
-        $data = parse_ini_file($fn, 1);
+        $data = parse_ini_file($fn, true);
 
         foreach ($data as $k => $v)
             $this->data[$k] = $v;
     }
 
-    public function get($k, $base = '') {
+    public function get(string $k, string $base = ''): mixed {
         if ($base) {
             if (!isset($this->data[$base][$k]))
                 throw new \RuntimeException("Config key '{$base}.{$k}' is not set");

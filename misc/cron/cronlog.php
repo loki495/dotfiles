@@ -1,6 +1,8 @@
 <?php
 
-include 'dotfiles/php/vendor/autoload.php';
+declare(strict_types=1);
+
+include __DIR__ . '/../../php/vendor/autoload.php';
 
 $fn = __DIR__.'/cronlog';
 $lines = file($fn);

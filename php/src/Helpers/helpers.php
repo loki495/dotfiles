@@ -1,6 +1,8 @@
 <?php
 
-function dd() {
+declare(strict_types=1);
+
+function dd(mixed ...$args): void {
 
     $cli = php_sapi_name() == 'cli';
 
@@ -42,7 +44,7 @@ function dd() {
     exit;
 }
 
-function echo_color($str, $type = '') {
+function echo_color(string $str, string $type = ''): void {
     switch ($type) {
         case 'error': //error
             echo "\033[31m$str\033[0m";
@@ -62,5 +64,6 @@ function echo_color($str, $type = '') {
     }
 }
 
-function fix_home_dir($fn) {
-    return str_replace('~', $_SERVER['HOME'], $fn);}
+function fix_home_dir(string $fn): string {
+    return str_replace('~', $_SERVER['HOME'], $fn);
+}
