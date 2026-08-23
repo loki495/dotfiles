@@ -61,6 +61,35 @@ anything else.
   work (debug code, personal config, experiments)? If yes to `master`/`main`/`stable`,
   call it out and stop.
 
+## Verifying commit surgery (splits, amends, reorders)
+
+Whenever reshaping history — splitting a commit, amending one, pulling stray files
+back into the commit they actually belong to, reordering — verify the result matches
+before trusting it, rather than eyeballing the diff:
+
+1. **Before touching anything**, make sure the working tree reflects the correct
+   final content. If there are unstaged/uncommitted changes, capture them as a
+   temporary commit first (`git commit -am "wip: temp snapshot for diff
+   verification"`) — this becomes the ground-truth diff target for the whole
+   operation. If the tree is already clean and committed, that commit itself is the
+   diff target — no separate temp commit needed.
+2. Do the surgery: interactive rebase with `edit`, `commit --amend`, or `reset` +
+   selective `git add -p`/`git reset -p` to split hunks between commits when a
+   single commit mixes content that belongs in two different results.
+3. **Compare the result against that diff target** — `git diff <target> HEAD` (or
+   compare tree hashes) — rather than assuming the surgery worked. It should come
+   back empty, or show only the specific intended change.
+4. Once confirmed identical, drop any temporary snapshot commit — it was only
+   scaffolding for the comparison (`git reset --soft` it away, or drop it in the
+   same rebase).
+
+This applies any time commits need reshaping — fixing a commit another
+process/session swept unrelated files into, splitting an overly broad commit, or
+reordering before push. Read "Concurrent sessions on the same repo" below before
+rewriting any commit you didn't author yourself, and never rewrite a commit already
+pushed to a shared remote without explicit confirmation — it requires a force-push,
+which is its own separate confirmation even after the rewrite itself is approved.
+
 ## Concurrent sessions on the same repo
 
 If told (or if context suggests, e.g. uncommitted changes you didn't make) that

@@ -71,6 +71,14 @@ Rules:
   judgment on "same feature": a genuinely separate fix or unrelated change still
   gets its own commit.
 - No existing git hooks (husky etc.) are in use unless a project says otherwise.
+- When splitting, amending, or otherwise reshaping commits — including pulling stray
+  files back out of a commit some other process/session swept them into — verify the
+  result against a diff target before trusting it, rather than eyeballing it: snapshot
+  the correct final state as a commit first if the tree isn't already clean and
+  committed, do the surgery, then diff the result against that snapshot to confirm it
+  matches (only dropping the temp snapshot once confirmed). Split at the hunk level
+  (`git add -p`) when a commit mixes content that belongs in two different results.
+  See `git-workflow.md`'s "Verifying commit surgery" section for the full recipe.
 
 See `git-workflow.md` skill for cherry-pick/rebase details and the `git-helper` agent
 for push-safety checks.
