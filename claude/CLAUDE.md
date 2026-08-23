@@ -2,6 +2,24 @@
 
 This file applies to all Claude Code sessions on this machine, regardless of project.
 
+## Hard rules — always / never
+
+- **NEVER** push to any remote without stating the exact branch + remote first and
+  getting explicit confirmation.
+- **NEVER** force-push, or rewrite a commit already pushed to a shared remote,
+  without explicit confirmation — even if rewriting the commit itself was approved.
+- **NEVER** delete, weaken, or skip/bypass a test to force a passing state without
+  explicit confirmation from Andres first.
+- **NEVER** take a real-world-visible action (a real email/SMS, charging a card, a
+  third-party write endpoint, a user-visible notification) without confirming first —
+  applies even inside test code or a one-off script. When in doubt whether something
+  counts, ask.
+- **ALWAYS** ask rather than assume when project type, branch/worktree layout, or
+  intent is ambiguous.
+- **ALWAYS** work one item at a time on multi-issue/audit work — explain, present
+  options, get a decision — before implementing the next one. (Repetitive mechanical
+  steps within an already-agreed plan are exempt — see "Working style".)
+
 ## Machine layout
 
 - All projects live under `~/www/`. No naming convention — folder names are freeform,
@@ -51,37 +69,11 @@ master/main/stable  (perfect mirror of production — never diverges except via 
                               rebased onto local)
 ```
 
-Rules:
-- If only one thing is being worked on at a time, work happens directly on `local`.
-- If multiple things are in flight, create a feature branch off `local` named for the feature.
-- Cherry-picks intended for production go to `master`/`main`/`stable` first, then are
-  rebased up through `local` → any feature branches.
-- Local-only changes (config tweaks, debug code, experiments) live only on `local` or
-  feature branches — never on `master`/`main`/`stable`.
-- Remote is usually `origin`. Some projects use `upstream` for the canonical/production
-  remote when `origin` points to a personal fork (e.g. GitHub mirror).
-- **Never push without explicit confirmation.** Always state which branch and remote
-  before pushing, and flag if a push target looks like it would put local-only work
-  somewhere it shouldn't be.
-- While a commit is still local-only (not yet cherry-picked/pushed to
-  master/main/stable), prefer amending it over stacking new small commits for
-  follow-up tweaks/fixes to the same feature — keeps local-only history clean
-  before it ships. Once a commit has been cherry-picked/pushed to a
-  production-mirror branch, never amend it — start a new commit instead. Use
-  judgment on "same feature": a genuinely separate fix or unrelated change still
-  gets its own commit.
-- No existing git hooks (husky etc.) are in use unless a project says otherwise.
-- When splitting, amending, or otherwise reshaping commits — including pulling stray
-  files back out of a commit some other process/session swept them into — verify the
-  result against a diff target before trusting it, rather than eyeballing it: snapshot
-  the correct final state as a commit first if the tree isn't already clean and
-  committed, do the surgery, then diff the result against that snapshot to confirm it
-  matches (only dropping the temp snapshot once confirmed). Split at the hunk level
-  (`git add -p`) when a commit mixes content that belongs in two different results.
-  See `git-workflow.md`'s "Verifying commit surgery" section for the full recipe.
-
-See `git-workflow.md` skill for cherry-pick/rebase details and the `git-helper` agent
-for push-safety checks.
+Full rules — cherry-pick/rebase procedure, push-safety checklist, commit-amend
+policy, verifying commit surgery, handling concurrent sessions on the same repo —
+live in the `git-workflow` skill; read it before any non-trivial git operation. The
+`git-helper` agent enforces the same rules specifically for push-safety/cherry-pick
+checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
 
 ## Local vs production data (staleness assumptions)
 
@@ -98,34 +90,6 @@ for push-safety checks.
 - Corollary for third-party APIs: when a repo/branch's local DB is known stale, treat
   it as read-only for any real third-party API from there — a write could act on
   data (tokens, inventory, IDs) that's already diverged from what production holds.
-
-## External side effects
-
-Confirm before any action that could have a real-world, externally-visible effect:
-sending a real email/SMS, charging a card, calling a write endpoint on a third-party
-API, or triggering a notification a real user would see — whether it's test code, a
-one-off script, or a manual fix. When in doubt whether an action is real-world-
-visible, ask before running it.
-
-## Verifying identity, not just success
-
-A successful, plausible-looking response (a valid API token, real-looking data, a
-"200 OK") is not proof you're talking to the *correct* account, environment, or
-tenant — only that the credentials/config work for *some* account. This matters most
-when there's known history of multiple accounts/environments (old vs. new, staging
-vs. prod, a prior attempt at the same integration).
-
-Before declaring credentials/config "verified":
-- Where possible, self-verify rather than only asking the user to check manually:
-  ask the user for one or more identifying facts you can independently confirm via
-  the API (e.g. "what email is on this account?", "how many products are in
-  category X?"), then query the API for that same field and compare. If it doesn't
-  match, treat the credentials/environment as wrong until proven otherwise — don't
-  proceed as if verified.
-- If self-verification isn't possible (no distinguishing field available via the
-  API), ask the user to confirm independently from a source that can only show the
-  true target — their own logged-in dashboard/app — rather than running more API
-  calls against the same possibly-wrong credentials.
 
 ## Tooling policy
 
@@ -160,39 +124,6 @@ Before declaring credentials/config "verified":
 - Composer scripts: `/project-bootstrap` adds wrapper scripts (`composer pest`,
   `composer pint`, `composer phpstan`, `composer rector`) that internally call
   `docker exec` so commands work consistently regardless of container name.
-
-## Scratch scripts and fixed/reused resource paths
-
-Any script — a one-off scratch/dev-server helper, or real project tooling —
-that binds to a **fixed, reused** resource path (a Unix socket, a lock
-file, a PID file) must find and terminate whatever process is already
-holding that resource *before* it unlinks/rebinds it, as the very first
-thing it does. Don't rely on a separate "remember to clean up when you're
-done" step, manual or otherwise — a session can end abruptly (context
-limit, crash, dropped connection, SIGKILL) before any end-of-run cleanup
-step ever executes, so a "clean up at the end" habit alone is unreliable
-by construction.
-
-Prefer a unique resource path per invocation (timestamp/PID-suffixed) when
-that's easy — then there's nothing to orphan in the first place. When a
-fixed/reused path is unavoidable or already an established convention, add
-the self-cleaning step at start instead.
-
-Found live 2026-08-08 (claude-session-manager): a test/dev-server harness
-script only ever unlinked a socket *file* before rebinding, never the
-*process* still holding the old listener open — ten orphaned instances had
-piled up silently over several days. Matching an AF_UNIX socket back to
-its owning process needs `/proc/net/unix` (maps a bound path to the
-socket's real kernel inode) cross-referenced against `/proc/*/fd/*` -
-**not** `fileinode()`/`stat()` on the socket file, which is a completely
-different, unrelated number space and will silently match nothing.
-
-## Tests — hard rule
-
-Tests must never be deleted, modified to weaken assertions, or skipped/bypassed in order
-to force a passing state — in hooks, in agents, or in normal conversation — without
-explicit confirmation from Andres first. If a test fails, the default action is to fix
-the underlying code or flag the conflict, not to alter the test.
 
 ## Test coverage — happy paths and sad paths
 
@@ -303,21 +234,12 @@ leaving it as an inline literal — cheap now, and marks it for a future proper 
 
 ## Feature atlas (feature/subsystem inventory)
 
-Any project can opt into a maintained inventory of its own features/subsystems via the
-`feature-atlas` skill family (`/feature-atlas`, `/feature-atlas-subsystem`,
-`/feature-atlas-report`, backed by the `feature-atlas-mapper/scout/auditor/synthesizer` agents).
-Once run, `.claude/feature-atlas/` in that project is the source of truth for what
-features/subsystems exist, their ownership boundaries, interfaces, dependencies, data model, and
-standing maintainability findings — do not re-derive this from scratch by re-reading the whole
-codebase when it's already there; read it first, and trust it over guessing.
-
-- First run in a project writes a pointer section into that project's own `CLAUDE.md` (with
-  confirmation) so future sessions know it exists.
-- Keep it current: after adding, removing, or substantially changing a feature, run
-  `/feature-atlas-subsystem <name>` for just that piece (cheap) rather than letting the atlas
-  drift stale. Before a refactor spanning multiple subsystems, or periodically, prefer the full
-  `/feature-atlas` update pass. If a project's atlas looks stale relative to recent commits,
-  proactively suggest re-running it rather than silently working around a stale inventory.
+Any project can opt into a maintained `.claude/feature-atlas/` inventory of its own
+features/subsystems via `/feature-atlas` (see that command's own doc for the full
+mechanism). Where it exists, it's the source of truth for feature boundaries,
+interfaces, dependencies, and standing maintainability findings — read it before
+re-deriving that from scratch by rescanning the codebase, and proactively suggest
+re-running it if it looks stale relative to recent commits.
 
 ## Context window management
 
@@ -352,16 +274,17 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 
 `laravel-conventions.md`, `livewire-components.md`, `pest-testing.md`,
 `opencart-legacy.md`, `frontend-stack.md`, `db-context.md`, `git-workflow.md`, `rector.md`,
-`backup-setup.md`
+`backup-setup.md`, `verifying-identity.md`, `resource-cleanup.md`
 
 ## Agents available
 
-`code-reviewer` (dual ruleset: Laravel strict / OpenCart safe), `git-helper`
-(push-safety + branch model enforcement), `legacy-auditor` (OpenCart read-only scanner),
-`test-writer` (Pest only, subagent), `feature-atlas-mapper` (whole-repo subsystem-boundary
-discovery), `feature-atlas-scout` (per-subsystem deep static analysis), `feature-atlas-auditor`
-(per-subsystem maintainability audit), `feature-atlas-synthesizer` (cross-subsystem validation +
-report)
+- **Core:** `code-reviewer` (dual ruleset: Laravel strict / OpenCart safe), `git-helper`
+  (push-safety + branch model enforcement), `legacy-auditor` (OpenCart read-only scanner),
+  `test-writer` (Pest only, subagent)
+- **Feature atlas family:** `feature-atlas-mapper` (whole-repo subsystem-boundary
+  discovery), `feature-atlas-scout` (per-subsystem deep static analysis),
+  `feature-atlas-auditor` (per-subsystem maintainability audit),
+  `feature-atlas-synthesizer` (cross-subsystem validation + report)
 
 ## Commands available
 
