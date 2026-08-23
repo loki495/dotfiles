@@ -3,6 +3,7 @@
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/echos
 source $DIRNAME/../bash/lib/pushdpopd
+NOTIFY_EMAIL="$DIRNAME/../bin/notify-email"
 
 bytes2kb() {
     local retval=`numfmt --to iec --format "%8.2f" $1`
@@ -46,10 +47,7 @@ check_current_folder() {
     then
         echo_error "Not enough free space (MIN = $DRIVE_MIN_KB)!"
         >&2 echo -en "${BLUE}Sending email...${NC}"
-        (
-            echo "Subject: $SITE_DOMAIN - Free Space Check"
-            echo "LOW HD SPACE WARNING - $FREE_SPACE_KB left free"
-        ) | ssmtp you@example.com
+        "$NOTIFY_EMAIL" "$SITE_DOMAIN - Free Space Check" "LOW HD SPACE WARNING - $FREE_SPACE_KB left free"
         echo_info "SENT"
 
     fi
@@ -73,7 +71,7 @@ check_local() {
     if [ "$FREE_SPACE" -lt "$DRIVE_MIN" ]
     then
         echo_error "Not enough free space (MIN = $DRIVE_MIN)!"
-        echo "LOW HD SPACE WARNING - $FREE_SPACE left free" | mail -s "Free Space Check - BACKUPS" you@example.com
+        "$NOTIFY_EMAIL" "Free Space Check - BACKUPS" "LOW HD SPACE WARNING - $FREE_SPACE left free"
 
     fi
 

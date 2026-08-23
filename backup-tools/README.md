@@ -76,6 +76,26 @@ letting a single `mysqldump --databases` call handle everything, so
 gzip` to the literal `$MYSQLDUMP_FILE` path) — kept for reference/rollback,
 not run by anything.
 
+If a table's dump fails (auth issue, disk full, network drop mid-transfer),
+`mysqlbk` no longer reports success anyway: it detects the real exit code
+through the `mysqldump | gzip` pipe, renames that table's output to
+`<table>.sql.gz.FAILED` so it can't be mistaken for a good backup, and
+keeps dumping the other tables in parallel rather than aborting the whole
+run. Once all tables are done, if anything failed it prints a summary and
+sends **one** aggregated email (not one per table) via `bin/notify-email`,
+then exits non-zero.
+
+## Email notifications
+
+`bin/notify-email <subject> <body> [recipient]` sends mail via curl's
+native SMTPS support against Gmail — no local MTA or extra package needed,
+since curl is already a hard dependency of this whole toolkit. Requires
+`GMAIL_PASSWORD` (a Gmail App Password for you@example.com) in
+`~/dotfiles/.env` (gitignored, per-machine — not something `install.sh`
+can set up for you). Used by `mysqlbk` (table dump failures),
+`check-hd-space` (low disk space), and `check-for-changes-today`
+(undocumented changes on the remote site).
+
 ## Orchestration
 
 `full-backup [--process-subfolders] <path>` = `mysqlbk` + `pull` +

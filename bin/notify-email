@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sends an email via curl's native SMTPS support against Gmail -- no local MTA
+# or extra package needed, just curl (already a hard dependency of this
+# toolkit, see install.sh's REQUIRED_COMMANDS). Same approach already used by
+# backup-tools/check-for-changes-today, generalized for reuse.
+#
+# Usage: notify-email <subject> <body> [recipient]
+# Requires GMAIL_PASSWORD (a Gmail App Password) in ~/dotfiles/.env.
+
+usage() {
+    echo "Usage: notify-email <subject> <body> [recipient]" >&2
+    exit 1
+}
+
+[[ $# -ge 2 ]] || usage
+
+SUBJECT="$1"
+BODY="$2"
+RECIPIENT="${3:-you@example.com}"
+FROM="you@example.com"
+
+if [ -f ~/dotfiles/.env ]; then
+    set -a
+    source ~/dotfiles/.env
+    set +a
+fi
+
+if [ -z "${GMAIL_PASSWORD:-}" ]; then
+    echo "notify-email: GMAIL_PASSWORD not set (expected in ~/dotfiles/.env)" >&2
+    exit 1
+fi
+
+curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
+    --mail-from "$FROM" \
+    --mail-rcpt "$RECIPIENT" \
+    --user "$FROM:$GMAIL_PASSWORD" \
+    -T <(printf 'From: %s\nTo: %s\nSubject: %s\n\n%s\n' "$FROM" "$RECIPIENT" "$SUBJECT" "$BODY") \
+    --silent --show-error

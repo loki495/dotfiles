@@ -1,15 +1,9 @@
 #!/bin/bash
 
-if [ -f ~/dotfiles/.env ]
-then
-    set -a
-    source ~/dotfiles/.env
-    set +a
-fi
-
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/common
 source $DIRNAME/common-git
+NOTIFY_EMAIL="$DIRNAME/../bin/notify-email"
 
 cd $LOCAL_PATH
 
@@ -28,11 +22,7 @@ else
     DIRNAME=`dirname $DIR`
     DOMAIN=`basename $DIRNAME`
 
-    curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
-        --mail-from 'dasc495@gmail.' \
-        --mail-rcpt 'you@example.com' \
-        --user 'you@example.com:'$GMAIL_PASSWORD \
-        -T <(echo -e 'From: you@example.com\nTo: you@example.com\nSubject: GIT CHANGES TO '$DOMAIN'\n\n'$CHANGES)
+    "$NOTIFY_EMAIL" "GIT CHANGES TO $DOMAIN" "$CHANGES"
 
 fi
 

@@ -37,7 +37,10 @@ echo "✅ Found $TOTAL tables in $MYSQL_DATABASE"
 DATE_DIR=$(date +%Y-%m-%d)
 mkdir -p "${BACKUP_DIR}/${DATE_DIR}"
 
-export BACKUP_DIR MYSQL_DATABASE MYCNF_FULL_PATH FORCED_USER IGNORED_TABLES_STRING TOTAL DATE_DIR TABLE_LIST DIRNAME
+FAILURE_LOG="${BACKUP_DIR}/${DATE_DIR}/.failures.log"
+rm -f "$FAILURE_LOG" "${FAILURE_LOG}.lock"
+
+export BACKUP_DIR MYSQL_DATABASE MYCNF_FULL_PATH FORCED_USER IGNORED_TABLES_STRING TOTAL DATE_DIR TABLE_LIST DIRNAME FAILURE_LOG
 
 # Generate index|table pairs for xargs
 i=0
@@ -45,6 +48,7 @@ for TABLE in "${TABLE_LIST[@]}"; do
   i=$((i + 1))
   echo "$i|$TABLE"
 done | xargs -n1 -P "$MAX_PARALLEL" bash -c '
+  set -o pipefail
   IFS="|" read -r INDEX TABLE <<< "$1"
 
   source $DIRNAME/../bash/lib/common
@@ -72,7 +76,29 @@ done | xargs -n1 -P "$MAX_PARALLEL" bash -c '
     --skip-events \
     --tables $TABLE \
   | gzip -9 > "$OUT_FILE"
+  DUMP_EXIT=$?
 
-  echo "✅  $INDEX/'"$TOTAL"' - $TABLE Done."
+  if [ "$DUMP_EXIT" -ne 0 ]; then
+    mv "$OUT_FILE" "${OUT_FILE}.FAILED" 2>/dev/null
+    ( flock -x 200; echo "$TABLE (exit $DUMP_EXIT)" >> "$FAILURE_LOG"; ) 200>>"${FAILURE_LOG}.lock"
+    echo "❌  $INDEX/'"$TOTAL"' - $TABLE FAILED (exit $DUMP_EXIT)."
+  else
+    echo "✅  $INDEX/'"$TOTAL"' - $TABLE Done."
+  fi
 ' bash
+
+if [ -s "$FAILURE_LOG" ]; then
+  FAILED_COUNT=$(wc -l < "$FAILURE_LOG")
+  echo_error "$FAILED_COUNT/$TOTAL table dump(s) failed for $MYSQL_DATABASE:"
+  cat "$FAILURE_LOG"
+
+  SUMMARY="mysqlbk on $(hostname) failed to dump $FAILED_COUNT/$TOTAL table(s) from $MYSQL_DATABASE at $(date).
+
+$(cat "$FAILURE_LOG")"
+
+  "$DIRNAME/../bin/notify-email" "mysqlbk FAILURE: $MYSQL_DATABASE ($FAILED_COUNT/$TOTAL tables)" "$SUMMARY" \
+    || echo_error "notify-email also failed -- check GMAIL_PASSWORD in ~/dotfiles/.env"
+
+  exit 1
+fi
 
