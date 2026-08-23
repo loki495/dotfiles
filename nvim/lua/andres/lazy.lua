@@ -30,8 +30,6 @@ require("lazy").setup({
 
 	'tpope/vim-fugitive',
 
-    'vijaymarupudi/nvim-fzf',
-
 	'ThePrimeagen/harpoon',
 
     'nvim-lua/plenary.nvim',
