@@ -22,8 +22,8 @@ place by `install.sh`.
    ```bash
    ./install.sh
    ```
-   Symlinks the configs below into place (`~/.config/*`, `~/.bashrc`, `~/.vimrc`, etc.)
-   and prompts for how to install Neovim:
+   Symlinks the configs below into place (`~/.config/*`, `~/.bashrc`, etc.) and
+   prompts for how to install Neovim:
    - **User-local (`--user`):** installs to `$HOME/.local/share/nvim`, symlinked to
      `$HOME/.local/bin/nvim`. Make sure `$HOME/.local/bin` is on `PATH`.
    - **Global (`--global`, needs `sudo`):** installs to `/opt/nvim`, symlinked to
@@ -34,7 +34,6 @@ place by `install.sh`.
 
 ### Post-install
 
-- **Vim:** open Vim and run `:PlugInstall`.
 - **Neovim:** plugins install automatically on first run via lazy.nvim.
 
 ## Repository structure
@@ -61,16 +60,14 @@ setup has been removed (see "Removed" below).
   Session Manager host agent (socket-activated) + its push-check timer, and a
   `cloudcli` (Claude Code UI) unit.
 
-### Editors
+### Editor
 
-- `nvim/` — Neovim config (Lua). `lua/andres/` is the main tree: `lazy.lua`
-  (plugin manager bootstrap + spec list), `remap.lua`, `autocmds.lua`,
-  `functions.lua` (custom user commands), `php_dev.lua` (helpers for building/
-  testing a local `php-src` checkout). `after/plugin/*.lua` holds per-plugin
-  config (fugitive, harpoon, telescope, treesitter, undotree, oil, lsp, etc.).
-- `vim/` — plain-Vim config (`vimrc` + `general/mappings/functions/plugins/
-  statusline.vim`, `colors/`). Actively maintained in parallel with `nvim/`, not
-  superseded by it — `install.sh` sets up both.
+- `nvim/` — Neovim config (Lua), the only editor config in the repo. `lua/andres/`
+  is the main tree: `lazy.lua` (plugin manager bootstrap + spec list), `remap.lua`,
+  `autocmds.lua`, `functions.lua` (custom user commands), `php_dev.lua` (helpers
+  for building/testing a local `php-src` checkout). `after/plugin/*.lua` holds
+  per-plugin config (fugitive, harpoon, telescope, treesitter, undotree, oil,
+  lsp, etc.).
 
 ### Shell & install
 
@@ -92,8 +89,9 @@ utilities (`battery_level_alarm.sh`, `hybrid-sleep`, `pulseaudio-control`,
 `reboot-needed-check.sh`, `find-dupes`, `clear-hd-space.php`), an OpenCart
 package-mapping tool (`oc`), Claude Code/tmux helpers (`claude-quota`,
 `tmux-sessions`, `mcphost`, `boost-query.sh`), a Docker SQL-import helper
-(`import-sqlgz-files-docker.sh`), and misc desktop scripts (`new-reddit-wallpaper`,
-`dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).
+(`import-sqlgz-files-docker.sh`), an email notifier (`notify-email`, via curl's
+SMTPS support — see backup-tools/README.md), and misc desktop scripts
+(`new-reddit-wallpaper`, `dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).
 
 `rg` and `todo-tray` are compiled binaries committed directly to the repo rather
 than built from source or installed via package manager — worth revisiting.
@@ -155,6 +153,11 @@ removed from the repo, along with a vendored ~100-file Hyprland "brain" preset
 framework whose theme-picker (`brain.sh`) wrote to hyprlang `.conf` files the
 Lua-based config no longer reads. The one still-functional script from that
 tree (`nwg_dock_toggle.sh`) was kept and moved to `hypr/scripts/`.
+
+`vim/` (plain-Vim config) was also removed: git history showed it 3+ years
+stale against `nvim/`'s active maintenance, with real abandoned-migration
+debris (a half-finished switch away from ALE left contradictory settings
+duplicated across two files). Neovim is now the only editor config here.
 
 ## Known rough edges
 

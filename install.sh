@@ -47,32 +47,8 @@ ln -s "$SCRIPTPATH/.mcphost" ~/.mcphost || true # Symlink might already exist
 echo ".mcphost done."
 
 echo "------------------------------------"
-echo "Setting up VIM dotfiles..."
-# Cleanup old vim configurations
-rm -f ~/.vimrc
-rm -f ~/.vim/plugins.settings.vim
-rm -f ~/.vim/general.vim
-rm -f ~/.vim/mappings.vim
-rm -f ~/.vim/plugins.vim
-rm -f ~/.vim/colors/lucius.vim
-rm -f ~/.vim/colors/scratch.vim
-rm -rf ~/.vim/plugins/
-rm -rf ~/.vim/plugged/
-unlink ~/.vim/colors/ 2>/dev/null || true # If symlink exists, unlink. || true to ignore error if not.
+echo "Ensuring ~/bin exists (on PATH via bashrc/fish)..."
 mkdir -p ~/bin
-mkdir -p ~/.vim/plugged
-mkdir -p ~/.vim/backup
-mkdir -p ~/.vim/undo
-mkdir -p ~/.vim/tmp
-ln -s "$SCRIPTPATH/vim/vimrc" ~/.vimrc
-ln -s "$SCRIPTPATH/vim/colors/" ~/.vim/colors
-touch ~/.vimrc.local # Ensure this file exists for local customizations
-
-echo "Downloading vim-plug..."
-curl -sfLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim > /dev/null
-echo "VIM dotfiles done."
-echo "  - After running this script, open Vim and run :PlugInstall to install plugins."
 
 echo "------------------------------------"
 echo "Setting up .config symlinks..."
@@ -139,6 +115,5 @@ echo
 echo "===================================="
 echo "All dotfiles setup complete!"
 echo "Remember to:"
-echo "  - If you want to use Vim and its plugins, open Vim and run :PlugInstall."
 echo "  - Ensure '$HOME/.local/bin' is in your PATH if you chose user-local Neovim installation."
 echo "===================================="
