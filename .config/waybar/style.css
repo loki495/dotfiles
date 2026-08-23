@@ -71,6 +71,28 @@ window#waybar {
     background: #20296f;
 }
 
+/* custom/ws-1..10: stand-in for hyprland/workspaces, see waybar config
+   comments. Matches the styling above; min-width lets an empty (hidden)
+   button collapse instead of leaving a gap. */
+#custom-ws-1, #custom-ws-2, #custom-ws-3, #custom-ws-4, #custom-ws-5,
+#custom-ws-6, #custom-ws-7, #custom-ws-8, #custom-ws-9, #custom-ws-10 {
+    padding: 2px 6px;
+    border-bottom: 4px;
+    color: #eceff4;
+    border-color: #d8dee9;
+    border-style: solid;
+    margin-top: 2px;
+    min-width: 0;
+}
+
+#custom-ws-1.active, #custom-ws-2.active, #custom-ws-3.active,
+#custom-ws-4.active, #custom-ws-5.active, #custom-ws-6.active,
+#custom-ws-7.active, #custom-ws-8.active, #custom-ws-9.active,
+#custom-ws-10.active {
+    border-color: #5171f1;
+    background: #20296f;
+}
+
 #clock, #battery, #cpu, #memory,#idle_inhibitor, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather,
 #custom-gpu_temp, #custom-free_hd
 {

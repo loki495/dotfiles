@@ -3,6 +3,10 @@
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("waybar")
+    -- Feeds instant refresh signals to waybar's custom/ws-* workspace
+    -- buttons (stand-in for the broken hyprland/workspaces click handler,
+    -- see waybar config comments). Remove once waybar ships a fix.
+    hl.exec_cmd("~/.config/waybar/scripts/workspace-watcher.sh")
     hl.exec_cmd("wpaperd")
 
     hl.exec_cmd("nm-applet --indicator")

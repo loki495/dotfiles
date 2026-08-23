@@ -9,7 +9,7 @@
     "margin": "0 0 0 0",
     "spacing":0,
 
-    "modules-left": ["custom/lock", "hyprland/workspaces", "hyprland/window", "custom/window_status"],
+    "modules-left": ["custom/lock", "custom/ws-1", "custom/ws-2", "custom/ws-3", "custom/ws-4", "custom/ws-5", "custom/ws-6", "custom/ws-7", "custom/ws-8", "custom/ws-9", "custom/ws-10", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "custom/weather"],
     "modules-right": ["custom/focused_monitor", "custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
@@ -20,28 +20,23 @@
         "interval": 1,
         "return-type": "json"
     },
-    "hyprland/workspaces": {
-        "format": "{icon}",
-        "on-click": "activate",
-        "all-outputs": true,
-        "sort-by-number": true,
-        "format-icons": {
-            "1": "1",
-            "2": "2",
-            "3": "3",
-            "4": "4",
-            "5": "5",
-            "6": "6",
-            "7": "7",
-            "8": "8",
-            "9": "9",
-            "10": "10",
-            "focused": "",
-            "default": ""
-        },
-        "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({workspace='e+1'})\"",
-        "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace='e-1'})\"",
-    },
+    // Stand-in for hyprland/workspaces: its click handler is broken under
+    // Hyprland's new Lua dispatch protocol (compiled into waybar, not
+    // fixable via config -- Alexays/Waybar#5008). One custom module per
+    // workspace, driven by workspace-btn.sh, refreshed instantly on
+    // workspace-change events by workspace-watcher.sh (SIGRTMIN+8). Remove
+    // these custom/ws-* modules and switch back to hyprland/workspaces once
+    // waybar ships a fix.
+    "custom/ws-1": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 1 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=1})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-2": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 2 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=2})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-3": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 3 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=3})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-4": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 4 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=4})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-5": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 5 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=5})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-6": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 6 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=6})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-7": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 7 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=7})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-8": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 8 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=8})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-9": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 9 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=9})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-10": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 10 eDP-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=10})\"", "signal": 8, "return-type": "json" },
     "hyprland/window": {
         "format": "{}",
         "icon":true,
@@ -238,7 +233,7 @@
     "height": 40,
     "spacing": 0,
 
-    "modules-left": ["hyprland/workspaces", "custom/focused_monitor"],
+    "modules-left": ["custom/ws-1", "custom/ws-2", "custom/ws-3", "custom/ws-4", "custom/ws-5", "custom/ws-6", "custom/ws-7", "custom/ws-8", "custom/ws-9", "custom/ws-10", "custom/focused_monitor"],
     "modules-center": ["clock"],
     "modules-right": ["pulseaudio", "network", "battery", "custom/laptop_screen", "custom/brightness", "tray", "custom/power"],
 
@@ -247,20 +242,17 @@
         "interval": 1,
         "return-type": "json"
     },
-    "hyprland/workspaces": {
-        "format": "{icon}",
-        "on-click": "activate",
-        "all-outputs": true,
-        "sort-by-number": true,
-        "format-icons": {
-            "1": "1", "2": "2", "3": "3", "4": "4", "5": "5",
-            "6": "6", "7": "7", "8": "8", "9": "9", "10": "10",
-            "focused": "",
-            "default": ""
-        },
-        "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({workspace='e+1'})\"",
-        "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace='e-1'})\"",
-    },
+    // See laptop bar section above for why hyprland/workspaces was replaced.
+    "custom/ws-1": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 1 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=1})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-2": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 2 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=2})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-3": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 3 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=3})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-4": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 4 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=4})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-5": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 5 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=5})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-6": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 6 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=6})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-7": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 7 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=7})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-8": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 8 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=8})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-9": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 9 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=9})\"", "signal": 8, "return-type": "json" },
+    "custom/ws-10": { "exec": "~/.config/waybar/scripts/workspace-btn.sh 10 HDMI-A-1", "on-click": "hyprctl dispatch \"hl.dsp.focus({workspace=10})\"", "signal": 8, "return-type": "json" },
     "tray": {
         "icon-size": 20,
         "spacing": 5
