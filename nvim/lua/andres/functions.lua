@@ -134,7 +134,10 @@ function ToggleVSplitTo90()
 end
 
 -- Create an autocommand that triggers on window enter.
+-- Cleared on every load so re-sourcing this file doesn't register it twice.
+local winenter_group = vim.api.nvim_create_augroup("AndresFunctionsAutocmds", { clear = true })
 vim.api.nvim_create_autocmd("WinEnter", {
+  group = winenter_group,
   callback = function()
     ToggleVSplitTo90()
   end,
