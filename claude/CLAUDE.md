@@ -125,6 +125,25 @@ checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
   `composer pint`, `composer phpstan`, `composer rector`) that internally call
   `docker exec` so commands work consistently regardless of container name.
 
+## C/C++ development
+
+- Andres knows both C and C++, but his background is pre-2000s style. Expect
+  him to ask about modern idioms/standards (C99/C11/C17, C++11 and later —
+  RAII, smart pointers, `<functional>`/lambdas, move semantics, etc.) rather
+  than assume familiarity — explain briefly when introducing them instead of
+  using them silently.
+- For a project targeting embedded/SBC hardware (e.g. Raspberry Pi GPIO
+  work) where code must actually build and run on the target device: prefer
+  two independent **non-bare** git repos (dev machine + device), synced by
+  direct `git push` to the device with `receive.denyCurrentBranch =
+  updateInstead` set on the device repo (push updates its working tree
+  directly, no separate pull step) — plus a small local wrapper script that
+  pushes, then builds and runs over ssh on the device, streaming output back.
+  Confirmed working well for `Ws2818` (Raspberry Pi + WS281x LED strip); no
+  GitHub/hosted remote or full local/feature branch model needed for this
+  kind of single-developer, single-target project — that heavier model is
+  for projects with a real shared/production remote.
+
 ## Test coverage — happy paths and sad paths
 
 This is a general rule, not scoped to Laravel or OpenCart. It applies to any kind of
@@ -258,6 +277,12 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
   remembering), capture that in the relevant place instead — a concise code comment
   only if the WHY is non-obvious, project docs, or CLAUDE.md/project.md — not as a
   "done" note left behind in the todo/bugs file.
+- **Global `Todo:` handling (Andres 2026-08-25):** when Andres says `Todo:` or
+  `add to Todo:` (or similar), read the local `todo` file first to see its
+  format, append the mentioned item wherever is most appropriate in that file's
+  existing structure, then continue with whatever was being done — don't treat
+  it as a context-switch request. Plain direct statements without `Todo:` deferral
+  framing remain normal requests to implement immediately.
 
 ## Hooks summary (see hooks config for full detail)
 
