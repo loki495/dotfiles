@@ -65,6 +65,16 @@ rm -rf ~/.config/fish || true
 ln -s "$SCRIPTPATH/.config/fish" ~/.config/fish
 echo ".config symlinks done."
 
+echo "------------------------------------"
+echo "Setting up systemd user services..."
+if [ -e ~/.config/systemd ] && [ ! -L ~/.config/systemd ]; then
+  mv ~/.config/systemd ~/.config/systemd.old
+fi
+ln -sfn "$SCRIPTPATH/.config/systemd" ~/.config/systemd
+systemctl --user daemon-reload
+systemctl --user enable --now opencode-serve.service
+echo "systemd user services linked and OpenCode server enabled."
+
 
 echo "------------------------------------"
 echo "Setting up Claude Code config..."
