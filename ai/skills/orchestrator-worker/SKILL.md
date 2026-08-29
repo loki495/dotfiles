@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator plans, decomposes, delegates, and reviews using the strongest available model; workers each execute one bounded task using a cheaper/faster model. Communication is file-based (.ai/PLAN.md, STATE.md, QUESTIONS.md, RESULT.md), so it works whether the orchestrator and worker are the same tool, different tools (Claude Code, opencode, Codex, agy), or different sessions entirely. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
+description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; workers each execute one bounded task on a cheaper/faster model. Communication is file-based (.ai/PLAN.md, STATE.md, QUESTIONS.md, RESULT.md), so it works whether the orchestrator and worker are the same tool, different tools (Claude Code, opencode, Codex, agy), or different sessions entirely. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
 ---
 
 # Orchestrator/Worker Protocol
@@ -26,7 +26,7 @@ complete   blocked
    |         |
    |      question
    |         v
-   |    orchestrator  <--- expensive/strong-reasoning model
+   |    orchestrator  <--- stays on whatever model it was launched with
    |         |
    |    answer / re-plan
    |         v
@@ -161,21 +161,67 @@ narration log — record what matters, not every step taken.
 
 Before delegating any implementation:
 
-1. Inspect the repository and relevant environment.
-2. Investigate external/local data the project depends on — inspect the actual
-   format rather than assuming it; if an external application's format changes
-   later, the project should fail safely rather than silently produce misleading
-   results.
-3. Identify important constraints and unknowns; document uncertainties rather than
+1. Scaffold `.ai/PLAN.md`, `.ai/STATE.md`, `.ai/QUESTIONS.md`, `.ai/RESULT.md` in the
+   project directory — they can start as stubs (`STATE.md` can just say
+   "researching, no plan yet"). This gives research workers somewhere to log
+   durable findings even before a plan exists.
+2. Inspect the repository and relevant environment.
+3. Identify what's actually unknown — specific questions, not "investigate
+   everything." Anything that needs reading multiple files/sources or several
+   exploratory commands is a candidate for delegating the gathering to a research
+   worker rather than doing it inline (see [Research Delegation](#research-delegation)).
+4. Identify important constraints and unknowns; document uncertainties rather than
    treating assumptions as facts.
-4. Create a concrete implementation plan.
-5. Define acceptance criteria.
-6. Identify dependencies between tasks.
-7. Only then begin delegating.
+5. Create a concrete implementation plan.
+6. Define acceptance criteria.
+7. Identify dependencies between tasks.
+8. Only then begin delegating implementation.
 
 Prefer evidence from the actual environment over memory or generic documentation. The
 plan must be detailed enough that a worker can execute a bounded step without the
 orchestrator's full conversation history — because it won't have it.
+
+---
+
+## Research Delegation
+
+The orchestrator decides *what* needs answering — that's planning judgment and stays
+its job. Delegate the *gathering* when it's substantial: reading several files,
+grepping broadly, running multiple exploratory commands, checking an external
+API/format. Don't delegate a single quick lookup — a worker launch has fixed
+overhead that a one-file read doesn't, and for a trivial question the round trip
+costs more than it saves.
+
+Group related questions into one research worker; split genuinely independent
+questions into parallel workers (same reasoning as
+[Parallel vs Sequential Workers](#parallel-vs-sequential-workers)). Use the same
+cheap-model-by-default tiering as implementation workers — bump up only when the
+question itself needs judgment to answer correctly, not brute-force lookup volume.
+
+Research workers are lighter-weight than implementation workers: there's no
+`PLAN.md` yet at this point, so they don't need a task ID or the full worker
+protocol — just the question, read-only.
+
+```
+You are a RESEARCH WORKER in the orchestrator/worker protocol
+(skill: orchestrator-worker, or read
+~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
+
+Project: <absolute path>
+Research question(s): <specific and bounded — not "investigate the codebase">
+
+Investigate read-only — do not modify anything. Report back concisely: what you
+found, where (file paths/line numbers, commands run), and flag anything you
+couldn't confirm rather than guessing. If it's a durable finding worth keeping
+past this session, also append it to .ai/RESULT.md.
+```
+
+**Trust, but verify what matters.** Treat a research worker's findings as reliable
+for minor/local facts. For anything the plan critically depends on — a claim that,
+if wrong, would derail multiple downstream tasks — spot-check it yourself before
+committing to the plan. A wrong implementation usually fails a test; a wrong research
+finding just quietly becomes a wrong plan, so it doesn't get the same automatic
+safety net.
 
 ---
 
@@ -291,10 +337,11 @@ working as intended.
 The orchestrator and the worker do fundamentally different work and should normally
 run different-cost models — this is the point of the split, not an incidental detail:
 
-- **Orchestrator**: plans, decomposes, resolves ambiguity, reviews correctness. Use
-  the strongest available reasoning model even though it costs more per token —
-  there's normally only one orchestrator running at a time, so the cost is bounded
-  and the work genuinely needs the reasoning.
+- **Orchestrator**: plans, decomposes, resolves ambiguity, reviews correctness. Stay
+  on whatever model the orchestrating session was already launched with — don't
+  switch up to the strongest/most expensive model available "just because" the
+  session is now acting as an orchestrator. The split isn't "orchestrator must be
+  the priciest model"; it's "workers should be cheaper than the orchestrator."
 - **Worker**: executes one already-decomposed, bounded task. Default to the
   cheapest/fastest model that can reliably do it. Workers run more often, and
   sometimes in parallel, so their per-token cost is what actually compounds — this is
