@@ -8,5 +8,4 @@ if [ -e ~/.config/systemd ] && [ ! -L ~/.config/systemd ]; then
 fi
 ln -sfn "$SCRIPTPATH/.config/systemd" ~/.config/systemd
 systemctl --user daemon-reload
-systemctl --user enable --now opencode-serve.service
-echo_success "systemd user services linked and OpenCode server enabled."
+echo_success "systemd user services directory linked."

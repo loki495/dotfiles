@@ -18,3 +18,8 @@ else
     echo_info "Invalid choice or no choice made. Skipping Neovim application installation."
     echo_info "You can run '$SCRIPTPATH/install_neovim.sh --user' or 'sudo $SCRIPTPATH/install_neovim.sh --global' manually later."
 fi
+
+section_header "Neovim Configuration Link"
+rm -rf ~/.config/nvim || true
+ln -s "$SCRIPTPATH/nvim" ~/.config/nvim
+echo_success "Neovim configuration linked to ~/.config/nvim."
