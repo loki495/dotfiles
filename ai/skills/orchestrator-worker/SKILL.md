@@ -58,7 +58,9 @@ The orchestrator is the senior agent responsible for:
 - reviewing worker results;
 - resolving worker questions and blockers;
 - deciding when additional worker iterations are required;
-- performing final validation and review.
+- performing final validation and review;
+- keeping the user informed, when asked, of which workers it has spawned — which
+  agent/subagent type and which model each one ran as.
 
 The orchestrator is **not** the primary implementation worker. It should generally
 avoid implementing application code itself — its job is to direct, review, and make
@@ -212,8 +214,9 @@ Research question(s): <specific and bounded — not "investigate the codebase">
 
 Investigate read-only — do not modify anything. Report back concisely: what you
 found, where (file paths/line numbers, commands run), and flag anything you
-couldn't confirm rather than guessing. If it's a durable finding worth keeping
-past this session, also append it to .ai/RESULT.md.
+couldn't confirm rather than guessing. State which agent/subagent type and model
+you ran as. If it's a durable finding worth keeping past this session, also append
+it to .ai/RESULT.md.
 ```
 
 **Trust, but verify what matters.** Treat a research worker's findings as reliable
@@ -272,7 +275,8 @@ Before doing anything:
 3. Inspect the actual code/data yourself.
 
 Then implement the task and follow the Worker Completion Protocol, or the Worker
-Questions and Blockers protocol if you hit something you must not guess on.
+Questions and Blockers protocol if you hit something you must not guess on. Include
+which agent/subagent type and model you ran as in your report.
 ```
 
 ---
@@ -288,7 +292,9 @@ When a worker successfully completes a task:
    confirm/finalize this on review, not treat the worker's edit as final).
 5. Record meaningful results in `RESULT.md`.
 6. Return a concise completion report covering: what changed, what was tested, any
-   assumptions made, any remaining concerns.
+   assumptions made, any remaining concerns, and which agent/subagent type and model
+   it actually ran as (confirms what was used, in case of a fallback from what the
+   orchestrator requested).
 
 A worker's `OK` is not sufficient evidence the task is correct — the orchestrator
 independently reviews every result (see [Code Review](#code-review)).
