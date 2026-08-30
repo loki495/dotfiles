@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; workers each execute one bounded task on a cheaper/faster model. Communication is file-based (.ai/PLAN.md, STATE.md, QUESTIONS.md, RESULT.md), so it works whether the orchestrator and worker are the same tool, different tools (Claude Code, opencode, Codex, agy), or different sessions entirely. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
+description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; each worker runs on the cheapest model, in any available tool (Claude Code, opencode, Codex, agy), that's judged capable of its one bounded task — reported to the user with justification before every launch, never assumed from whatever's already running. Communication is file-based (.ai/PLAN.md, STATE.md, QUESTIONS.md, RESULT.md), so this works across tools and across sessions. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
 ---
 
 # Orchestrator/Worker Protocol
@@ -18,7 +18,7 @@ specific tool; where mechanics differ per tool, that's called out explicitly.
         |
     delegate
         |
-     worker  <--- cheap/fast model, one bounded task
+     worker  <--- cheapest capable model, any tool, one bounded task
         |
    +----+----+
    |         |
@@ -59,8 +59,9 @@ The orchestrator is the senior agent responsible for:
 - resolving worker questions and blockers;
 - deciding when additional worker iterations are required;
 - performing final validation and review;
-- keeping the user informed, when asked, of which workers it has spawned — which
-  agent/subagent type and which model each one ran as.
+- telling the user, **before every worker launch** (not just when asked), which
+  agent/tool and model it's about to use and why — see
+  [Worker Launch Reporting](#worker-launch-reporting).
 
 The orchestrator is **not** the primary implementation worker. It should generally
 avoid implementing application code itself — its job is to direct, review, and make
@@ -139,8 +140,9 @@ The current orchestration state, kept concise and current:
 - current objective;
 - current step;
 - current worker status;
-- worker model and how it was launched (in-process, or cross-tool via which CLI —
-  see [Model Tiering](#model-tiering) and [In-Process vs Cross-Tool](#in-process-vs-cross-tool));
+- worker model, how it was launched (in-process, or cross-tool via which CLI), and
+  why that one was picked — see [Model Tiering](#model-tiering) and
+  [In-Process vs Cross-Tool](#in-process-vs-cross-tool);
 - important architectural decisions;
 - known limitations;
 - outstanding blockers.
@@ -349,17 +351,24 @@ run different-cost models — this is the point of the split, not an incidental 
   switch up to the strongest/most expensive model available "just because" the
   session is now acting as an orchestrator. The split isn't "orchestrator must be
   the priciest model"; it's "workers should be cheaper than the orchestrator."
-- **Worker**: executes one already-decomposed, bounded task. Default to the
-  cheapest/fastest model that can reliably do it. Workers run more often, and
-  sometimes in parallel, so their per-token cost is what actually compounds — this is
-  where token spend is controlled.
+- **Worker**: executes one already-decomposed, bounded task. Use the **cheapest
+  model, in any available tool, that's capable of doing it satisfactorily** — not
+  just the orchestrating tool's own cheap tier. Workers run more often, and
+  sometimes in parallel, so their per-token cost is what actually compounds; this is
+  where token spend is controlled, and it's controlled better by actually comparing
+  options than by defaulting to whatever's already open. See
+  [In-Process vs Cross-Tool](#in-process-vs-cross-tool) for how to compare across
+  tools without making the comparison itself expensive.
 
 Bump a worker to a stronger model only when the bounded task itself genuinely
 requires deep reasoning (diagnosing a subtle bug, reconciling conflicting
-constraints) — not by default "to be safe." Record the exact worker model in
-`STATE.md` either way. Don't assume a model's cost or availability from its name;
-verify with the tool's own model listing before launching (`opencode models`,
-`codex debug` / `-c model=...` docs, `agy models`, etc.).
+constraints) — not by default "to be safe," and not just because it's the model
+already running. Whichever model gets picked, state *why* — "cheapest capable option
+available" is a real justification, but it has to have actually been checked against
+the alternatives, not assumed. Record the exact worker model, which tool it ran in,
+and that justification in `STATE.md`. Don't assume a model's cost or availability
+from its name; verify with the tool's own model listing before launching
+(`opencode models`, `codex debug` / `-c model=...` docs, `agy models`, etc.).
 
 The orchestration protocol itself must not depend on a particular model's identity —
 the same project should be able to swap worker models later (a free tier, a stronger
@@ -407,29 +416,33 @@ same files. The orchestrator never needs tool-specific handling once a worker is
 launched; it just watches for file updates and the return value like any other
 worker.
 
-**Default to in-process, on the cheapest tier your own tool offers.** For most
-tasks — especially small/fast ones — this is both simplest and cheapest: no
-cross-tool auth/quota check to do, no subprocess to manage, and the fixed overhead of
-switching tools would exceed anything a marginally-cheaper model saves.
+**Prioritize the cheapest capable model for every worker, in-process or not** — don't
+default to in-process just because it's already open. The in-process/cross-tool
+question is purely mechanical (how do I reach the cheapest capable option), not a
+reason to skip looking for it.
 
-**Consider cross-tool dispatch only for large tasks**, where there's enough work to
-amortize that overhead — a multi-file implementation, an extensive investigation,
-something that would run for a while and burn real tokens either way. Even then:
+**Keep the comparison itself cheap**, so "always look" doesn't turn into its own
+research task:
 
-1. Do a quick, bounded check of the other tool's availability before committing to
-   it — is it installed (`command_exists`), authenticated, does it have quota
-   headroom? Use the tool's own lightweight status command where one exists
-   (`codex doctor`, agy's usage check, `opencode models`) rather than guessing. This
-   check should be cheap — if the tool doesn't offer a fast way to answer this,
-   don't build one; treat it as unavailable and move on.
-2. Only dispatch there if the check confirms it's usable **and** capable enough for
-   the task. Don't gamble a large task on an unfamiliar model just because it's
-   free — if it turns out inadequate, the wasted round trip on a big task costs more
-   than the in-process alternative would have.
-3. **In-process is always the fallback.** If the other tool isn't installed, isn't
-   authenticated, is out of quota, or the check itself is inconclusive, just launch
-   in-process on your own cheap tier — don't let an optimization attempt block real
-   work.
+1. Once per orchestration session (not once per worker), find out what's actually
+   available: which tools are installed (`command_exists`), authenticated, and what
+   they charge/offer — use each tool's own lightweight status command
+   (`codex doctor`, agy's usage check, `opencode models`) rather than guessing.
+   Re-check a specific tool mid-session only if something would plausibly have
+   changed it (you've launched several workers there since and quota could be
+   tight), not before every single launch.
+2. For each worker, pick the cheapest model from that known set that you judge
+   capable of the task. When two options are close enough in cost that the
+   difference doesn't matter, prefer in-process — it's simpler, and simplicity is
+   the tiebreaker, not the default.
+3. Don't gamble a task on an unfamiliar cheap/free model without some basis for
+   trusting it with this specific task — if it turns out inadequate, the wasted
+   round trip costs more than picking the right tier up front would have. This
+   matters more as task size grows; a small task failing over is cheap either way.
+4. **In-process is always the fallback**, regardless of why: nothing else installed,
+   nothing else authenticated, everything else out of quota, or the capability call
+   is genuinely too close to guess. Don't let the search for a cheaper option block
+   real work — fall back and move on.
 
 Verification doesn't change based on where a worker ran: the orchestrator reviews a
 cross-tool worker's result exactly like an in-process one (see
@@ -438,6 +451,27 @@ not a protocol failure — decide whether to re-delegate on the same tool or fal
 to in-process, the same way any blocked/incorrect task gets re-run.
 
 Record which mechanism was actually used, alongside the model, in `STATE.md`.
+
+### Worker Launch Reporting
+
+Tell the user this **before launching**, not after and not only when asked — this is
+what makes "prioritize the cheapest capable model" verifiable rather than a claim:
+
+```
+Launching worker — <task ID / description>
+Agent/tool: <e.g. Claude Code Agent (general-purpose) | opencode | codex | agy>
+Model: <model>
+Why: <the actual comparison, not just a label — e.g. "cheapest available across
+      installed tools capable of this bounded mechanical edit (checked opencode/
+      codex/agy: X had no quota, Y not authenticated)" or "bumped up from the
+      cheapest tier because this task requires diagnosing a race condition">
+```
+
+This is a report, not a request for permission — the orchestrator still has standing
+authority to launch workers per [Blocker Resolution Loop](#blocker-resolution-loop)
+and the rest of this protocol. It exists so a wrong or lazy model choice ("used
+whatever was already running") is visible in the moment, not discovered later by
+asking.
 
 ### Parallel vs Sequential Workers
 
