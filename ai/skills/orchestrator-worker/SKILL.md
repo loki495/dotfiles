@@ -139,7 +139,8 @@ The current orchestration state, kept concise and current:
 - current objective;
 - current step;
 - current worker status;
-- worker model (exact provider/model identifier — see [Model Tiering](#model-tiering));
+- worker model and how it was launched (in-process, or cross-tool via which CLI —
+  see [Model Tiering](#model-tiering) and [In-Process vs Cross-Tool](#in-process-vs-cross-tool));
 - important architectural decisions;
 - known limitations;
 - outstanding blockers.
@@ -395,6 +396,48 @@ synchronously by default (the report comes back in the tool result); use
 Confirmed as of 2026-08-29 against the installed versions on this machine — CLI flags
 drift between releases, so re-verify with the tool's own `--help` if it's been a
 while.
+
+### In-Process vs Cross-Tool
+
+Communication is entirely file-based, so it doesn't matter to the protocol whether a
+worker runs in-process (the orchestrator's own `Agent`/subagent mechanism) or as a
+separate cross-tool subprocess (`opencode run`, `codex exec`, `agy -p`) — either way
+the worker reads `.ai/PLAN.md`/`STATE.md`/`QUESTIONS.md` and reports back through the
+same files. The orchestrator never needs tool-specific handling once a worker is
+launched; it just watches for file updates and the return value like any other
+worker.
+
+**Default to in-process, on the cheapest tier your own tool offers.** For most
+tasks — especially small/fast ones — this is both simplest and cheapest: no
+cross-tool auth/quota check to do, no subprocess to manage, and the fixed overhead of
+switching tools would exceed anything a marginally-cheaper model saves.
+
+**Consider cross-tool dispatch only for large tasks**, where there's enough work to
+amortize that overhead — a multi-file implementation, an extensive investigation,
+something that would run for a while and burn real tokens either way. Even then:
+
+1. Do a quick, bounded check of the other tool's availability before committing to
+   it — is it installed (`command_exists`), authenticated, does it have quota
+   headroom? Use the tool's own lightweight status command where one exists
+   (`codex doctor`, agy's usage check, `opencode models`) rather than guessing. This
+   check should be cheap — if the tool doesn't offer a fast way to answer this,
+   don't build one; treat it as unavailable and move on.
+2. Only dispatch there if the check confirms it's usable **and** capable enough for
+   the task. Don't gamble a large task on an unfamiliar model just because it's
+   free — if it turns out inadequate, the wasted round trip on a big task costs more
+   than the in-process alternative would have.
+3. **In-process is always the fallback.** If the other tool isn't installed, isn't
+   authenticated, is out of quota, or the check itself is inconclusive, just launch
+   in-process on your own cheap tier — don't let an optimization attempt block real
+   work.
+
+Verification doesn't change based on where a worker ran: the orchestrator reviews a
+cross-tool worker's result exactly like an in-process one (see
+[Code Review](#code-review)). If a cross-tool worker's result is inadequate, that's
+not a protocol failure — decide whether to re-delegate on the same tool or fall back
+to in-process, the same way any blocked/incorrect task gets re-run.
+
+Record which mechanism was actually used, alongside the model, in `STATE.md`.
 
 ### Parallel vs Sequential Workers
 
