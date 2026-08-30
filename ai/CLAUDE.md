@@ -299,7 +299,8 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 
 `laravel-conventions`, `livewire-components`, `pest-testing`,
 `opencart-legacy`, `frontend-stack`, `db-context`, `git-workflow`, `rector`,
-`backup-setup`, `verifying-identity`, `resource-cleanup`, `orchestrator-worker`
+`backup-setup`, `verifying-identity`, `resource-cleanup`, `orchestrator-worker`,
+`ac495-infrastructure`
 
 ## Agents available
 
