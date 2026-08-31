@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; each worker runs on the cheapest model, in any available tool (Claude Code, opencode, Codex, agy), that's judged capable of its one bounded task — reported to the user with justification before every launch, never assumed from whatever's already running. Communication is file-based (.ai/PLAN.md, STATE.md, QUESTIONS.md, RESULT.md), so this works across tools and across sessions. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
+description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; each worker runs on the cheapest model, in any available tool (Claude Code, opencode, Codex, agy), that's judged capable of its one bounded task — reported to the user with justification before every launch, never assumed from whatever's already running. Communication is file-based, one folder per orchestration under .ai/orchestrator/<id>/ (PLAN.md, STATE.md, QUESTIONS.md, RESULT.md) plus a shared INDEX.md registry, so multiple orchestrations can run concurrently in the same project and any session — this one resuming later, or a different tool entirely — can discover and resume where another left off. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
 ---
 
 # Orchestrator/Worker Protocol
@@ -100,19 +100,58 @@ unrelated files, repositories, configuration, credentials, or user data.
 
 ## Project State
 
-Every orchestrated project maintains four files at its root:
+A project can have more than one orchestration active, or completed, at once —
+different objectives, launched by different sessions, sometimes at the same time.
+Each gets its own folder so they can't collide, and so any session — this one
+resuming later, or a completely different one — can find and pick up exactly where
+another left off:
 
-    .ai/PLAN.md
-    .ai/STATE.md
-    .ai/QUESTIONS.md
-    .ai/RESULT.md
+    .ai/orchestrator/INDEX.md                    <- registry of every orchestration
+    .ai/orchestrator/<orchestration-id>/PLAN.md
+    .ai/orchestrator/<orchestration-id>/STATE.md
+    .ai/orchestrator/<orchestration-id>/QUESTIONS.md
+    .ai/orchestrator/<orchestration-id>/RESULT.md
 
-These are the **authoritative** communication channel. A worker's direct response —
-whatever the launching tool returns immediately after the call — is a convenience for
-the orchestrator's next step, nothing more. If it ever conflicts with what these files
+**`<orchestration-id>`**: `<YYYY-MM-DD>-<kebab-slug-of-the-objective>`, e.g.
+`2026-08-30-cards-domain-migration`. Human-readable, sorts naturally by date, and only
+collides if two orchestrations started the same day land on the same slug — if that
+happens, make the slug more specific rather than appending an arbitrary suffix.
+
+**Before starting as an orchestrator, always check for existing orchestrations
+first** — don't assume `.ai/orchestrator/` is empty or that this is a fresh start:
+
+1. Read `INDEX.md` if it exists (or list `.ai/orchestrator/*/` if it doesn't yet — a
+   folder can exist without ever having been indexed, if whatever created it was
+   interrupted before writing its row).
+2. If an entry matches the requested objective and isn't `done`, resume it: read its
+   four files and continue from `STATE.md`'s current step. A new session has no
+   memory of the old one, but the files are the authoritative record — that's the
+   entire point of this being file-based rather than conversation-based.
+3. Only create a new `<orchestration-id>` folder for a genuinely distinct objective.
+
+**`INDEX.md`** is a flat list, one line per orchestration:
+
+    - <orchestration-id> | <status> | <one-line objective> | updated <date>
+
+Each orchestrator only ever writes its own line — never edit another orchestration's
+row, even to fix formatting, the same way parallel workers only touch their own status
+line in `PLAN.md` (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)).
+Add a line when creating a folder; update only your own line's status/date as things
+progress.
+
+Multiple orchestrations can run concurrently in the same project as long as their
+scopes don't overlap. If two orchestrations would touch the same files, that's a sign
+they should be one orchestration, or sequenced, rather than two independent ones —
+check `INDEX.md` for that before starting a second one that might collide with a
+still-active first.
+
+The four files inside an orchestration's own folder are the **authoritative**
+communication channel for that orchestration. A worker's direct response — whatever
+the launching tool returns immediately after the call — is a convenience for the
+orchestrator's next step, nothing more. If it ever conflicts with what these files
 say, the files win; fix the files if they're wrong. Any orchestrator (even a fresh
-session, even a different tool) must be able to resume a project from these four files
-alone, with no memory of prior conversation.
+session, even a different tool) must be able to resume an orchestration from its four
+files alone, with no memory of prior conversation.
 
 Only the orchestrator writes to `STATE.md`. Workers append to `QUESTIONS.md` and
 `RESULT.md`, and update only their own task's status line in `PLAN.md` — this matters
@@ -167,10 +206,13 @@ narration log — record what matters, not every step taken.
 
 Before delegating any implementation:
 
-1. Scaffold `.ai/PLAN.md`, `.ai/STATE.md`, `.ai/QUESTIONS.md`, `.ai/RESULT.md` in the
-   project directory — they can start as stubs (`STATE.md` can just say
-   "researching, no plan yet"). This gives research workers somewhere to log
-   durable findings even before a plan exists.
+1. Check `.ai/orchestrator/INDEX.md` for an existing, unfinished orchestration on this
+   objective before creating a new one (see [Project State](#project-state)). If
+   starting fresh, pick an `<orchestration-id>`, add its row to `INDEX.md`, and
+   scaffold `PLAN.md`, `STATE.md`, `QUESTIONS.md`, `RESULT.md` in its folder — they
+   can start as stubs (`STATE.md` can just say "researching, no plan yet"). This
+   gives research workers somewhere to log durable findings even before a plan
+   exists.
 2. Inspect the repository and relevant environment.
 3. Identify what's actually unknown — specific questions, not "investigate
    everything." Anything that needs reading multiple files/sources or several
@@ -214,13 +256,14 @@ You are a RESEARCH WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
+Orchestration: .ai/orchestrator/<orchestration-id>/
 Research question(s): <specific and bounded — not "investigate the codebase">
 
 Investigate read-only — do not modify anything. Report back concisely: what you
 found, where (file paths/line numbers, commands run), and flag anything you
 couldn't confirm rather than guessing. State which agent/subagent type and model
 you ran as. If it's a durable finding worth keeping past this session, also append
-it to .ai/RESULT.md.
+it to this orchestration's RESULT.md.
 ```
 
 **Trust, but verify what matters.** Treat a research worker's findings as reliable
@@ -254,7 +297,8 @@ Every worker must be instructed, at minimum, to read:
 - this protocol (the `orchestrator-worker` skill if the worker's tool auto-loads
   shared skills; otherwise point it explicitly at
   `~/dotfiles/ai/skills/orchestrator-worker/SKILL.md`);
-- `.ai/PLAN.md`, `.ai/STATE.md`, `.ai/QUESTIONS.md` in the project directory.
+- this orchestration's `PLAN.md`, `STATE.md`, `QUESTIONS.md` (under
+  `.ai/orchestrator/<orchestration-id>/`, per [Project State](#project-state)).
 
 The worker inspects the repository itself rather than relying entirely on the
 orchestrator's description, and must not assume the plan is correct if repository
@@ -271,10 +315,11 @@ You are a WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
+Orchestration: .ai/orchestrator/<orchestration-id>/
 Your task: <task ID from PLAN.md>
 
 Before doing anything:
-1. Read .ai/PLAN.md, .ai/STATE.md, and .ai/QUESTIONS.md in the project directory.
+1. Read PLAN.md, STATE.md, and QUESTIONS.md from this orchestration's folder.
 2. Confirm your assigned task and its acceptance criteria.
 3. Inspect the actual code/data yourself.
 
@@ -362,7 +407,7 @@ Workers must **not** guess when they encounter:
 Instead:
 
 1. Mark the current task `blocked` or `needs_review` in `PLAN.md`.
-2. Write the question to `.ai/QUESTIONS.md`: what was discovered, why the plan
+2. Write the question to this orchestration's `QUESTIONS.md`: what was discovered, why the plan
    can't safely continue, exactly what decision/information is needed, options if
    useful, a recommendation if there is one.
 3. Leave the working tree in a coherent state.
@@ -525,8 +570,8 @@ for any cross-tool worker running in the background:
    it's hung — disk writes can trail the sentinel by a few seconds. Recheck after a
    short pause before concluding it's actually stuck. Only kill a process that's
    clearly well past the task's expected size, and always re-read (don't assume) any
-   `.ai/` files it touched afterward, the same way the original incident was
-   recovered from.
+   of its orchestration's files it touched afterward, the same way the original
+   incident was recovered from.
 5. **Give each parallel cross-tool worker its own project directory** (`-C <dir>` or
    equivalent, per [Project Isolation](#project-isolation)) — this narrows, though
    doesn't by itself eliminate, the chance of state bleeding between concurrent
@@ -537,8 +582,8 @@ for any cross-tool worker running in the background:
 Communication is entirely file-based, so it doesn't matter to the protocol whether a
 worker runs in-process (the orchestrator's own `Agent`/subagent mechanism) or as a
 separate cross-tool subprocess (`opencode run`, `codex exec`, `agy -p`) — either way
-the worker reads `.ai/PLAN.md`/`STATE.md`/`QUESTIONS.md` and reports back through the
-same files. The orchestrator never needs tool-specific handling once a worker is
+the worker reads `PLAN.md`/`STATE.md`/`QUESTIONS.md` from its orchestration's folder
+and reports back through the same files. The orchestrator never needs tool-specific handling once a worker is
 launched; it just watches for file updates and the return value like any other
 worker.
 
@@ -602,7 +647,8 @@ asking.
 ### Parallel vs Sequential Workers
 
 Sequential is the default: one task's result often changes what the next task should
-be, and it keeps the `.ai/` files a single source of truth with no concurrent writers.
+be, and it keeps the orchestration's files a single source of truth with no
+concurrent writers.
 
 Launch workers in parallel only when:
 
@@ -671,6 +717,7 @@ A project is complete only when:
 5. No known critical blockers remain.
 6. The working tree contains only intentional changes.
 7. Important limitations are documented.
+8. This orchestration's line in `.ai/orchestrator/INDEX.md` is marked `done`.
 
 The final report summarizes what was built, important architectural decisions, how
 it was verified, known limitations, and relevant future improvements. Don't claim
