@@ -391,7 +391,7 @@ blocks until done and returns its output:
 | Tool | Headless invocation | Model flag | Notes |
 |---|---|---|---|
 | opencode | `opencode run --model <provider/model> "<worker prompt>"` | `--model` | Foreground subprocess; cwd = project dir. Verify exact syntax with `opencode run --help` / `opencode models` — do not invent provider/model names. |
-| Codex | `codex exec -m <model> "<worker prompt>"` (alias `codex e`) | `-m`/`--model` | Foreground subprocess. Verify with `codex exec --help`. `codex agents` lists sessions on the local app-server daemon if you need to check on a running one. |
+| Codex | `codex exec -m <model> "<worker prompt>"` (alias `codex e`) | `-m`/`--model` | Foreground subprocess. Verify with `codex exec --help`. See [Codex Completion Verification](#codex-completion-verification) before trusting a background-launched codex worker as done — `codex agents` needs a real TTY and cannot be used from a script. |
 | agy (Antigravity) | `agy -p --agent <name> --model <model> "<worker prompt>"` | `--model` | Foreground subprocess (`-p`/`--print` = non-interactive). `--effort` isn't supported on every model. agy has account-wide usage quotas — check headroom before launching several workers in a row. |
 
 Claude Code is the one exception, since the orchestrator is usually already running
@@ -405,6 +405,65 @@ synchronously by default (the report comes back in the tool result); use
 Confirmed as of 2026-08-29 against the installed versions on this machine — CLI flags
 drift between releases, so re-verify with the tool's own `--help` if it's been a
 while.
+
+### Codex Completion Verification
+
+A real orchestration run hit a genuine race with codex: two `codex exec` workers were
+launched, the launching harness reported both complete, but both were still writing
+output minutes later — a concurrent write corrupted `PLAN.md`'s status section until
+the stray processes were killed and the files manually reconciled. This was serious
+enough to report as a tool bug. Tested directly (2026-08-30) to understand it before
+writing this guidance:
+
+- A single foreground `codex exec` call, waited on synchronously (`wait "$!"` in a
+  wrapper script) with a task built to take several seconds, behaved correctly — the
+  process didn't exit until the real work (including a deliberate multi-second shell
+  step) was done, exit code and the JSONL `turn.completed` event lined up, and no new
+  process was left running afterward (only pre-existing, unrelated persistent daemons
+  — see below — were present, before and after).
+- Codex's actual work runs through a shared local `app-server` daemon plus
+  `codex-code-mode-host` processes that persist independently of any single
+  `codex exec` invocation (`codex app-server daemon ...`, always-on regardless of
+  whether a worker is active). That shared, persistent architecture is what makes a
+  stray/orphaned turn possible under concurrent launches, even though one call in
+  isolation completed cleanly in this test — it was not reproduced directly, but the
+  daemon design is a plausible mechanism for it and the original report is real.
+- `codex agents` — this skill previously pointed here to check on a running
+  session — **requires an interactive TTY** (`ERROR: stdin is not a terminal` when
+  run from a script or pipe). It cannot be used by an orchestrator. No scriptable
+  "is this codex thread actually idle" query exists in this CLI (checked
+  `codex debug`, `codex exec resume`, `codex app-server daemon version` — none fit).
+
+Since there's no reliable tool-side status query, don't trust the launching
+mechanism's "process completed" signal alone for codex, especially when running more
+than one codex worker at a time:
+
+1. **Default to sequential codex workers.** [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)
+   already defaults to sequential for good reasons; treat that default as firm for
+   codex specifically, since this is the one tool with a confirmed concurrent-write
+   race. Only run codex workers in parallel if the task genuinely needs it, and expect
+   to lean harder on the sentinel check below.
+2. **Require a completion sentinel, not just a process-exit signal.** Have every codex
+   worker's prompt end with an explicit instruction to write a fixed final line to its
+   own `RESULT.md` as its last action (e.g. `WORKER_DONE <task-id>`). The orchestrator
+   treats the worker as finished only once that sentinel is actually present on disk —
+   not merely because the launching call returned or a background-task notification
+   fired. This is a restatement of [Worker Completion Protocol](#worker-completion-protocol)'s
+   existing file-based verification, called out explicitly here because codex is the
+   one tool where skipping it has already caused real file corruption.
+3. **If a codex worker runs in the background/parallel, poll for the sentinel** (a
+   short loop checking `RESULT.md` for the marker) rather than relying on a single
+   "done" event — see the Monitor tool's guidance on polling loops if launching from
+   Claude Code.
+4. **If a stray codex process is still visible after the sentinel appears**, don't
+   assume it's hung — disk writes can trail the sentinel by a few seconds. Recheck
+   after a short pause before concluding it's actually stuck. Only kill a process
+   that's clearly well past the task's expected size, and always re-read (don't
+   assume) any `.ai/` files it touched afterward, the same way the original incident
+   was recovered from.
+5. **Give each parallel codex worker its own project directory** (`-C <dir>`, per
+   [Project Isolation](#project-isolation)) — this narrows, though doesn't by itself
+   eliminate, the chance of state bleeding between threads on the shared daemon.
 
 ### In-Process vs Cross-Tool
 
