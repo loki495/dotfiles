@@ -140,8 +140,9 @@ The current orchestration state, kept concise and current:
 - current objective;
 - current step;
 - current worker status;
-- worker model, how it was launched (in-process, or cross-tool via which CLI), and
-  why that one was picked — see [Model Tiering](#model-tiering) and
+- worker model, how it was launched (in-process, or cross-tool via which CLI), why
+  that one was picked, and its cost as actually reported (exact or proxy — see
+  [Cost Reporting](#cost-reporting)) — see [Model Tiering](#model-tiering) and
   [In-Process vs Cross-Tool](#in-process-vs-cross-tool);
 - important architectural decisions;
 - known limitations;
@@ -279,7 +280,8 @@ Before doing anything:
 
 Then implement the task and follow the Worker Completion Protocol, or the Worker
 Questions and Blockers protocol if you hit something you must not guess on. Include
-which agent/subagent type and model you ran as in your report.
+which agent/subagent type and model you ran as, and your cost per Cost Reporting, in
+your report.
 ```
 
 ---
@@ -298,9 +300,50 @@ When a worker successfully completes a task:
    assumptions made, any remaining concerns, and which agent/subagent type and model
    it actually ran as (confirms what was used, in case of a fallback from what the
    orchestrator requested).
+7. Report cost — see [Cost Reporting](#cost-reporting) for what's actually available
+   to report and how to report it honestly.
 
 A worker's `OK` is not sufficient evidence the task is correct — the orchestrator
 independently reviews every result (see [Code Review](#code-review)).
+
+### Cost Reporting
+
+What a worker can honestly report about its own cost depends entirely on how it ran.
+Don't ask for a number a worker structurally cannot know, and don't let an estimate
+pass as an exact figure:
+
+- **Cross-tool CLI workers with a JSON/machine-readable output mode** — confirmed for
+  codex: `codex exec --json` emits a `turn.completed` event carrying a real `usage`
+  object (`input_tokens`, `cached_input_tokens`, `cache_write_input_tokens`,
+  `output_tokens`); check each tool's own `--help`/docs for its equivalent rather than
+  assuming the flag name or field names carry over. Capture that event and report the
+  real numbers, plus a rough dollar estimate if the model's per-token pricing is
+  known. This is exact, not a guess — use `--json` (or equivalent) by default for
+  cross-tool worker launches so this is available.
+- **In-process Claude Code subagents cannot self-report exact token usage.** A
+  subagent has no tool that exposes its own token count from inside its own
+  generation — that accounting only exists afterward, in its own persisted session
+  transcript on disk (under `~/.claude/projects/<project>/**/*.jsonl`; the exact
+  layout can shift between Claude Code versions, so locate the right file by
+  recency/session-id rather than hardcoding a path). If genuinely precise numbers are
+  needed, the *orchestrator* can read that file after the worker completes — that's
+  how a real token-usage audit of this protocol was actually done. This is a
+  deliberate deep-dive, not a routine step for every task; don't add it as overhead
+  to normal delegation.
+- **When exact numbers aren't available** (the common case for in-process workers),
+  report proxy signals instead: number of tool calls made, roughly how many files
+  were read/written, and task duration if known. Label these explicitly as
+  estimates, not token counts — a vague impression framed as if it were a hard number
+  is worse than an honest "exact usage not visible for this run."
+- **Cross-tool workers launched without a JSON/verbose mode have genuinely
+  unrecoverable cost** — the orchestrator never sees their token usage, and their
+  real cost (a separate provider's billing) isn't visible from here at all. State
+  this plainly in `RESULT.md` rather than omitting a cost line silently; a known gap
+  is more useful than a missing one.
+
+Record whatever was actually captured — exact or proxy — in `STATE.md` alongside the
+model/mechanism/justification already required there, so a long session accumulates a
+readable cost trail instead of requiring a transcript dig to reconstruct later.
 
 ---
 
@@ -360,6 +403,18 @@ run different-cost models — this is the point of the split, not an incidental 
   [In-Process vs Cross-Tool](#in-process-vs-cross-tool) for how to compare across
   tools without making the comparison itself expensive.
 
+Model tier isn't the only source of savings, and for tool-call-heavy tasks it usually
+isn't the dominant one. A worker that makes many tool calls builds a large context
+over the course of its own run; doing that exploration in a disposable worker means
+the growth gets discarded when the worker finishes, instead of becoming permanent,
+repeatedly-re-read context in a long-running orchestrator session — a real audit found
+one delegated task whose worker context grew past 400k tokens over ~80 tool calls, and
+containing that inside a worker rather than the orchestrator was worth far more than
+the model-tier difference alone, since an orchestrator's accumulated context gets
+re-read on every subsequent turn for the rest of the session. A task expected to need
+many tool calls or a large exploration footprint is worth delegating for this reason
+by itself, even before comparing model prices.
+
 Bump a worker to a stronger model only when the bounded task itself genuinely
 requires deep reasoning (diagnosing a subtle bug, reconciling conflicting
 constraints) — not by default "to be safe," and not just because it's the model
@@ -391,7 +446,7 @@ blocks until done and returns its output:
 | Tool | Headless invocation | Model flag | Notes |
 |---|---|---|---|
 | opencode | `opencode run --model <provider/model> "<worker prompt>"` | `--model` | Foreground subprocess; cwd = project dir. Verify exact syntax with `opencode run --help` / `opencode models` — do not invent provider/model names. |
-| Codex | `codex exec -m <model> "<worker prompt>"` (alias `codex e`) | `-m`/`--model` | Foreground subprocess. Verify with `codex exec --help`. See [Codex Completion Verification](#codex-completion-verification) before trusting a background-launched codex worker as done — `codex agents` needs a real TTY and cannot be used from a script. |
+| Codex | `codex exec -m <model> "<worker prompt>"` (alias `codex e`), add `--json` to capture real usage — see [Cost Reporting](#cost-reporting) | `-m`/`--model` | Foreground subprocess. Verify with `codex exec --help`. See [Background Launch Verification](#background-launch-verification) before ever backgrounding a codex (or any cross-tool) worker without waiting on it — `codex agents` needs a real TTY and cannot be used from a script. |
 | agy (Antigravity) | `agy -p --agent <name> --model <model> "<worker prompt>"` | `--model` | Foreground subprocess (`-p`/`--print` = non-interactive). `--effort` isn't supported on every model. agy has account-wide usage quotas — check headroom before launching several workers in a row. |
 
 Claude Code is the one exception, since the orchestrator is usually already running
@@ -406,64 +461,76 @@ Confirmed as of 2026-08-29 against the installed versions on this machine — CL
 drift between releases, so re-verify with the tool's own `--help` if it's been a
 while.
 
-### Codex Completion Verification
+### Background Launch Verification
 
-A real orchestration run hit a genuine race with codex: two `codex exec` workers were
-launched, the launching harness reported both complete, but both were still writing
-output minutes later — a concurrent write corrupted `PLAN.md`'s status section until
-the stray processes were killed and the files manually reconciled. This was serious
-enough to report as a tool bug. Tested directly (2026-08-30) to understand it before
-writing this guidance:
+A real orchestration run hit a genuine race: two `codex exec` workers were launched,
+the launching harness reported both complete, but both were still writing output
+minutes later — a concurrent write corrupted `PLAN.md`'s status section until the
+stray processes were killed and the files manually reconciled. Investigated in two
+passes: a live test of a single, properly-waited `codex exec` call (2026-08-30), then
+later a direct read of the actual incident transcript (2026-08-30), which found the
+exact cause.
 
-- A single foreground `codex exec` call, waited on synchronously (`wait "$!"` in a
-  wrapper script) with a task built to take several seconds, behaved correctly — the
-  process didn't exit until the real work (including a deliberate multi-second shell
-  step) was done, exit code and the JSONL `turn.completed` event lined up, and no new
-  process was left running afterward (only pre-existing, unrelated persistent daemons
-  — see below — were present, before and after).
-- Codex's actual work runs through a shared local `app-server` daemon plus
-  `codex-code-mode-host` processes that persist independently of any single
-  `codex exec` invocation (`codex app-server daemon ...`, always-on regardless of
-  whether a worker is active). That shared, persistent architecture is what makes a
-  stray/orphaned turn possible under concurrent launches, even though one call in
-  isolation completed cleanly in this test — it was not reproduced directly, but the
-  daemon design is a plausible mechanism for it and the original report is real.
-- `codex agents` — this skill previously pointed here to check on a running
-  session — **requires an interactive TTY** (`ERROR: stdin is not a terminal` when
-  run from a script or pipe). It cannot be used by an orchestrator. No scriptable
-  "is this codex thread actually idle" query exists in this CLI (checked
-  `codex debug`, `codex exec resume`, `codex app-server daemon version` — none fit).
+**Confirmed root cause**: the real launch used
+`nohup codex exec ... & ; echo "PID: $!"` — backgrounded with no `wait` and no poll.
+The wrapping shell command returns almost immediately once the process is
+backgrounded, so "the harness reported completed" was true of the *wrapper*, not the
+worker — the notification was accurate about the thing it was actually watching, just
+not the thing that mattered. This is a general shell-launch anti-pattern, not
+something specific to codex: any cross-tool worker launched with bare backgrounding
+(`&`, `nohup ... &`, `disown`) and no `wait`/poll afterward has the same failure mode.
+Never do this — either run the worker in the foreground and block on it (the default
+for all three cross-tool CLIs, per the table above), or, if backgrounding is genuinely
+needed for parallelism, capture the PID and `wait` on it or poll for a completion
+sentinel (below) — never just log the PID and move on.
 
-Since there's no reliable tool-side status query, don't trust the launching
-mechanism's "process completed" signal alone for codex, especially when running more
-than one codex worker at a time:
+Secondary, codex-specific factor: codex's actual work runs through a shared local
+`app-server` daemon plus `codex-code-mode-host` processes that persist independently
+of any single `codex exec` invocation (`codex app-server daemon ...`, always-on
+regardless of whether a worker is active). A single, properly-waited `codex exec` call
+completed cleanly against this daemon in direct testing, so the daemon by itself
+wasn't the failure here — but it's a plausible reason codex specifically could still
+leave orphaned work behind even with a correctly-`wait`ed launch, worth keeping in
+mind if a future incident doesn't match the missing-`wait` pattern above.
 
-1. **Default to sequential codex workers.** [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)
-   already defaults to sequential for good reasons; treat that default as firm for
-   codex specifically, since this is the one tool with a confirmed concurrent-write
-   race. Only run codex workers in parallel if the task genuinely needs it, and expect
-   to lean harder on the sentinel check below.
-2. **Require a completion sentinel, not just a process-exit signal.** Have every codex
-   worker's prompt end with an explicit instruction to write a fixed final line to its
-   own `RESULT.md` as its last action (e.g. `WORKER_DONE <task-id>`). The orchestrator
-   treats the worker as finished only once that sentinel is actually present on disk —
-   not merely because the launching call returned or a background-task notification
-   fired. This is a restatement of [Worker Completion Protocol](#worker-completion-protocol)'s
-   existing file-based verification, called out explicitly here because codex is the
-   one tool where skipping it has already caused real file corruption.
-3. **If a codex worker runs in the background/parallel, poll for the sentinel** (a
-   short loop checking `RESULT.md` for the marker) rather than relying on a single
-   "done" event — see the Monitor tool's guidance on polling loops if launching from
-   Claude Code.
-4. **If a stray codex process is still visible after the sentinel appears**, don't
-   assume it's hung — disk writes can trail the sentinel by a few seconds. Recheck
-   after a short pause before concluding it's actually stuck. Only kill a process
-   that's clearly well past the task's expected size, and always re-read (don't
-   assume) any `.ai/` files it touched afterward, the same way the original incident
-   was recovered from.
-5. **Give each parallel codex worker its own project directory** (`-C <dir>`, per
-   [Project Isolation](#project-isolation)) — this narrows, though doesn't by itself
-   eliminate, the chance of state bleeding between threads on the shared daemon.
+Also corrected: `codex agents` — this skill previously pointed here to check on a
+running session — **requires an interactive TTY** (`ERROR: stdin is not a terminal`
+when run from a script or pipe). It cannot be used by an orchestrator. No scriptable
+"is this thread actually idle" query exists in the codex CLI (checked `codex debug`,
+`codex exec resume`, `codex app-server daemon version` — none fit); this is exactly
+why the sentinel approach below matters, rather than looking for a status-check
+command.
+
+Regardless of root cause, verification still shouldn't rest on a single "done" signal
+for any cross-tool worker running in the background:
+
+1. **Foreground + wait is the default.** Only background a cross-tool worker when the
+   task genuinely needs parallelism (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers),
+   which already defaults to sequential). codex specifically had a confirmed
+   concurrent-write race, so treat sequential as firmer still for codex until it's
+   been re-tested clean under real parallel load.
+2. **Require a completion sentinel, not just a process-exit signal**, whenever a
+   worker does run in the background. Have the worker's prompt end with an explicit
+   instruction to write a fixed final line to its own `RESULT.md` as its last action
+   (e.g. `WORKER_DONE <task-id>`). The orchestrator treats the worker as finished only
+   once that sentinel is actually present on disk — not merely because the launching
+   call returned or a background-task notification fired. This restates
+   [Worker Completion Protocol](#worker-completion-protocol)'s existing file-based
+   verification, called out explicitly here because this exact gap has already caused
+   real file corruption once.
+3. **Poll for the sentinel** (a short loop checking `RESULT.md` for the marker)
+   rather than relying on a single "done" event — see the Monitor tool's guidance on
+   polling loops if launching from Claude Code.
+4. **If a stray process is still visible after the sentinel appears**, don't assume
+   it's hung — disk writes can trail the sentinel by a few seconds. Recheck after a
+   short pause before concluding it's actually stuck. Only kill a process that's
+   clearly well past the task's expected size, and always re-read (don't assume) any
+   `.ai/` files it touched afterward, the same way the original incident was
+   recovered from.
+5. **Give each parallel cross-tool worker its own project directory** (`-C <dir>` or
+   equivalent, per [Project Isolation](#project-isolation)) — this narrows, though
+   doesn't by itself eliminate, the chance of state bleeding between concurrent
+   workers sharing one tool's backend.
 
 ### In-Process vs Cross-Tool
 
