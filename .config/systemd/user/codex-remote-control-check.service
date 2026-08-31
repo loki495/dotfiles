@@ -1,0 +1,8 @@
+[Unit]
+Description=Ensure Codex remote control is available
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/andres/.local/bin/codex remote-control start --json

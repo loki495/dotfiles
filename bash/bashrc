@@ -250,3 +250,7 @@ syncclone() {
 }
 
 [ -f ~/.bashrc.local ] && source ~/.bashrc.local
+
+# >>> Codex installer >>>
+export PATH="/home/andres/.local/bin:$PATH"
+# <<< Codex installer <<<

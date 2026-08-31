@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart Antigravity CLI Remote Control Daemon to apply updates
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --user restart agy-remote-control.service

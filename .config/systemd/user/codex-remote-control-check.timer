@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodically ensure Codex remote control is available
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=10s
+Persistent=true
+Unit=codex-remote-control-check.service
+
+[Install]
+WantedBy=timers.target

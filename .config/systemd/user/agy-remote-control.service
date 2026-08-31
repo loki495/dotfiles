@@ -1,0 +1,17 @@
+[Unit]
+Description=Antigravity CLI (agy) Remote Control Daemon
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Environment=AGY_CLI_DISABLE_AUTO_UPDATE=false
+ExecStartPre=-/home/andres/.local/bin/agy --bg-updater
+ExecStart=/home/andres/.antigravity/bin/run_agy_remote_control.sh
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/andres/.antigravity/agy_daemon.log
+StandardError=append:/home/andres/.antigravity/agy_daemon.log
+
+[Install]
+WantedBy=default.target

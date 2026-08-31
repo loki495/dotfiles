@@ -11,8 +11,8 @@ Description=Periodically check for newly-blocked sessions and send push notifica
 # that isn't actually latency-sensitive at 1-5s granularity.
 # OnUnitActiveSec (not OnCalendar) so a slow tick (an overloaded host)
 # can't pile up overlapping runs.
-OnBootSec=5s
-OnUnitActiveSec=5s
+OnBootSec=10s
+OnUnitActiveSec=10s
 Unit=csm-push-check.service
 
 [Install]
