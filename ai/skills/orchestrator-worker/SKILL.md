@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Orchestrator/worker delegation protocol for splitting expensive planning-and-review reasoning from cheap, bounded execution. The orchestrator stays on whatever model it was launched with and plans, decomposes, delegates, and reviews; each worker runs on the cheapest model, in any available tool (Claude Code, opencode, Codex, agy), that's judged capable of its one bounded task — reported to the user with justification before every launch, never assumed from whatever's already running. Communication is file-based, one folder per orchestration under .ai/orchestrator/<id>/ (PLAN.md, STATE.md, QUESTIONS.md, RESULT.md) plus a shared INDEX.md registry, so multiple orchestrations can run concurrently in the same project and any session — this one resuming later, or a different tool entirely — can discover and resume where another left off. Use when a task is complex enough to warrant explicit planning plus delegated implementation, or when you want an expensive model's usage confined to reasoning rather than mechanical execution.
+description: Default file-based protocol for any multi-step coding work — solo, forked, or delegated to workers. A plan lives in its own folder under .ai/plans/<plan-slug>/ (PLAN.md, STATE.md, QUESTIONS.md, RESULT.md, scratch/), created automatically once work is explicitly multi-phase or spans sessions, so a fresh session (this one resuming later, or a different tool entirely) can pick it up cold from the files alone. Small work escalates to full delegation (workers, model tiering, parallel execution) automatically when it's clearly warranted, or with a quick check when it's ambiguous — never silently. Two shared, cross-plan stores back every plan: .ai/research/ (checksum-versioned investigative findings, reused until the files they're based on change) and .ai/lessons/ (durable non-code gotchas — platform quirks, library fine print, logic traps — checked before and updated after any research or implementation step). Tool-agnostic throughout: Claude Code, opencode, Codex, and agy can each play orchestrator or worker, and every file here is plain text any of them can read and write. Use this by default for multi-step work, not only when explicitly asked.
 ---
 
 # Orchestrator/Worker Protocol
@@ -10,13 +10,17 @@ either role — orchestrator in one project, worker in another, sometimes both i
 same run (see [Launching Workers](#launching-workers)). Nothing here assumes a
 specific tool; where mechanics differ per tool, that's called out explicitly.
 
+This is the **default** way multi-step work happens on this machine — not a protocol
+to invoke on request. See [When This Applies](#when-this-applies) for exactly what
+triggers a plan folder and what triggers full delegation.
+
 ## Core principle
 
     investigate
         |
       plan
         |
-    delegate
+    delegate?  <--- see When This Applies: light work stays here, done directly or forked
         |
      worker  <--- cheapest capable model, any tool, one bounded task
         |
@@ -46,6 +50,47 @@ is expected to listen.
 
 ---
 
+## When This Applies
+
+Two separate thresholds — don't conflate them. Crossing the first doesn't mean
+crossing the second.
+
+**Create a plan folder** (`.ai/plans/<plan-slug>/`) when the task is:
+
+- explicitly multi-phase, an audit, or framed as a plan/todo list by the user;
+- expected to span more than one session (paused and resumed later, possibly by a
+  different session or tool);
+- work I would already reach for the in-session `TodoWrite` tool for, **and** it
+  needs to survive a session boundary rather than just this conversation.
+
+Skip the folder for single-turn, single-file, quickly-resolved work — a plain reply
+or an ordinary `TodoWrite` list is enough, and creating a folder for a three-line fix
+is pure overhead. When genuinely unsure whether a task clears this bar, err toward
+creating the folder — cheap to create, cheap to leave nearly empty, expensive to
+reconstruct provenance for later if skipped and the task turns out to run long.
+
+**Escalate to full delegation** (spawn workers, apply
+[Model Tiering](#model-tiering), consider parallel execution) once a plan is
+underway, when:
+
+- the work is expected to need a large tool-call/context footprint (many files, a
+  test suite run, broad exploration) — see the growth-cost argument in
+  [Model Tiering](#model-tiering);
+- there are genuinely independent subtasks that could run in parallel;
+- a cheaper model is plausibly capable of a bounded piece of the work and the cost
+  difference is worth the coordination.
+
+This should happen **automatically when it's clearly warranted, or with one quick
+check-in when it's ambiguous** — never silently. If a plan turns out to need
+delegation partway through, that's normal; nothing about the folder structure
+changes, only how heavily its files get used (see [Project State](#project-state) —
+every plan gets all four files from creation, light or not).
+
+A plan that never needs delegation is not a failure of the protocol — most solo
+work, once it clears the "create a folder" bar, stays solo the whole way through.
+
+---
+
 ## Role: Orchestrator
 
 The orchestrator is the senior agent responsible for:
@@ -53,8 +98,9 @@ The orchestrator is the senior agent responsible for:
 - understanding the overall objective;
 - investigating the environment and repository;
 - creating and maintaining the implementation plan;
-- decomposing work into bounded tasks;
-- delegating implementation to workers;
+- decomposing work into bounded tasks when delegating;
+- delegating implementation to workers once escalated (see
+  [When This Applies](#when-this-applies));
 - reviewing worker results;
 - resolving worker questions and blockers;
 - deciding when additional worker iterations are required;
@@ -63,10 +109,14 @@ The orchestrator is the senior agent responsible for:
   agent/tool and model it's about to use and why — see
   [Worker Launch Reporting](#worker-launch-reporting).
 
-The orchestrator is **not** the primary implementation worker. It should generally
-avoid implementing application code itself — its job is to direct, review, and make
-architectural decisions. See [Model Tiering](#model-tiering) for why this split
-exists, not just as a division of labor.
+For work that hasn't crossed the delegation threshold, the orchestrator does the
+work directly rather than manufacturing a worker launch for its own sake — see
+[When This Applies](#when-this-applies) and the "don't delegate a single quick
+lookup" floor in [Research Delegation](#research-delegation). Once delegation is
+warranted, the orchestrator should generally avoid implementing application code
+itself — its job shifts to directing, reviewing, and making architectural
+decisions. See [Model Tiering](#model-tiering) for why this split exists, not just
+as a division of labor.
 
 ## Role: Worker
 
@@ -75,13 +125,17 @@ A worker is an implementation agent responsible for:
 1. Reading this protocol (see [Worker Context](#worker-context)).
 2. Reading the current plan and state.
 3. Identifying its assigned task.
-4. Inspecting relevant code/data itself — not just trusting the orchestrator's
+4. Checking [Shared Research Cache](#shared-research-cache) and
+   [Shared Lessons Store](#shared-lessons-store) for anything already known before
+   investigating from scratch.
+5. Inspecting relevant code/data itself — not just trusting the orchestrator's
    description of it.
-5. Implementing the task.
-6. Running appropriate tests/checks.
-7. Updating task status.
-8. Recording relevant results.
-9. Reporting completion or blockers.
+6. Implementing the task.
+7. Running appropriate tests/checks.
+8. Updating task status.
+9. Recording relevant results — in `RESULT.md`, and in the shared research/lessons
+   stores when applicable (see [Worker Completion Protocol](#worker-completion-protocol)).
+10. Reporting completion or blockers.
 
 The worker should not redesign the project without consulting the orchestrator. It
 may make reasonable local implementation decisions consistent with the plan; major
@@ -100,62 +154,71 @@ unrelated files, repositories, configuration, credentials, or user data.
 
 ## Project State
 
-A project can have more than one orchestration active, or completed, at once —
+A project can have more than one plan active, paused, or completed at once —
 different objectives, launched by different sessions, sometimes at the same time.
 Each gets its own folder so they can't collide, and so any session — this one
 resuming later, or a completely different one — can find and pick up exactly where
 another left off:
 
-    .ai/orchestrator/INDEX.md                    <- registry of every orchestration
-    .ai/orchestrator/<orchestration-id>/PLAN.md
-    .ai/orchestrator/<orchestration-id>/STATE.md
-    .ai/orchestrator/<orchestration-id>/QUESTIONS.md
-    .ai/orchestrator/<orchestration-id>/RESULT.md
+    .ai/plans/INDEX.md                    <- registry of every plan
+    .ai/plans/<plan-slug>/PLAN.md
+    .ai/plans/<plan-slug>/STATE.md
+    .ai/plans/<plan-slug>/QUESTIONS.md
+    .ai/plans/<plan-slug>/RESULT.md
+    .ai/plans/<plan-slug>/scratch/
+    .ai/plans/archive/<plan-slug>/        <- completed plans, moved here after confirmation
 
-**`<orchestration-id>`**: `<YYYY-MM-DD>-<kebab-slug-of-the-objective>`, e.g.
+**`<plan-slug>`**: `<YYYY-MM-DD>-<kebab-slug-of-the-objective>`, e.g.
 `2026-08-30-cards-domain-migration`. Human-readable, sorts naturally by date, and only
-collides if two orchestrations started the same day land on the same slug — if that
+collides if two plans started the same day land on the same slug — if that
 happens, make the slug more specific rather than appending an arbitrary suffix.
 
-**Before starting as an orchestrator, always check for existing orchestrations
-first** — don't assume `.ai/orchestrator/` is empty or that this is a fresh start:
+**Before starting work on a project that has `.ai/plans/`, always check for existing
+plans first** — don't assume the directory is empty or that this is a fresh start:
 
-1. Read `INDEX.md` if it exists (or list `.ai/orchestrator/*/` if it doesn't yet — a
-   folder can exist without ever having been indexed, if whatever created it was
+1. Read `INDEX.md` if it exists (or list `.ai/plans/*/` if it doesn't yet — a folder
+   can exist without ever having been indexed, if whatever created it was
    interrupted before writing its row).
-2. If an entry matches the requested objective and isn't `done`, resume it: read its
-   four files and continue from `STATE.md`'s current step. A new session has no
-   memory of the old one, but the files are the authoritative record — that's the
-   entire point of this being file-based rather than conversation-based.
-3. Only create a new `<orchestration-id>` folder for a genuinely distinct objective.
+2. If an entry matches the requested objective and isn't `done`, ask which to resume
+   rather than assuming — then read its four files and continue from `STATE.md`'s
+   current step. A new session has no memory of the old one, but the files are the
+   authoritative record — that's the entire point of this being file-based rather
+   than conversation-based.
+3. Only create a new `<plan-slug>` folder for a genuinely distinct objective.
 
-**`INDEX.md`** is a flat list, one line per orchestration:
+**`INDEX.md`** is a flat list, one line per plan:
 
-    - <orchestration-id> | <status> | <one-line objective> | updated <date>
+    - <plan-slug> | <status> | <one-line objective> | updated <date>
 
-Each orchestrator only ever writes its own line — never edit another orchestration's
-row, even to fix formatting, the same way parallel workers only touch their own status
+Each orchestrator only ever writes its own line — never edit another plan's row,
+even to fix formatting, the same way parallel workers only touch their own status
 line in `PLAN.md` (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)).
 Add a line when creating a folder; update only your own line's status/date as things
 progress.
 
-Multiple orchestrations can run concurrently in the same project as long as their
-scopes don't overlap. If two orchestrations would touch the same files, that's a sign
-they should be one orchestration, or sequenced, rather than two independent ones —
-check `INDEX.md` for that before starting a second one that might collide with a
-still-active first.
+Multiple plans can run concurrently in the same project as long as their scopes
+don't overlap. If two plans would touch the same files, that's a sign they should be
+one plan, or sequenced, rather than two independent ones — check `INDEX.md` for that
+before starting a second one that might collide with a still-active first.
 
-The four files inside an orchestration's own folder are the **authoritative**
-communication channel for that orchestration. A worker's direct response — whatever
-the launching tool returns immediately after the call — is a convenience for the
-orchestrator's next step, nothing more. If it ever conflicts with what these files
-say, the files win; fix the files if they're wrong. Any orchestrator (even a fresh
-session, even a different tool) must be able to resume an orchestration from its four
-files alone, with no memory of prior conversation.
+The four files inside a plan's own folder are the **authoritative** communication
+channel for that plan. A worker's direct response — whatever the launching tool
+returns immediately after the call — is a convenience for the orchestrator's next
+step, nothing more. If it ever conflicts with what these files say, the files win;
+fix the files if they're wrong. Any orchestrator (even a fresh session, even a
+different tool) must be able to resume a plan from its four files alone, with no
+memory of prior conversation.
 
 Only the orchestrator writes to `STATE.md`. Workers append to `QUESTIONS.md` and
 `RESULT.md`, and update only their own task's status line in `PLAN.md` — this matters
 once workers run in parallel (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)).
+
+Every plan gets all four files from creation, even a light one that never needs
+delegation — they can start as stubs (`STATE.md` can just say "researching, no plan
+yet"). What "graduating to full delegation" changes is how heavily these files get
+used (worker launches, cost reporting, parallel coordination), not whether they
+exist. This keeps a plan from ever needing to move or be restructured mid-flight —
+see [When This Applies](#when-this-applies).
 
 ### PLAN.md
 
@@ -169,12 +232,16 @@ The authoritative implementation plan. Each task/step contains:
 - implementation notes
 - status: `pending` / `in_progress` / `blocked` / `needs_review` / `done`
 
-Do not mark a task `done` merely because the worker claims completion — the
-acceptance criteria must actually be satisfied. That check is the orchestrator's job.
+A light plan's tasks can be simple checkbox-style entries without every field filled
+in — the format scales down, it doesn't need a separate lighter file.
+
+Do not mark a task `done` merely because the worker (or your own direct work) claims
+completion — the acceptance criteria must actually be satisfied. That check is the
+orchestrator's job.
 
 ### STATE.md
 
-The current orchestration state, kept concise and current:
+The current plan state, kept concise and current:
 
 - current objective;
 - current step;
@@ -195,10 +262,125 @@ thought process (see [Worker Questions and Blockers](#worker-questions-and-block
 
 ### RESULT.md
 
-A durable record of meaningful discoveries and results: important findings about
-external data, architectural decisions, unexpected constraints, completed worker
-iterations, significant implementation decisions, verification results. Not a
-narration log — record what matters, not every step taken.
+A durable record of meaningful discoveries and results **for this plan specifically**:
+important findings about external data, architectural decisions, unexpected
+constraints, completed worker iterations, significant implementation decisions,
+verification results. Not a narration log — record what matters, not every step
+taken. Findings that outlive this plan — reusable investigative facts, or durable
+non-code gotchas — belong in [Shared Research Cache](#shared-research-cache) or
+[Shared Lessons Store](#shared-lessons-store) instead (or as well, if genuinely both
+plan-specific context and reusable knowledge).
+
+### scratch/
+
+Exploration notes, generated one-off scripts, temp diffs, working files that support
+the plan but aren't meant to become permanent project files. Not part of the
+authoritative record — `RESULT.md` is. Safe to be messy; safe to gitignore
+(`.ai/plans/*/scratch/` is a reasonable project `.gitignore` entry, added via
+`/project-bootstrap` or by hand — not required, but the four top-level files are
+committed by convention and `scratch/` deliberately is not).
+
+### Archiving
+
+When a plan is marked `done` in `INDEX.md` and the user confirms it's genuinely
+finished (not just paused), move its folder to `.ai/plans/archive/<plan-slug>/` and
+update its `INDEX.md` line's status to `archived`. Don't auto-archive without that
+confirmation — a "done" plan sometimes gets reopened, and archiving is a courtesy for
+keeping the active list scannable, not a hard deletion.
+
+---
+
+## Shared Research Cache
+
+`.ai/research/` holds investigative findings that outlive any single plan — about
+this codebase specifically, or about general technical facts (a library's behavior,
+an API's shape, a format's quirks) — so the next plan, any plan, any tool, doesn't
+re-investigate something already answered.
+
+    .ai/research/INDEX.md
+    .ai/research/<topic-slug>.md
+
+**`INDEX.md`**, one line per topic:
+
+    - <topic-slug> | <keywords> | <files/paths this topic covers> | verified <date>
+
+**`<topic-slug>.md`**, a small header plus the findings:
+
+    ---
+    topic: <topic-slug>
+    covers:
+      - path: <file path>
+        hash: <git hash-object output, or sha256:<digest> for untracked files>
+      - path: <file path>
+        hash: <...>
+    updated: <date>
+    ---
+
+    <findings — concise, information-dense, written for a cold reader>
+
+A topic with no `covers` entries (a general fact not tied to specific files — how a
+library behaves, an API contract) has no hash to check and is simply trusted until
+manually revised, same as [Shared Lessons Store](#shared-lessons-store).
+
+**Before any research** — inline, forked, or delegated to a worker — check
+`.ai/research/INDEX.md` for a matching topic first. If one exists with `covers`
+entries:
+
+1. Re-hash each listed file (`git hash-object <path>` for tracked files; `sha256sum`
+   for untracked ones — cheap, exact, no need to read full file content to compute).
+2. All hashes match → reuse the cached findings directly, cite the topic file, skip
+   new research entirely.
+3. A few files changed → delegate a narrow re-verify scoped only to the diff of
+   those files (cheap — this is not a full re-research), then patch the note's
+   affected sections, hashes, and `updated` date.
+4. Most or all files changed, or the topic's actual scope has clearly shifted →
+   treat the note as stale, do full research, overwrite.
+
+**After any research** — whether it hit the cache or ran fresh — write or update the
+topic's entry in both `INDEX.md` and its own file. This is what makes the cache
+actually pay off on the next plan; skipping the write-back defeats the point.
+
+---
+
+## Shared Lessons Store
+
+`.ai/lessons/` holds durable, **non-code-specific** knowledge: gotchas, edge cases,
+fine-print behavior, platform/OS quirks, logic or math traps, tips and snippets —
+things that don't go stale when this codebase's files change, only when the
+underlying tool, platform, or understanding changes. This is the key distinction
+from [Shared Research Cache](#shared-research-cache): research is versioned against
+file hashes because code changes invalidate it; lessons aren't, because they're not
+about this code's current state, they're about how something outside this codebase
+actually behaves.
+
+    .ai/lessons/INDEX.md
+    .ai/lessons/<topic-slug>.md
+
+**`INDEX.md`**, one line per topic:
+
+    - <topic-slug> | <keywords/tags> | <one-line hook>
+
+**`<topic-slug>.md`**:
+
+    ---
+    topic: <topic-slug>
+    tags: [php, laravel, opencart, bash, os, general, ...]
+    ---
+
+    <the gotcha, concise, information-dense>
+
+**Before** research or implementation touching something that smells like a gotcha
+domain (an unfamiliar library, OS-specific behavior, a math/logic edge case, a
+platform quirk) — check `.ai/lessons/INDEX.md` for a matching topic. **After**
+discovering something durable and non-code-specific worth keeping — write it, in
+both `INDEX.md` and its own topic file.
+
+Scoped to the current project for now (`.ai/lessons/` at the project root). When a
+lesson is clearly general-purpose — not tied to this codebase or business logic at
+all — flag it and offer to also save it to a machine-wide location, the same way
+global `CLAUDE.md`'s memory-scope-discipline rule already handles workflow
+preferences that turn out to be general rather than project-specific. Don't do this
+silently; ask, the same as that rule does.
 
 ---
 
@@ -206,24 +388,26 @@ narration log — record what matters, not every step taken.
 
 Before delegating any implementation:
 
-1. Check `.ai/orchestrator/INDEX.md` for an existing, unfinished orchestration on this
-   objective before creating a new one (see [Project State](#project-state)). If
-   starting fresh, pick an `<orchestration-id>`, add its row to `INDEX.md`, and
-   scaffold `PLAN.md`, `STATE.md`, `QUESTIONS.md`, `RESULT.md` in its folder — they
-   can start as stubs (`STATE.md` can just say "researching, no plan yet"). This
-   gives research workers somewhere to log durable findings even before a plan
-   exists.
-2. Inspect the repository and relevant environment.
-3. Identify what's actually unknown — specific questions, not "investigate
+1. Check `.ai/plans/INDEX.md` for an existing, unfinished plan on this objective
+   before creating a new one (see [Project State](#project-state)). If starting
+   fresh, pick a `<plan-slug>`, add its row to `INDEX.md`, and scaffold `PLAN.md`,
+   `STATE.md`, `QUESTIONS.md`, `RESULT.md`, `scratch/` in its folder — they can start
+   as stubs. This gives research even before a plan exists somewhere durable to land.
+2. Check [Shared Research Cache](#shared-research-cache) and
+   [Shared Lessons Store](#shared-lessons-store) for anything already known about
+   this objective before investigating from scratch.
+3. Inspect the repository and relevant environment.
+4. Identify what's actually unknown — specific questions, not "investigate
    everything." Anything that needs reading multiple files/sources or several
    exploratory commands is a candidate for delegating the gathering to a research
    worker rather than doing it inline (see [Research Delegation](#research-delegation)).
-4. Identify important constraints and unknowns; document uncertainties rather than
+5. Identify important constraints and unknowns; document uncertainties rather than
    treating assumptions as facts.
-5. Create a concrete implementation plan.
-6. Define acceptance criteria.
-7. Identify dependencies between tasks.
-8. Only then begin delegating implementation.
+6. Create a concrete implementation plan.
+7. Define acceptance criteria.
+8. Identify dependencies between tasks.
+9. Only then begin delegating implementation — if the work has crossed the
+   delegation threshold at all (see [When This Applies](#when-this-applies)).
 
 Prefer evidence from the actual environment over memory or generic documentation. The
 plan must be detailed enough that a worker can execute a bounded step without the
@@ -238,7 +422,9 @@ its job. Delegate the *gathering* when it's substantial: reading several files,
 grepping broadly, running multiple exploratory commands, checking an external
 API/format. Don't delegate a single quick lookup — a worker launch has fixed
 overhead that a one-file read doesn't, and for a trivial question the round trip
-costs more than it saves.
+costs more than it saves. Always check
+[Shared Research Cache](#shared-research-cache) first regardless of how the
+gathering will happen — a cache hit skips the delegation question entirely.
 
 Group related questions into one research worker; split genuinely independent
 questions into parallel workers (same reasoning as
@@ -246,9 +432,21 @@ questions into parallel workers (same reasoning as
 cheap-model-by-default tiering as implementation workers — bump up only when the
 question itself needs judgment to answer correctly, not brute-force lookup volume.
 
+**Prefer a fork over a fresh agent when the research needs context you already
+have.** A fork inherits the orchestrator's full context and shares its prompt
+cache — no cold-start re-derivation — but it always runs on the orchestrator's own
+model; there is no cheaper-model option for a fork (see
+[Model Tiering](#model-tiering)). A fresh subagent or cross-tool worker starts cold
+and has to re-derive that context itself, but can run on a genuinely cheaper model.
+Pick based on which cost actually dominates for this question — context
+re-derivation, or per-token price — not by default.
+
 Research workers are lighter-weight than implementation workers: there's no
 `PLAN.md` yet at this point, so they don't need a task ID or the full worker
-protocol — just the question, read-only.
+protocol — just the question, read-only, plus the instruction to check and update
+the shared research/lessons stores. Cross-tool research workers still get the
+[worker session tag](#worker-session-tagging) prepended as their literal first line
+(use `<task-id>=research` since there's no real task ID yet); in-process ones skip it.
 
 ```
 You are a RESEARCH WORKER in the orchestrator/worker protocol
@@ -256,14 +454,20 @@ You are a RESEARCH WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
-Orchestration: .ai/orchestrator/<orchestration-id>/
+Plan: .ai/plans/<plan-slug>/
 Research question(s): <specific and bounded — not "investigate the codebase">
+
+First check .ai/research/INDEX.md and .ai/lessons/INDEX.md for anything already
+known about this — reuse or narrowly re-verify per Shared Research Cache rather than
+starting from scratch if a matching topic exists.
 
 Investigate read-only — do not modify anything. Report back concisely: what you
 found, where (file paths/line numbers, commands run), and flag anything you
 couldn't confirm rather than guessing. State which agent/subagent type and model
-you ran as. If it's a durable finding worth keeping past this session, also append
-it to this orchestration's RESULT.md.
+you ran as. Write durable findings to .ai/research/<topic-slug>.md (with file
+hashes) and any non-code-specific gotcha to .ai/lessons/<topic-slug>.md — update
+each INDEX.md. If it's also worth keeping in this plan's own record, append it to
+RESULT.md too.
 ```
 
 **Trust, but verify what matters.** Treat a research worker's findings as reliable
@@ -271,7 +475,9 @@ for minor/local facts. For anything the plan critically depends on — a claim t
 if wrong, would derail multiple downstream tasks — spot-check it yourself before
 committing to the plan. A wrong implementation usually fails a test; a wrong research
 finding just quietly becomes a wrong plan, so it doesn't get the same automatic
-safety net.
+safety net. The same caution applies to a cache hit from `.ai/research/` that a
+critical decision rests on — a matching hash means the file hasn't changed, not that
+the original finding was correct.
 
 ---
 
@@ -297,8 +503,10 @@ Every worker must be instructed, at minimum, to read:
 - this protocol (the `orchestrator-worker` skill if the worker's tool auto-loads
   shared skills; otherwise point it explicitly at
   `~/dotfiles/ai/skills/orchestrator-worker/SKILL.md`);
-- this orchestration's `PLAN.md`, `STATE.md`, `QUESTIONS.md` (under
-  `.ai/orchestrator/<orchestration-id>/`, per [Project State](#project-state)).
+- this plan's `PLAN.md`, `STATE.md`, `QUESTIONS.md` (under
+  `.ai/plans/<plan-slug>/`, per [Project State](#project-state));
+- `.ai/research/INDEX.md` and `.ai/lessons/INDEX.md` for anything already known
+  relevant to its task.
 
 The worker inspects the repository itself rather than relying entirely on the
 orchestrator's description, and must not assume the plan is correct if repository
@@ -307,7 +515,11 @@ below).
 
 ### Worker prompt template
 
-Use this as the starting point for every worker launch, filled in per task:
+Use this as the starting point for every worker launch, filled in per task. If this
+is a **cross-tool** launch (codex/opencode/agy), prepend the
+[worker session tag](#worker-session-tagging) as the literal first line, before
+`You are a WORKER...`. Skip the tag for in-process launches (Claude Code's `Agent`
+tool) — those never become a separately-visible session, so there's nothing to tag.
 
 ```
 You are a WORKER in the orchestrator/worker protocol
@@ -315,13 +527,15 @@ You are a WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
-Orchestration: .ai/orchestrator/<orchestration-id>/
+Plan: .ai/plans/<plan-slug>/
 Your task: <task ID from PLAN.md>
 
 Before doing anything:
-1. Read PLAN.md, STATE.md, and QUESTIONS.md from this orchestration's folder.
-2. Confirm your assigned task and its acceptance criteria.
-3. Inspect the actual code/data yourself.
+1. Read PLAN.md, STATE.md, and QUESTIONS.md from this plan's folder.
+2. Check .ai/research/INDEX.md and .ai/lessons/INDEX.md for anything already known
+   relevant to this task.
+3. Confirm your assigned task and its acceptance criteria.
+4. Inspect the actual code/data yourself.
 
 Then implement the task and follow the Worker Completion Protocol, or the Worker
 Questions and Blockers protocol if you hit something you must not guess on. Include
@@ -341,12 +555,20 @@ When a worker successfully completes a task:
 4. Update `STATE.md` if relevant to the overall state (the orchestrator should
    confirm/finalize this on review, not treat the worker's edit as final).
 5. Record meaningful results in `RESULT.md`.
-6. Return a concise completion report covering: what changed, what was tested, any
+6. If the task produced a reusable investigative finding (code-specific or general),
+   write/update it in [Shared Research Cache](#shared-research-cache). If it
+   surfaced a durable non-code-specific gotcha, write/update it in
+   [Shared Lessons Store](#shared-lessons-store).
+7. Return a concise completion report covering: what changed, what was tested, any
    assumptions made, any remaining concerns, and which agent/subagent type and model
    it actually ran as (confirms what was used, in case of a fallback from what the
    orchestrator requested).
-7. Report cost — see [Cost Reporting](#cost-reporting) for what's actually available
+8. Report cost — see [Cost Reporting](#cost-reporting) for what's actually available
    to report and how to report it honestly.
+
+This applies equally whether the step was done by a delegated worker or by the
+orchestrator working directly on a light plan — whoever did the step updates
+`PLAN.md`/`RESULT.md`/the shared stores, not just workers.
 
 A worker's `OK` is not sufficient evidence the task is correct — the orchestrator
 independently reviews every result (see [Code Review](#code-review)).
@@ -407,7 +629,7 @@ Workers must **not** guess when they encounter:
 Instead:
 
 1. Mark the current task `blocked` or `needs_review` in `PLAN.md`.
-2. Write the question to this orchestration's `QUESTIONS.md`: what was discovered, why the plan
+2. Write the question to this plan's `QUESTIONS.md`: what was discovered, why the plan
    can't safely continue, exactly what decision/information is needed, options if
    useful, a recommendation if there is one.
 3. Leave the working tree in a coherent state.
@@ -448,6 +670,16 @@ run different-cost models — this is the point of the split, not an incidental 
   [In-Process vs Cross-Tool](#in-process-vs-cross-tool) for how to compare across
   tools without making the comparison itself expensive.
 
+**A fork is not a lever for model cost.** A fork always runs on the orchestrating
+session's own model — a `model` override passed to a fork is ignored. Forking saves
+tokens a different way: it inherits full context and shares the prompt cache, so
+there's no cold-start re-derivation the way a fresh agent has. Choose between a fork
+and a fresh/cross-tool worker based on which cost actually dominates for the task at
+hand — context re-derivation (fork wins) or per-token price (a cheaper fresh
+worker wins) — not out of habit. See also
+[Research Delegation](#research-delegation) for this same tradeoff applied to
+research specifically.
+
 Model tier isn't the only source of savings, and for tool-call-heavy tasks it usually
 isn't the dominant one. A worker that makes many tool calls builds a large context
 over the course of its own run; doing that exploration in a disposable worker means
@@ -458,7 +690,8 @@ containing that inside a worker rather than the orchestrator was worth far more 
 the model-tier difference alone, since an orchestrator's accumulated context gets
 re-read on every subsequent turn for the rest of the session. A task expected to need
 many tool calls or a large exploration footprint is worth delegating for this reason
-by itself, even before comparing model prices.
+by itself, even before comparing model prices — this is also why it's part of the
+[escalation criteria](#when-this-applies) above.
 
 Bump a worker to a stronger model only when the bounded task itself genuinely
 requires deep reasoning (diagnosing a subtle bug, reconciling conflicting
@@ -490,21 +723,58 @@ blocks until done and returns its output:
 
 | Tool | Headless invocation | Model flag | Notes |
 |---|---|---|---|
-| opencode | `opencode run --model <provider/model> "<worker prompt>"` | `--model` | Foreground subprocess; cwd = project dir. Verify exact syntax with `opencode run --help` / `opencode models` — do not invent provider/model names. |
-| Codex | `codex exec -m <model> "<worker prompt>"` (alias `codex e`), add `--json` to capture real usage — see [Cost Reporting](#cost-reporting) | `-m`/`--model` | Foreground subprocess. Verify with `codex exec --help`. See [Background Launch Verification](#background-launch-verification) before ever backgrounding a codex (or any cross-tool) worker without waiting on it — `codex agents` needs a real TTY and cannot be used from a script. |
-| agy (Antigravity) | `agy -p --agent <name> --model <model> "<worker prompt>"` | `--model` | Foreground subprocess (`-p`/`--print` = non-interactive). `--effort` isn't supported on every model. agy has account-wide usage quotas — check headroom before launching several workers in a row. |
+| opencode | `opencode run --model <provider/model> --title "<tag>" "<worker prompt>"` | `--model` | Foreground subprocess; cwd = project dir. `--title` is a real, confirmed flag — always set it to the [worker session tag](#worker-session-tagging) rather than leaving it to the default truncated-prompt title. Verify exact syntax with `opencode run --help` / `opencode models` — do not invent provider/model names. |
+| Codex | `codex exec -m <model> --json "<worker prompt>" < /dev/null` (alias `codex e`) | `-m`/`--model` | Foreground subprocess. **Always redirect stdin from `/dev/null`** — confirmed 2026-08-30: `codex exec` can hang indefinitely waiting on stdin even when a prompt is given as an argument, if stdin isn't a TTY and isn't explicitly closed. `--json` captures real usage, see [Cost Reporting](#cost-reporting). No title/name flag exists — see [Worker Session Tagging](#worker-session-tagging) for how tagging works without one. See [Background Launch Verification](#background-launch-verification) before ever backgrounding a codex (or any cross-tool) worker without waiting on it — `codex agents` needs a real TTY and cannot be used from a script. |
+| agy (Antigravity) | `agy -p --agent <name> --model <model> "<worker prompt>"` | `--model` | Foreground subprocess (`-p`/`--print` = non-interactive). No title/name flag exists either — see [Worker Session Tagging](#worker-session-tagging). `--effort` isn't supported on every model. agy has account-wide usage quotas — check headroom before launching several workers in a row. |
 
 Claude Code is the one exception, since the orchestrator is usually already running
 inside it: use the `Agent` tool directly rather than shelling out to `claude -p`.
 Pick a `subagent_type` (a purpose-built agent, or `general-purpose`), pass the worker
-prompt as `prompt`, and use the `model` parameter to pin the cheaper tier. Runs
-synchronously by default (the report comes back in the tool result); use
-`subagent_type: "fork"` with background execution when launching workers in parallel
-(see below) so their tool output doesn't fill the orchestrator's own context.
+prompt as `prompt`, and use the `model` parameter to pin the cheaper tier — this
+override works for a real subagent launch but is silently ignored for
+`subagent_type: "fork"` (see [Model Tiering](#model-tiering)). Runs synchronously by
+default (the report comes back in the tool result); use `subagent_type: "fork"` with
+background execution when launching workers in parallel (see below) so their tool
+output doesn't fill the orchestrator's own context.
 
 Confirmed as of 2026-08-29 against the installed versions on this machine — CLI flags
 drift between releases, so re-verify with the tool's own `--help` if it's been a
 while.
+
+### Worker Session Tagging
+
+A cross-tool worker (codex/opencode/agy) becomes its own real session in whatever
+that tool tracks — and, on this machine, gets auto-adopted into
+claude-session-manager's dashboard alongside every session a human started directly.
+Without a way to tell them apart, a worker launched for a 30-second bounded task looks
+identical to a session someone's actively driving. Tag every cross-tool worker so it
+can be identified and, by default, hidden:
+
+**Put this as the literal first line of every worker's prompt** (before the actual
+task text), regardless of tool:
+
+    [WORKER session=<plan-slug>/<task-id> parent=<parent-session-id>]
+
+- `<plan-slug>`/`<task-id>` — from [Project State](#project-state)/`PLAN.md`.
+- `<parent-session-id>` — the orchestrator's own session identity, if it's knowable.
+  On this machine, an orchestrator running inside a claude-session-manager-spawned
+  tmux pane already has this in its own environment as `$CSM_SESSION_NAME`
+  (confirmed: `SessionLifecycleService::create_cc_session()`/`resume_cc_session()` set
+  it at spawn time, `host-agent/lib/Services/SessionLifecycleService.php:97,258`) —
+  read it directly, don't invent a new mechanism. Use `unknown` if it's unset or the
+  orchestrator isn't running under something that tracks session identity — don't
+  guess or fabricate one.
+
+Where a tool has a real, explicit title-setting flag, **also** pass this exact string
+as the title (confirmed for opencode's `--title`, per the table above) — that's a
+reliable, structured signal on top of the prompt-embedded one. Where no such flag
+exists (confirmed for codex and agy, as of 2026-08-30), the prompt-embedded line is
+the only mechanism available; whether it reliably survives into whatever
+name/preview text each tool ends up recording is **not independently verified** —
+codex's own raw session record stores no literal name/preview field at all (that
+text appears to be computed dynamically when a thread list is requested, not stored),
+so confirm this against a real listing once anything is built to detect the tag,
+rather than assuming it works.
 
 ### Background Launch Verification
 
@@ -570,8 +840,8 @@ for any cross-tool worker running in the background:
    it's hung — disk writes can trail the sentinel by a few seconds. Recheck after a
    short pause before concluding it's actually stuck. Only kill a process that's
    clearly well past the task's expected size, and always re-read (don't assume) any
-   of its orchestration's files it touched afterward, the same way the original
-   incident was recovered from.
+   of its plan's files it touched afterward, the same way the original incident was
+   recovered from.
 5. **Give each parallel cross-tool worker its own project directory** (`-C <dir>` or
    equivalent, per [Project Isolation](#project-isolation)) — this narrows, though
    doesn't by itself eliminate, the chance of state bleeding between concurrent
@@ -582,15 +852,16 @@ for any cross-tool worker running in the background:
 Communication is entirely file-based, so it doesn't matter to the protocol whether a
 worker runs in-process (the orchestrator's own `Agent`/subagent mechanism) or as a
 separate cross-tool subprocess (`opencode run`, `codex exec`, `agy -p`) — either way
-the worker reads `PLAN.md`/`STATE.md`/`QUESTIONS.md` from its orchestration's folder
-and reports back through the same files. The orchestrator never needs tool-specific handling once a worker is
-launched; it just watches for file updates and the return value like any other
-worker.
+the worker reads `PLAN.md`/`STATE.md`/`QUESTIONS.md` from its plan's folder and
+reports back through the same files. The orchestrator never needs tool-specific
+handling once a worker is launched; it just watches for file updates and the return
+value like any other worker.
 
 **Prioritize the cheapest capable model for every worker, in-process or not** — don't
 default to in-process just because it's already open. The in-process/cross-tool
 question is purely mechanical (how do I reach the cheapest capable option), not a
-reason to skip looking for it.
+reason to skip looking for it. Remember a fork is not part of this comparison at
+all — it has no model choice, see [Model Tiering](#model-tiering).
 
 **Keep the comparison itself cheap**, so "always look" doesn't turn into its own
 research task:
@@ -647,8 +918,8 @@ asking.
 ### Parallel vs Sequential Workers
 
 Sequential is the default: one task's result often changes what the next task should
-be, and it keeps the orchestration's files a single source of truth with no
-concurrent writers.
+be, and it keeps the plan's files a single source of truth with no concurrent
+writers.
 
 Launch workers in parallel only when:
 
@@ -661,6 +932,37 @@ When running parallel workers, give each a distinct task ID and instruct it to t
 only files within its own task's scope. Only the orchestrator writes `STATE.md`;
 parallel workers append to `QUESTIONS.md`/`RESULT.md` and update only their own task's
 status line in `PLAN.md`, to avoid clobbering each other's writes.
+
+---
+
+## Token Efficiency Practices
+
+These apply to every plan, light or fully delegated — they're what makes file-based
+state actually cheaper than re-explaining things in conversation, not just
+differently organized:
+
+- **Verify via diffs/status, not full re-reads.** After an edit, don't re-read the
+  whole file to confirm it worked — a tool that errors on failure already proves it
+  didn't silently fail. Use `git diff`/`git status` for a summary of what actually
+  changed, not `cat` of the full file.
+- **Prefer targeted search over full reads.** `grep`/glob for a symbol or pattern
+  before reading a whole file just to check whether something exists in it.
+- **Run checks with quiet/concise output**, and keep only pass/fail + errors in plan
+  files — never paste raw verbose CI-style output (full test-runner logs, progress
+  bars, full lint dumps) into `PLAN.md`/`STATE.md`/`RESULT.md`. If a tool has a
+  terser mode (compact test output, a trimmed static-analysis formatter), use it;
+  either way, summarize before writing to a plan file.
+- **Batch independent steps.** Tool calls whose inputs don't depend on each other's
+  output belong in the same turn, not sequential round trips — this applies inside
+  plan work exactly as it does everywhere else.
+- **`/clear` (or a fresh session) between unrelated phases is safe and encouraged**
+  once the current phase's state is actually persisted to the plan folder — that's
+  the entire point of resuming cold from files. Don't carry a large, no-longer-needed
+  exploration context into an unrelated next phase just because the session happens
+  to still be open.
+- **Push deterministic checks to scripts/tools that return pass/fail + errors**, not
+  narrated tool output — a lint/type-check/test run belongs in `RESULT.md` as "passed"
+  or "3 failures: <what>", not as a transcript of the run.
 
 ---
 
@@ -708,7 +1010,7 @@ current implementation focused.
 
 ## Final Completion
 
-A project is complete only when:
+A plan is complete only when:
 
 1. All required plan tasks are `done`.
 2. Acceptance criteria are satisfied.
@@ -717,7 +1019,9 @@ A project is complete only when:
 5. No known critical blockers remain.
 6. The working tree contains only intentional changes.
 7. Important limitations are documented.
-8. This orchestration's line in `.ai/orchestrator/INDEX.md` is marked `done`.
+8. This plan's line in `.ai/plans/INDEX.md` is marked `done`, and — once the user
+   confirms it's genuinely finished — the folder is moved per
+   [Archiving](#archiving).
 
 The final report summarizes what was built, important architectural decisions, how
 it was verified, known limitations, and relevant future improvements. Don't claim
