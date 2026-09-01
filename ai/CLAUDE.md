@@ -192,6 +192,43 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
   framing ("X should show Y", "the page doesn't have Z") are normal requests, not
   backlog notes — implement those as usual.
 
+## Multi-step work: plans, research, lessons (default workflow)
+
+For any multi-step coding work — refactors, audits, multi-file features, anything
+likely to span more than one sitting — the `orchestrator-worker` skill's file-based
+protocol is the **default**, not something to invoke on request. Read that skill for
+full mechanics; summary of what it means day to day:
+
+- **When a plan folder gets created:** automatically, without being asked, once a
+  task is explicitly multi-phase/an audit, expected to span sessions, or is
+  `TodoWrite`-worthy work that needs to survive a session boundary. Small
+  single-turn/single-file work stays inline or as a plain `TodoWrite` list — no
+  folder needed, and creating one for a three-line fix is overhead, not diligence.
+- **Where it lives:** `.ai/plans/<plan-slug>/` at the project root — one folder per
+  initiative, agent-agnostic (readable/writable by Claude Code, opencode, Codex, or
+  agy, not Claude-specific), with `.ai/plans/INDEX.md` as the registry of
+  active/paused/done work.
+- **Resuming cold:** at the start of work in a project that has `.ai/plans/`, check
+  `INDEX.md` for in-progress plans before starting new multi-step work, and ask which
+  to resume (or confirm starting fresh) rather than assuming.
+- **Escalating to full delegation** (spawning workers, model tiering, parallel
+  execution): automatic once it's clearly warranted, or a quick check-in when it's
+  ambiguous — never silently. This satisfies the "work one item at a time, get a
+  decision before the next" rule in "Working style" above for the *delegation*
+  decision specifically; it doesn't replace that rule for the substance of the work.
+- **Shared, cross-plan knowledge:** `.ai/research/` (checksum-versioned investigative
+  findings, code-specific or general — reused until the files they're based on
+  change) and `.ai/lessons/` (durable non-code-specific gotchas — platform quirks,
+  library fine print, logic traps) live outside any single plan folder. Check both
+  before researching anything; update both after finding something durable, by
+  whoever did the step, not just delegated workers.
+- **Token efficiency is part of the default, not an afterthought:** verify via
+  diffs/status instead of re-reading full files, prefer targeted grep/glob over full
+  reads, run lint/test/static-analysis tools with quiet flags and keep only
+  pass/fail + errors in plan files (never raw verbose output), batch independent
+  steps, and treat `/clear` between unrelated phases as safe and encouraged once a
+  phase's state is persisted to the plan folder.
+
 ## Memory scope discipline
 
 When Andres gives feedback or states a preference that's about general workflow,
@@ -253,7 +290,7 @@ leaving it as an inline literal — cheap now, and marks it for a future proper 
 
 ## Feature atlas (feature/subsystem inventory)
 
-Any project can opt into a maintained `.claude/feature-atlas/` inventory of its own
+Any project can opt into a maintained `.ai/feature-atlas/` inventory of its own
 features/subsystems via `/feature-atlas` (see that command's own doc for the full
 mechanism). Where it exists, it's the source of truth for feature boundaries,
 interfaces, dependencies, and standing maintainability findings — read it before
@@ -269,7 +306,11 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 ## Backlog files (todo / bugs.md)
 
 - Most projects should keep an up-to-date `todo` file (and optionally a `bugs.md`) at
-  the repo root for open and in-progress work.
+  the repo root for open and in-progress work. This is a different tool from
+  `.ai/plans/` (see "Multi-step work" above): `todo`/`bugs.md` is a flat, repo-wide
+  backlog of what's not started yet; `.ai/plans/<slug>/` is per-initiative, in-flight
+  session state for something already underway. An item graduates from `todo` to its
+  own plan folder once work actually begins on it, not before.
 - These files track what's **left to do**, not a history log. When an item is
   completed, remove it rather than marking it done/fixed in place — don't leave a
   growing record of finished work in these files.
@@ -320,7 +361,7 @@ Traefik config + setup.sh, adds composer script wrappers, writes `.claude/projec
 when worktree/branch structure is ambiguous.
 
 `/feature-atlas` — discovers and audits every feature/subsystem in the current project
-(frontend + backend), writing `.claude/feature-atlas/` as the project's source of truth for its
+(frontend + backend), writing `.ai/feature-atlas/` as the project's source of truth for its
 feature inventory and standing maintainability findings. Re-runnable; only refreshes what
 changed. See "Feature atlas" section above.
 

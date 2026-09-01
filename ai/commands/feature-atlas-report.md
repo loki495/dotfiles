@@ -1,5 +1,5 @@
 Re-run just the cross-subsystem validation, meta-audit, and ranking pass for
-`.claude/feature-atlas/` and rebuild `REPORT.md` — without rescanning any code. Useful after one or
+`.ai/feature-atlas/` and rebuild `REPORT.md` — without rescanning any code. Useful after one or
 more `/feature-atlas-subsystem` refreshes, or whenever the ranked TODO list needs to reflect the
 latest state of the existing `DETAILS.md`/`AUDIT.md` files.
 
@@ -9,10 +9,10 @@ latest state of the existing `DETAILS.md`/`AUDIT.md` files.
 
 **Workflow steps:**
 
-1. **Require an existing atlas** — `.claude/feature-atlas/SUMMARY.md` must exist with at least one
+1. **Require an existing atlas** — `.ai/feature-atlas/SUMMARY.md` must exist with at least one
    subsystem folder. If not, tell the user to run `/feature-atlas` first.
 
-2. **Synthesize** — spawn `feature-atlas-synthesizer` against `.claude/feature-atlas/`. It
+2. **Synthesize** — run `feature-atlas-synthesizer` against `.ai/feature-atlas/`. It
    independently re-verifies every finding against current code, rejects/narrows/demotes weak
    ones, runs the coverage/duplication/DRY/over-abstraction/schema/dependency-ranking meta-passes,
    and rewrites `REPORT.md` plus `SUMMARY.md`'s descriptive digest.

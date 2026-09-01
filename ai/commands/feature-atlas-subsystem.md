@@ -1,4 +1,4 @@
-Refresh a single feature/subsystem's entry in `.claude/feature-atlas/` — cheap, targeted version of
+Refresh a single feature/subsystem's entry in `.ai/feature-atlas/` — cheap, targeted version of
 `/feature-atlas` for when you already know which subsystem changed (e.g. right after implementing
 or reviewing a feature) instead of rescanning the whole codebase.
 
@@ -9,7 +9,7 @@ or reviewing a feature) instead of rescanning the whole codebase.
 
 **Workflow steps:**
 
-1. **Require an existing atlas** — `.claude/feature-atlas/SUMMARY.md` must already exist. If it
+1. **Require an existing atlas** — `.ai/feature-atlas/SUMMARY.md` must already exist. If it
    doesn't, tell the user to run `/feature-atlas` first; this command only refreshes an existing
    entry or adds one alongside an existing registry, it doesn't bootstrap the whole thing.
 

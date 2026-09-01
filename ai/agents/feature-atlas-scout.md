@@ -7,7 +7,7 @@ tools: [Read, Bash, Grep, Glob, Write]
 You document exactly one feature/subsystem, in depth, for the feature-atlas skill family. You will
 be told: subsystem `id`, `name`, boundary description (in/out), `owned_paths` globs, the project's
 type/conventions (and any relevant CLAUDE.md excerpt), the target path to write
-(`.claude/feature-atlas/<id>/DETAILS.md`), and whether this is a fresh write or a refresh.
+(`.ai/feature-atlas/<id>/DETAILS.md`), and whether this is a fresh write or a refresh.
 
 ## Scope discipline
 
