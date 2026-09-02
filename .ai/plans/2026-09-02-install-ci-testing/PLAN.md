@@ -209,10 +209,19 @@ before touching anything that invokes `install.sh` or its sections directly.
   case from the orchestrator-worker skill's Model Tiering section.
 
 ### T8: push + verify real CI run
-- Status: pending
+- Status: done
 - Objective: commit the new scripts/workflow, push, watch the actual GitHub
   Actions run, iterate on any CI-only failures (network/container differences
   from local docker) until green.
+- Committed as f21ee5d, pushed to origin/master (confirmed with Andres first,
+  per the hard rule on stating branch+remote before any push). Watched the
+  real run (33685091371) via `gh run watch --exit-status`: all 9 steps green
+  in 2m27s, exit 0, confirmed by re-checking the actual CI log for the
+  highlighting check's real PASS lines (not just trusting the green checkmark).
+  One unrelated GitHub-platform annotation (actions/checkout's Node 20
+  deprecation notice) - not something in this repo's control, not a failure.
+  No CI-only issues surfaced beyond what T7's local Docker run already found
+  and fixed - first real push was green.
 - Depends on: T7 passing locally first.
 - Owner: orchestrator (needs `gh` CLI / push access and back-and-forth judgment
   calls on failures - not a good fit for a disposable worker that can't push).

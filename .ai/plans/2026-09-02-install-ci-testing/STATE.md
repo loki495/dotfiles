@@ -2,9 +2,7 @@
 
 **Objective**: test the whole dotfiles install + add GitHub Actions CI (see PLAN.md)
 
-**Current step**: T1 and T3 done directly by orchestrator. T2 and T4 delegated to
-parallel forks (independent files, no dependency between them per PLAN.md).
-Waiting on both to complete before T5 (driver script).
+**Current step**: COMPLETE. All 8 tasks (T1-T8) done, verified, and pushed.
 
 **Worker status**:
 - T2 (assert-symlinks.sh): done, fork, Sonnet 5. Reviewed by orchestrator:
@@ -87,5 +85,18 @@ counts available for any (in-process forks can't self-report - see the skill's
 Cost Reporting section); tool-call counts above are proxy signals from each
 fork's own completion report.
 
-**Next**: T8 (commit, push, watch real GitHub Actions run) - the only
-remaining task, owned by the orchestrator directly (needs push access).
+**Next**: none - all 8 tasks done, plan complete. T8: committed f21ee5d,
+pushed to origin/master (confirmed with Andres first), watched real run
+33685091371 via `gh run watch --exit-status` - all 9 steps green in 2m27s,
+exit 0, spot-checked the actual CI log's highlighting-check output (not just
+the checkmark). First real push was green; no CI-only issues beyond what
+T7's local Docker run already found and fixed.
+
+All 4 acceptance criteria from PLAN.md met: (1) install.sh + install_neovim.sh
+--parsers/--queries genuinely exercised in an isolated container, not just
+syntax-checked; (2) the tmux-based check proves real per-token highlighting
+and no error popups, for every currently-supported language; (3) the GitHub
+Actions workflow runs on relevant pushes and workflow_dispatch, confirmed
+green on a real run; (4) no changes were made to Andres's real $HOME - all
+testing ran in throwaway containers, verified via the assert-symlinks.sh
+tests and the explicit DOTFILES_CI_TEST=1 gate.
