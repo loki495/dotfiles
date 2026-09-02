@@ -1,6 +1,107 @@
 #!/usr/bin/env bash
 set -e # Exit immediately if a command exits with a non-zero status.
 
+# Grammar repos for languages Neovim doesn't bundle natively (only c, lua,
+# markdown, markdown_inline, vim, query, vimdoc ship with core Neovim 0.12+).
+# Format: [lang]="git_url[#subdir]" - subdir is used for monorepos like
+# tree-sitter-typescript (typescript/tsx) and tree-sitter-php (php/php_only).
+declare -A TS_GRAMMARS=(
+    [bash]="https://github.com/tree-sitter/tree-sitter-bash"
+    [html]="https://github.com/tree-sitter/tree-sitter-html"
+    [yaml]="https://github.com/tree-sitter-grammars/tree-sitter-yaml"
+    [javascript]="https://github.com/tree-sitter/tree-sitter-javascript"
+    [typescript]="https://github.com/tree-sitter/tree-sitter-typescript#typescript"
+    [tsx]="https://github.com/tree-sitter/tree-sitter-typescript#tsx"
+    [vue]="https://github.com/tree-sitter-grammars/tree-sitter-vue"
+    [json]="https://github.com/tree-sitter/tree-sitter-json"
+    [php]="https://github.com/tree-sitter/tree-sitter-php#php"
+    [blade]="https://github.com/KaranAhlawat/tree-sitter-blade" # NOTE: upstream marks this EXPERIMENTAL
+    [rust]="https://github.com/tree-sitter/tree-sitter-rust"
+    [toml]="https://github.com/tree-sitter/tree-sitter-toml"
+)
+TS_CLI_MIN_VERSION="0.26.1"
+PARSER_DIR="$HOME/.local/share/nvim/site/parser"
+
+install_parsers() {
+    shift # drop the leading --parsers
+    mkdir -p "$PARSER_DIR"
+
+    if ! command -v tree-sitter >/dev/null 2>&1; then
+        echo "tree-sitter-cli not found. Installing via pacman..."
+        sudo pacman -S --needed tree-sitter-cli
+    fi
+    local ts_version
+    ts_version=$(tree-sitter --version | awk '{print $2}')
+    if [ "$(printf '%s\n%s' "$TS_CLI_MIN_VERSION" "$ts_version" | sort -V | head -1)" != "$TS_CLI_MIN_VERSION" ]; then
+        echo "Error: tree-sitter-cli $ts_version is older than the required $TS_CLI_MIN_VERSION."
+        echo "Update it via: sudo pacman -S tree-sitter-cli"
+        return 1
+    fi
+    echo "Using tree-sitter-cli $ts_version"
+
+    local langs=("$@")
+    if [ ${#langs[@]} -eq 0 ]; then
+        langs=("${!TS_GRAMMARS[@]}")
+    fi
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    for lang in "${langs[@]}"; do
+        local spec="${TS_GRAMMARS[$lang]:-}"
+        if [ -z "$spec" ]; then
+            echo "Skipping '$lang': no known grammar repo configured in TS_GRAMMARS."
+            continue
+        fi
+
+        local repo_url="${spec%%#*}"
+        local subdir=""
+        [[ "$spec" == *#* ]] && subdir="${spec##*#}"
+
+        echo "=== $lang ($repo_url${subdir:+ [$subdir]}) ==="
+        local clone_dir="$tmp_dir/$lang"
+        if ! git clone --depth 1 --recurse-submodules --shallow-submodules "$repo_url" "$clone_dir"; then
+            echo "Failed to clone $repo_url, skipping $lang."
+            continue
+        fi
+
+        local build_dir="$clone_dir"
+        [ -n "$subdir" ] && build_dir="$clone_dir/$subdir"
+
+        if [ -f "$clone_dir/package.json" ]; then
+            if ! (cd "$clone_dir" && npm install --ignore-scripts --no-audit --no-fund --silent); then
+                echo "Failed to npm install for $lang, skipping."
+                continue
+            fi
+        fi
+
+        if ! (cd "$build_dir" && tree-sitter generate && tree-sitter build); then
+            echo "Failed to build $lang, skipping."
+            continue
+        fi
+
+        local so_file
+        so_file=$(find "$build_dir" -maxdepth 1 -iname "*.so" | head -1)
+        if [ -z "$so_file" ]; then
+            echo "No .so produced for $lang, skipping."
+            continue
+        fi
+        cp "$so_file" "$PARSER_DIR/$lang.so"
+        echo "Installed $PARSER_DIR/$lang.so"
+    done
+
+    echo ""
+    echo "Parser binaries installed to $PARSER_DIR (already on Neovim's native runtimepath)."
+    echo "NOTE: this only builds the parser binaries. Highlight/indent query files"
+    echo "(highlights.scm etc.) are a separate step, not something tree-sitter-cli produces."
+}
+
+if [ "$1" == "--parsers" ]; then
+    install_parsers "$@"
+    exit 0
+fi
+
 INSTALL_TYPE=""
 
 if [ "$1" == "--global" ]; then
@@ -9,8 +110,18 @@ elif [ "$1" == "--user" ]; then
     INSTALL_TYPE="user"
 else
     echo "Error: You must specify either --user or --global for Neovim installation."
-    echo "Usage: $0 [--user|--global]"
+    echo "Usage: $0 [--user|--global] [--force]"
+    echo "       $0 --parsers [lang ...]   (build missing treesitter parsers; default: all configured languages)"
     exit 1
+fi
+
+if command -v nvim >/dev/null 2>&1 && [ "$2" != "--force" ]; then
+    echo "Neovim is already installed at: $(command -v nvim)"
+    echo "Version: $(nvim --version | head -1)"
+    echo ""
+    echo "Skipping install so this script doesn't shadow it with a separate build/alias."
+    echo "Re-run as: $0 $1 --force  to install the latest release anyway."
+    exit 0
 fi
 
 # Use a temporary directory for downloads

@@ -1,1 +1,1 @@
-return 'gelguy/wilder.nvim'
+return { 'gelguy/wilder.nvim', build = ':UpdateRemotePlugins' }

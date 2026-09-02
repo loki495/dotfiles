@@ -1,1 +1,1 @@
-return 'ThePrimeagen/harpoon'
+return { 'ThePrimeagen/harpoon' }

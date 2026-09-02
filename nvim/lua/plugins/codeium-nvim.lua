@@ -5,9 +5,6 @@ return {
         "hrsh7th/nvim-cmp",
     },
     config = function()
-        require("codeium").setup(
-            {
-                vim.keymap.set('i', '<C-G>', function () return vim.fn['codeium#Accept']() end, { expr = true, silent = true })
-            })
+        require("codeium").setup({})
     end
 }
