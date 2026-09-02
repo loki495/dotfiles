@@ -21,3 +21,24 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     vim.cmd([[%s/\r//ge]])
   end,
 })
+
+-- Native treesitter highlighting (nvim-treesitter was archived and dropped -
+-- see git log). Neovim 0.12 only bundles c/lua/markdown/vim/query/vimdoc
+-- parsers+queries; the rest come from `install_neovim.sh --parsers` plus
+-- query files placed under ~/.local/share/nvim/site/queries/<lang>/.
+local ft_to_lang = {
+    sh = "bash",
+    typescriptreact = "tsx",
+}
+local treesitter_filetypes = {
+    "sh", "html", "yaml", "javascript", "typescript",
+    "typescriptreact", "vue", "json", "php", "rust", "toml",
+}
+vim.api.nvim_create_autocmd("FileType", {
+    group = group,
+    pattern = treesitter_filetypes,
+    callback = function(args)
+        local lang = ft_to_lang[args.match] or args.match
+        pcall(vim.treesitter.start, args.buf, lang)
+    end,
+})

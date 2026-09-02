@@ -22,6 +22,14 @@ declare -A TS_GRAMMARS=(
 TS_CLI_MIN_VERSION="0.26.1"
 PARSER_DIR="$HOME/.local/share/nvim/site/parser"
 
+# Languages actually wired up via vim.treesitter.start() in
+# nvim/lua/andres/autocmds.lua. Deliberately excludes markdown (Neovim 0.12
+# ships its own correct native query; nvim-treesitter's old copy uses a
+# predicate broken on 0.12) and blade (not attached to any real filetype -
+# .blade.php currently maps to filetype "php", see nvim/lua/andres/remap.lua).
+TS_QUERY_LANGS=(bash html yaml javascript typescript tsx vue json php rust toml)
+QUERY_DIR="$HOME/.local/share/nvim/site/queries"
+
 install_parsers() {
     shift # drop the leading --parsers
     mkdir -p "$PARSER_DIR"
@@ -97,8 +105,48 @@ install_parsers() {
     echo "(highlights.scm etc.) are a separate step, not something tree-sitter-cli produces."
 }
 
+install_queries() {
+    shift # drop the leading --queries
+    mkdir -p "$QUERY_DIR"
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    echo "Cloning nvim-treesitter (master, archived/frozen) for its query files..."
+    if ! git clone --quiet --depth 1 --branch master \
+        https://github.com/nvim-treesitter/nvim-treesitter "$tmp_dir/nvim-treesitter"; then
+        echo "Failed to clone nvim-treesitter, aborting."
+        return 1
+    fi
+
+    local langs=("$@")
+    if [ ${#langs[@]} -eq 0 ]; then
+        langs=("${TS_QUERY_LANGS[@]}")
+    fi
+
+    for lang in "${langs[@]}"; do
+        local src="$tmp_dir/nvim-treesitter/queries/$lang"
+        if [ ! -d "$src" ]; then
+            echo "Skipping '$lang': no query dir found upstream."
+            continue
+        fi
+        mkdir -p "$QUERY_DIR/$lang"
+        cp "$src/"*.scm "$QUERY_DIR/$lang/" 2>/dev/null
+        echo "Installed queries for $lang: $(ls "$QUERY_DIR/$lang" | tr '\n' ' ')"
+    done
+
+    echo ""
+    echo "Query files installed to $QUERY_DIR (already on Neovim's native runtimepath)."
+}
+
 if [ "$1" == "--parsers" ]; then
     install_parsers "$@"
+    exit 0
+fi
+
+if [ "$1" == "--queries" ]; then
+    install_queries "$@"
     exit 0
 fi
 
@@ -112,6 +160,7 @@ else
     echo "Error: You must specify either --user or --global for Neovim installation."
     echo "Usage: $0 [--user|--global] [--force]"
     echo "       $0 --parsers [lang ...]   (build missing treesitter parsers; default: all configured languages)"
+    echo "       $0 --queries [lang ...]   (fetch highlight/indent query files; default: all configured languages)"
     exit 1
 fi
 
