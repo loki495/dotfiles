@@ -1,0 +1,15 @@
+[Unit]
+Description=Sessioneer Codex app-server bridge
+After=default.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/home/andres/www/sessioneer/host-agent/.env
+ExecStart=/usr/bin/php /home/andres/www/sessioneer/host-agent/codex_bridge.php
+Restart=on-failure
+RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=30
+
+[Install]
+WantedBy=default.target

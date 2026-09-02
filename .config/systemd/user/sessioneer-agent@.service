@@ -1,10 +1,10 @@
 [Unit]
-Description=Claude Session Manager host agent (per-connection instance)
+Description=Sessioneer host agent (per-connection instance)
 
 [Service]
 # Optional (leading "-" = don't fail if missing). See host-agent/.env.example.
-EnvironmentFile=-/home/andres/www/claude-session-manager/host-agent/.env
-ExecStart=/usr/bin/php /home/andres/www/claude-session-manager/host-agent/agent.php
+EnvironmentFile=-/home/andres/www/sessioneer/host-agent/.env
+ExecStart=/usr/bin/php /home/andres/www/sessioneer/host-agent/agent.php
 StandardInput=socket
 StandardOutput=socket
 StandardError=journal
