@@ -1,5 +1,7 @@
 # Dotfiles
 
+[![Test dotfiles install](https://github.com/loki495/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/loki495/dotfiles/actions/workflows/ci.yml)
+
 Personal dotfiles for an Arch/Garuda Linux desktop (Hyprland + waybar) and a set of
 PHP/Laravel/OpenCart dev-tooling scripts. Managed as a single repo, symlinked into
 place by `install.sh`.
