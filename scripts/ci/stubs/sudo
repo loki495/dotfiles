@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# CI container jobs already run as root, so there's nothing to escalate to
+# and no sudoers/PAM setup to worry about - just exec the command directly.
+# Not expected to actually be hit in the current test-install.sh flow (tree-
+# sitter-cli is pre-installed by the CI workflow, and NVIM_INSTALL_CHOICE=1
+# never reaches the --global/sudo branch in scripts/install/60-neovim.sh),
+# kept as defensive insurance against future drift in either of those paths.
+exec "$@"

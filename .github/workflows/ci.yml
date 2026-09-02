@@ -1,0 +1,58 @@
+name: Test dotfiles install
+
+on:
+  push:
+    paths:
+      - "install.sh"
+      - "install_neovim.sh"
+      - "scripts/install/**"
+      - "scripts/ci/**"
+      - "nvim/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch: {}
+
+jobs:
+  test-install:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    # Force a known, writable HOME rather than trusting whatever convention
+    # this container-job setup defaults to - test-install.sh's safety gate
+    # requires the checked-out repo to live at exactly $HOME/dotfiles (see
+    # .ai/plans/2026-09-02-install-ci-testing/RESULT.md's T2 finding: bash/
+    # bashrc hardcodes that path unconditionally).
+    env:
+      HOME: /root
+
+    steps:
+      - name: Install base dependencies
+        # -Sy (not just -S) to sync package databases first - a freshly
+        # pulled archlinux:latest image's local db is stale/empty. Installs
+        # everything install_neovim.sh --parsers needs (git for cloning
+        # grammar repos, a C toolchain + node/npm for tree-sitter generate/
+        # build, tree-sitter-cli itself so install_neovim.sh's own pacman
+        # fallback never triggers) plus tmux for the highlighting check and
+        # curl/wget/tar for install_neovim.sh's own nvim download.
+        run: |
+          pacman -Sy --noconfirm --needed \
+            git curl wget tar tmux base-devel nodejs npm tree-sitter-cli
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: checkout
+
+      - name: Place repo at $HOME/dotfiles
+        # bash/bashrc (sourced by test-install.sh's ~/.bashrc check) hardcodes
+        # ~/dotfiles/... paths regardless of where the repo actually lives -
+        # see RESULT.md. Symlinking is enough; nothing here needs a real copy.
+        run: |
+          mkdir -p "$HOME"
+          ln -sfn "$GITHUB_WORKSPACE/checkout" "$HOME/dotfiles"
+
+      - name: Run install + verification suite
+        env:
+          DOTFILES_CI_TEST: "1"
+        run: |
+          export PATH="$HOME/dotfiles/scripts/ci/stubs:$PATH"
+          "$HOME/dotfiles/scripts/ci/test-install.sh"

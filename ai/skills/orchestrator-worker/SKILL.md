@@ -847,6 +847,23 @@ for any cross-tool worker running in the background:
    doesn't by itself eliminate, the chance of state bleeding between concurrent
    workers sharing one tool's backend.
 
+**A distinct failure mode from all of the above**: an in-process worker (fork or
+subagent) that itself starts a long-lived background process as part of its own
+work — a `docker run`/`sleep infinity` container it plans to `docker exec` into
+repeatedly, a dev server, anything not expected to exit on its own — must clean
+that process up before finishing. If the *worker itself* gets externally
+interrupted before reaching that cleanup (a rate limit, a crash, being killed),
+nothing in this protocol watches for it: the "worker died" notification says
+nothing about what it left running. Confirmed 2026-09-02: a fork doing Docker-
+based CI testing hit a session rate limit mid-task, and the `archlinux` container
+it had started (`sleep infinity`, meant to be `docker exec`'d into) kept running
+for 8+ hours afterward, undetected, consuming disk. After any worker — in-process
+or cross-tool — reports anything other than clean completion, check for what it
+might have left running (`docker ps -a`, relevant process list) before assuming
+"failed" means "nothing changed." This is a different check than the sentinel-
+polling above, which only covers the launcher-side wait/race case, not a worker's
+own orphaned children.
+
 ### In-Process vs Cross-Tool
 
 Communication is entirely file-based, so it doesn't matter to the protocol whether a

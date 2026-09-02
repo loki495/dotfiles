@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# No-op systemctl stub for CI containers, which have no real user systemd
+# session (no D-Bus, no user manager). install.sh's 40-systemd.sh only needs
+# the symlinking exercised, not an actual daemon-reload/enable to succeed.
+# Put this script's directory first on PATH before running install.sh in a
+# container - see scripts/ci/test-install.sh.
+echo "[systemctl stub] ignoring: systemctl $*" >&2
+exit 0

@@ -3,10 +3,15 @@ set -e
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 section_header "Neovim Application Installation"
-echo "Do you want to install Neovim for the current user or globally?"
-echo "  1) User-local installation (\$HOME/.local/bin/nvim)"
-echo "  2) Global installation (/usr/local/bin/nvim - requires sudo)"
-read -rp "Please enter 1 or 2: " nvim_choice
+if [ -n "$NVIM_INSTALL_CHOICE" ]; then
+    nvim_choice="$NVIM_INSTALL_CHOICE"
+    echo_info "Using NVIM_INSTALL_CHOICE=$nvim_choice (non-interactive)."
+else
+    echo "Do you want to install Neovim for the current user or globally?"
+    echo "  1) User-local installation (\$HOME/.local/bin/nvim)"
+    echo "  2) Global installation (/usr/local/bin/nvim - requires sudo)"
+    read -rp "Please enter 1 or 2: " nvim_choice
+fi
 
 if [ "$nvim_choice" == "1" ]; then
     echo_info "Proceeding with user-local Neovim application installation."

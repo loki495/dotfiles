@@ -1,0 +1,2 @@
+- disk-full-false-empty-du | linux, bash, disk, debugging, general | full df + empty du means argument-list-too-long or deleted-open-files, not an empty dir - use --max-depth and lsof +L1
+- lazy-nvim-fresh-home-needs-sync | nvim, lazy.nvim, testing, ci, general | fresh $HOME never ran Lazy! sync - native-compiled plugins throw and can silently break unrelated autocmds registered later in startup

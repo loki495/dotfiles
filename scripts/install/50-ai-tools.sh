@@ -16,7 +16,7 @@ for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
   rm -f ~/.claude/"$f"
   ln -s "$SCRIPTPATH/ai/$f" ~/.claude/"$f"
 done
-for d in skills commands agents hooks; do
+for d in skills commands agents hooks lessons; do
   rm -rf ~/.claude/"$d"
   ln -s "$SCRIPTPATH/ai/$d" ~/.claude/"$d"
 done
