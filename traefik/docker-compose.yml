@@ -1,0 +1,54 @@
+services:
+  traefik:
+    image: traefik:v3.6.5
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      # File provider - only used for the app.dev.local.test TLS cert
+      # below (see dynamic/csm-tls.yml). Docker labels alone can only
+      # reference dynamic config attributes, not embed a real certificate
+      # file, so this is the one piece that can't be done via labels.
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      # Added specifically so claude-session-manager can be served over
+      # HTTPS (a secure context is a hard requirement for Service
+      # Workers/Web Push, not optional - plain HTTP silently blocks
+      # navigator.serviceWorker entirely, no error surfaced). Purely
+      # additive: doesn't affect any existing HTTP-only router on other
+      # sites sharing this Traefik instance.
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      # LAN HTTPS for *.example.com: a wildcard cert issued via Let's Encrypt's
+      # DNS-01 challenge against Cloudflare's API (CF_DNS_API_TOKEN below),
+      # since these names are never reachable on :80 from the public internet
+      # for an HTTP-01 challenge. Requesting it as the entrypoint's default
+      # cert (rather than per-router) means every current and future
+      # *.example.com router gets it automatically. The existing app.dev.local.test
+      # file-provider cert is unaffected -- Traefik still matches the most
+      # specific cert by SNI.
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge=true"
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.cloudflare.acme.email=you@example.com"
+      - "--certificatesresolvers.cloudflare.acme.storage=/etc/traefik/acme/acme.json"
+      - "--entrypoints.websecure.http.tls.certresolver=cloudflare"
+      - "--entrypoints.websecure.http.tls.domains[0].main=example.com"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.example.com"
+    env_file:
+      - .env
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./dynamic:/dynamic:ro"
+      - "./certs:/etc/traefik/certs:ro"
+      - "./acme:/etc/traefik/acme"
+
+networks:
+  default:
+    name: web

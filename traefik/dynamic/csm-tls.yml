@@ -1,0 +1,16 @@
+# Dynamic TLS config for app.dev.local.test - see docker-compose.yml's
+# --entrypoints.websecure.address=:443 comment for why this exists (Web
+# Push/Service Workers on claude-session-manager need a real secure
+# context, plain HTTP silently blocks them). Docker labels alone can't
+# carry an actual certificate file, hence this file-provider config -
+# --providers.file.directory=/dynamic (see docker-compose.yml).
+#
+# Self-signed, SAN=app.dev.local.test specifically (not Traefik's generic
+# anonymous default cert, which has the wrong hostname and would still
+# fail validation even once trusted), 397-day validity (Apple's own
+# ≤398-day cap for a cert to be trustable via iOS's Certificate Trust
+# Settings - a longer validity would silently never be trustable there).
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/app.dev.local.test.crt
+      keyFile: /etc/traefik/certs/app.dev.local.test.key

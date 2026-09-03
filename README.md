@@ -135,6 +135,24 @@ Rector/DB/frontend conventions). `statusline-command.sh` — custom statusline.
 `.mcphost.yml` — config for `mcphost` (local LLM agent host): MCP server
 definitions and model params (currently Ollama `gemma:7b`).
 
+### Traefik (`traefik/`)
+
+Symlinked to `~/www/traefik/` (the live reverse-proxy config for the whole
+example.com home lab: routes both this machine's Docker-labeled containers and
+`media`'s own services — Sonarr, Radarr, etc. — via the file provider, and
+issues the `*.example.com` wildcard cert through Let's Encrypt DNS-01 against
+Cloudflare). `docker-compose.yml` runs Traefik itself; `dynamic/` holds the
+file-provider routes (`ac495-sites.yml`) and the one legacy self-signed TLS
+case (`csm-tls.yml`, for a plain-HTTP-only dev host needing a secure context).
+`cloudflared-media-config.yml` is the Cloudflare Tunnel ingress config that
+actually runs on `media`, tracked here for reference/history since `media`
+has no git repo of its own for it.
+
+**`.env` (Cloudflare API token), `acme/` (the real Let's Encrypt account +
+wildcard private key), and `certs/` (a self-signed private key) are
+gitignored, not tracked** - they exist as real files at the symlinked
+location for Traefik to actually run, but must never end up in this repo.
+
 ### Other
 
 - `git/` — `.gitconfig` + bash git-completion script.

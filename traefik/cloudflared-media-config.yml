@@ -1,0 +1,19 @@
+tunnel: home
+credentials-file: /home/user/.cloudflared/00000000-0000-0000-0000-000000000000.json
+
+ingress:
+  # Every example.com hostname routes through Traefik on .12 - it's the one
+  # component that knows how to reach both work-hosted containers (Docker
+  # labels) and media-hosted services like Sonarr (file-provider config),
+  # so there's no reason for any hostname to bypass it. The catch-all used
+  # to point at http://localhost:80 (media itself, where cloudflared runs)
+  # from this tunnel's first end-to-end test (Cloudflare Access -> tunnel
+  # on .6 -> Traefik on .12, homie.example.com only) - nothing ever listened
+  # there, so every OTHER hostname 502'd once it got past Access. Found
+  # live 2026-09-03 (Andres: 502s regardless of being on the home VPN or
+  # not - the VPN not necessarily using Pi-hole's DNS meant both paths hit
+  # this same broken catch-all).
+  - hostname: "*.example.com"
+    service: http://10.10.0.10:80
+
+  - service: http_status:404

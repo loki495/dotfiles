@@ -1,0 +1,206 @@
+http:
+  routers:
+    homie-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`homie.example.com`)
+      service: homie@docker
+    adminer-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`adminer.example.com`)
+      service: adminer@docker
+    csm-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`csm.example.com`)
+      service: sessioneer@docker
+    sessioneer-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`sessioneer.example.com`)
+      service: sessioneer@docker
+    git-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`git.example.com`)
+      service: git@docker
+    insights-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`insights.example.com`)
+      service: insights@docker
+    jp-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`jp.example.com`)
+      service: jp@docker
+    client-f-new-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-f-new.example.com`)
+      service: client-f-new@docker
+    client-a-legacy-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-a-legacy.example.com`)
+      service: client-a-legacy@docker
+    client-a-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-a.example.com`)
+      service: client-a@docker
+    redis-ui-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`redis-ui.example.com`)
+      service: redis-ui@docker
+    client-a-catalog-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-a-catalog.example.com`)
+      service: client-a-catalog@docker
+    client-b-dev-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-b-dev.example.com`)
+      service: client-b-dev@docker
+    client-b-master-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-b-master.example.com`)
+      service: client-b-master@docker
+    client-b-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-b.example.com`)
+      service: client-b@docker
+    client-c-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-c.example.com`)
+      service: client-c@docker
+    client-f-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`client-f.example.com`)
+      service: client-f@docker
+    stocker-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`stocker.example.com`)
+      service: stocker@docker
+    termui-ac495:
+      entryPoints: [web, websecure]
+      rule: Host(`termui.example.com`)
+      service: termui@docker
+
+    # Media server sites (LAN HTTPS only -- remote/tunnel access still goes
+    # directly from cloudflared on media to localhost:<port>, bypassing
+    # Traefik entirely; this router exists purely so LAN clients get the
+    # same wildcard cert via Pi-hole pointing these names at 10.10.0.10
+    # instead of 10.10.0.20).
+    sonarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`sonarr.example.com`)
+      service: sonarr-media
+    radarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`radarr.example.com`)
+      service: radarr-media
+    prowlarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`prowlarr.example.com`)
+      service: prowlarr-media
+    jackett-ac495:
+      entryPoints: [websecure]
+      rule: Host(`jackett.example.com`)
+      service: jackett-media
+    nzbget-ac495:
+      entryPoints: [websecure]
+      rule: Host(`nzbget.example.com`)
+      service: nzbget-media
+    bazarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`bazarr.example.com`)
+      service: bazarr-media
+    qbittorrent-ac495:
+      entryPoints: [websecure]
+      rule: Host(`qbittorrent.example.com`)
+      service: qbittorrent-media
+    esphome-ac495:
+      entryPoints: [websecure]
+      rule: Host(`esphome.example.com`)
+      service: esphome-media
+    homeassistant-ac495:
+      entryPoints: [websecure]
+      rule: Host(`homeassistant.example.com`)
+      service: homeassistant-media
+    status-ac495:
+      entryPoints: [websecure]
+      rule: Host(`status.example.com`)
+      service: status-media
+    stocks-ac495:
+      entryPoints: [websecure]
+      rule: Host(`stocks.example.com`)
+      service: stocks-media
+    pihole-ac495:
+      entryPoints: [websecure]
+      rule: Host(`pihole.example.com`)
+      service: pihole-media
+    hyperion-ac495:
+      entryPoints: [websecure]
+      rule: Host(`hyperion.example.com`)
+      service: hyperion-media
+    claude-ui-ac495:
+      entryPoints: [websecure]
+      rule: Host(`claude-ui.example.com`)
+      service: claude-ui-media
+    lazydocker-ac495:
+      entryPoints: [websecure]
+      rule: Host(`lazydocker.example.com`)
+      service: lazydocker-media
+
+  services:
+    sonarr-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8989"
+    radarr-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:7878"
+    prowlarr-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:9696"
+    jackett-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:9117"
+    nzbget-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:6789"
+    bazarr-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:6767"
+    qbittorrent-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8080"
+    esphome-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:6052"
+    homeassistant-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8123"
+    status-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8081"
+    stocks-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8085"
+    pihole-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:8001"
+    hyperion-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.30:8090"
+    claude-ui-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.10:3001"
+    lazydocker-media:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.0.20:3333"

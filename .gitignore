@@ -6,3 +6,5 @@ nvim/plugin
 nvim/lazy-lock.json
 .ai/plans/*/scratch/
 
+traefik/acme/
+traefik/certs/
