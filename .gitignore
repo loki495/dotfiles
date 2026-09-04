@@ -8,3 +8,7 @@ nvim/lazy-lock.json
 
 traefik/acme/
 traefik/certs/
+traefik/docker-compose.yml
+traefik/dynamic/ac495-sites.yml
+traefik/cloudflared-media-config.yml
+misc/docker/docker-compose.yml

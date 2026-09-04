@@ -69,7 +69,7 @@ the **public** DNS answer instead, which is Cloudflare's proxied edge IP, not th
 IP. That forces the request through the internet and back in via the Tunnel/Access
 path below, even though the client was on the same LAN the whole time. This is
 exactly what broke the assumption during the cards-domain migration: `homie-app`'s
-own container resolv.conf pointed at `10.10.0.20`/`192.168.1.1` directly rather than
+own container resolv.conf pointed at `10.10.0.20`/`10.10.0.1` directly rather than
 through Pi-hole, so `getent hosts sonarr.example.com` from inside it returned
 Cloudflare's edge IPs, and a `curl` to `sonarr.example.com` from there got a 302
 (Cloudflare Access) instead of hitting Sonarr.
@@ -89,19 +89,9 @@ credentials file referenced by UUID) runs on `media`, giving external/remote acc
 to `*.example.com` without opening any port on the home router. Traffic that resolves
 to Cloudflare's public edge (see the DNS gotcha above, or genuinely external clients)
 gets gated by Cloudflare Access before reaching the tunnel — confirmed by an observed
-302 on a direct `curl` from outside the LAN-DNS path.
-
-**Open question, not yet resolved** — flagging rather than guessing: the current
-ingress config only has one explicit per-hostname rule
-(`homie.example.com → 10.10.0.10:80`) plus a wildcard catch-all
-(`*.example.com → http://localhost:80`, i.e. port 80 on `media` itself, where cloudflared
-runs). None of media's own services (Sonarr, Radarr, etc.) are individually listed,
-and their ports aren't 80, so it's unclear whether the catch-all actually reaches them
-correctly today or whether this is genuinely just the "first end-to-end test" its own
-comment says it is, with per-service ingress rules still to be added. Verify this
-directly (check what's actually listening on `media:80`, or just test a specific
-service hostname from outside the LAN-DNS path) before assuming remote/tunnel access
-works for anything beyond `homie.example.com`.
+302 on a direct `curl` from outside the LAN-DNS path, and per-service ingress rules
+now cover every `media`-hosted hostname individually (not just a single-hostname
+catch-all), so every current `*.example.com` name is confirmed gated the same way.
 
 ## Known limitations
 
