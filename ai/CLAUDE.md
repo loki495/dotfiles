@@ -10,6 +10,11 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
   without explicit confirmation — even if rewriting the commit itself was approved.
 - **NEVER** delete, weaken, or skip/bypass a test to force a passing state without
   explicit confirmation from Andres first.
+- **NEVER** suppress an unexpected exception or error in a local/debug environment.
+  Let it surface with the framework/runtime's normal diagnostic output. If code catches
+  it to provide a graceful production fallback, rethrow it in debug mode and report or
+  log it before handling it in non-debug mode. Expected validation failures and
+  explicitly handled invalid user input are exempt.
 - **NEVER** take a real-world-visible action (a real email/SMS, charging a card, a
   third-party write endpoint, a user-visible notification) without confirming first —
   applies even inside test code or a one-off script. When in doubt whether something
@@ -74,6 +79,9 @@ policy, verifying commit surgery, handling concurrent sessions on the same repo 
 live in the `git-workflow` skill; read it before any non-trivial git operation. The
 `git-helper` agent enforces the same rules specifically for push-safety/cherry-pick
 checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
+
+Keep commits feature-scoped and use separate commits for distinct features or fixes.
+Closely related CSS changes and purely visual polish may be grouped into one UI commit.
 
 ## Local vs production data (staleness assumptions)
 
