@@ -1,12 +1,12 @@
 [user]
-	email = you@example.com
+	email = andres@ac495.net
 	name = Andres Crucitti
 [http]
 	sslVerify = false
 [core]
 	quotepath = false
 	commitGraph = true
-	editor = "/home/andres/nvim/bin/nvim"
+	editor = "/usr/bin/nvim"
 [gc]
 	writeCommitGraph = true
 [receive]
