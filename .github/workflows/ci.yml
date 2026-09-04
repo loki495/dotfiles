@@ -1,15 +1,6 @@
 name: Test dotfiles install
 
 on:
-  # Deliberately no `paths:` filter. There was one, listing install.sh,
-  # install_neovim.sh, scripts/install/**, scripts/ci/** and nvim/** - but
-  # test-install.sh exercises far more than that (it runs the real install and
-  # then asserts on the symlinks it produced, which cover bash/, .config/, ai/,
-  # git/, bin/ and traefik/). Changes to any of those shipped with no CI at
-  # all, and the badge kept pointing at an older run. Any list narrower than
-  # "everything" has to be kept in sync with what the suite actually touches,
-  # which is precisely how it drifted wrong; the job is a few minutes in an
-  # Arch container, so running it on every push is the cheaper trade.
   push:
   workflow_dispatch: {}
 
