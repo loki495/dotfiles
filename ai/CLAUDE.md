@@ -29,8 +29,8 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
 
 - All projects live under `~/www/`. No naming convention — folder names are freeform,
   and for live (non-personal) projects the domain name may appear somewhere in the path.
-- Some projects use git worktrees for parallel branch work (e.g. `client-b`,
-  `client-a`). Worktree structure varies per project and is NOT assumed.
+- Some projects use git worktrees for parallel branch work. Worktree structure
+  varies per project and is NOT assumed.
   - Before assuming a project's branch/worktree layout, run `git worktree list` and
     `git branch -a` in the project root to confirm.
   - If the layout is ambiguous or non-standard, write findings to `.claude/project.md`
