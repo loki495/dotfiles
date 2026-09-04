@@ -199,7 +199,7 @@ Copy this file as the starting point. It handles:
 - Xdebug config if xdebug extension is present
 - Old Debian release handling (stretch/buster archive mirror fix)
 
-**OpenCart reference:** `~/www/site-a.example.com/client-b-local/setup-dev-container.sh`
+**OpenCart reference:** `~/www/<opencart-site>/<opencart-site>-local/setup-dev-container.sh`
 This variant uses the `APACHE_ROOT` environment variable to set the Apache DocumentRoot
 to the project root (not `public/`). Use it as the OpenCart starting point.
 

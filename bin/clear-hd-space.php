@@ -27,7 +27,7 @@ foreach ($clean_dirs as $dir) {
 Sample INI file
 
  [clean-dirs]
- 0[path] = '~/site-a.example.com/public_html'
+ 0[path] = '~/example-site.com/public_html'
  0[type] = 'opencart1|sessions'
  0[days] = '(int)'  (for backup_database/sessions only)
 
