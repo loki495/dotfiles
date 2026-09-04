@@ -24,7 +24,7 @@ The slug drives container names, Traefik hostnames, and the docker-compose `name
 
 - Default: current folder's basename, lowercased, spaces/dots → hyphens
 - Override: use `$ARGUMENTS` if provided
-- Examples: `stocker` → `stocker`, `new.example.com` → `client-f-new`
+- Examples: `stocker` → `stocker`, `new.example.com` → `new-example`
 
 Confirm with the user if it looks ambiguous.
 
