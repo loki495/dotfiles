@@ -5,11 +5,11 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in utils/kodi-db/.env}
-      MYSQL_DATABASE: kodi
-      MYSQL_USER: kodi
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-kodi}
+      MYSQL_USER: ${MYSQL_USER:-kodi}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in utils/kodi-db/.env}
       command: --skip-ssl --skip-secure-auth --require_secure_transport=OFF
     ports:
-      - "3307:3306"
+      - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - ./data:/var/lib/mysql
