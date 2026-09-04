@@ -9,7 +9,7 @@ set -e
 #   ./install.sh --list                # list available sections
 #
 # Each section is also independently runnable directly, e.g.:
-#   ./scripts/install/51-claude-code.sh
+#   ./scripts/install/50-ai-tools.sh
 
 SCRIPTPATH="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 INSTALL_DIR="$SCRIPTPATH/scripts/install"
