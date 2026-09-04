@@ -12,7 +12,7 @@ a personal home-lab setup that changes as things get added.
 ## The machines
 
 - **`work`** (`10.10.0.10`) — **this machine.** Docker host for Traefik itself and
-  every `@docker`-routed app (homie, csm, git, adminer, the various game/client-a
+  every `@docker`-routed app (homie, csm, git, adminer, the various client
   projects, claude-ui, etc. — see `~/www/traefik/dynamic/ac495-sites.yml`'s first
   block of routers).
 - **`media`** (`10.10.0.20`, SSH alias `media`) — the media box. Hosts Pi-hole, the

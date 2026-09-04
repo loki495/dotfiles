@@ -8,10 +8,19 @@
 #   ./import-sql.sh --all --ignore-single "pattern"
 #   ./import-sql.sh --dry-run ...
 
-DB_CONTAINER="client-b-db"
-DB_USER="user"
-DB_PASS="pass"
-DB_NAME="app"
+# Connection details come from a .env in the directory you run this from - the
+# folder holding the .sql.gz dumps - so one script serves every project without
+# carrying any one project's container name. Values in the file override any
+# already exported, so drop the variable from .env to set it per-invocation.
+# See import-sqlgz-files-docker.env.example for the template.
+# shellcheck source=/dev/null
+[ -f ./.env ] && source ./.env
+
+: "${DB_CONTAINER:?set DB_CONTAINER in ./.env or the environment}"
+: "${DB_USER:?set DB_USER in ./.env or the environment}"
+: "${DB_PASS:?set DB_PASS in ./.env or the environment}"
+: "${DB_NAME:?set DB_NAME in ./.env or the environment}"
+
 DRY_RUN=false
 
 usage() {

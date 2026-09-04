@@ -6,8 +6,9 @@ description: Backs up a site's git repo + database from its production/live serv
 # Setting Up Site Backups
 
 Backs up a site's git repo + database from its production/live server into
-`~/backups/<site>/` on the dedicated backups machine (SSH alias `backups`,
-`ubuntu@<backups-host>:2222`). Full variable/script reference:
+`~/backups/<site>/` on the dedicated backups machine, reached throughout this
+skill by its SSH alias `backups` (define the real host, user and port once in
+`~/.ssh/config`). Full variable/script reference:
 `~/dotfiles/backup-tools/README.md` on that machine — read it before setting
 up a new site, this skill is the workflow, that file is the schema.
 
@@ -15,7 +16,7 @@ up a new site, this skill is the workflow, that file is the schema.
 
 1. **Survey a few existing `backup.conf` files first** (`ssh backups "cat
    ~/backups/*/backup.conf"`) — conventions vary (AWS-fleet sites share
-   `ec2-fleet.pem`; non-fleet sites use their own key; OpenCart sites add
+   one fleet-wide `.pem`; non-fleet sites use their own key; OpenCart sites add
    `MYSQL_EXCLUDED_TABLES`/`RSYNC_FOLDERS`; etc). Match the closest existing
    pattern rather than inventing a new one.
 

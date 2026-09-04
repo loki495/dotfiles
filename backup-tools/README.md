@@ -29,8 +29,8 @@ files; not every variable is used by every site.
 **Required:**
 - `SSH_HOST`, `SSH_USER` — remote box to pull from.
 - `SSH_KEY` — private key path. Prefer a **dedicated key per site** when the
-  site isn't on the shared AWS EC2 fleet (`ec2-fleet.pem` is shared across
-  many sites that *are* on that fleet — don't reuse it for an unrelated box).
+  site isn't on the shared AWS EC2 fleet (one `.pem` is shared across the many
+  sites that *are* on that fleet — don't reuse it for an unrelated box).
 - `SSH_BASE_PATH` + `SSH_PATH` — concatenated to the remote code directory.
 - `LOCAL_BASE` (almost always `` `pwd` ``) + `LOCAL_PATH` (almost always
   `public_html`) — where the git clone lands locally.
