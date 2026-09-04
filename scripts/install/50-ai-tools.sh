@@ -6,9 +6,21 @@ section_header "Setting up shared AGENTS.md entrypoint..."
 backup_and_link ~/AGENTS.md "$SCRIPTPATH/ai/AGENTS.md"
 echo_success "AGENTS.md linked (read natively by Codex and Antigravity's agy)."
 
-section_header "Setting up .mcphost symlink..."
-ln -sfn "$SCRIPTPATH/.mcphost" ~/.mcphost
-echo_success ".mcphost done."
+section_header "Setting up mcphost config..."
+# mcphost reads ~/.mcphost.yml for its config and creates ~/.mcphost/ itself as
+# a hooks directory - only the first is ours to link, and only the first exists
+# in this repo. Earlier versions of this script linked ~/.mcphost instead, which
+# left a dangling symlink; worse, once mcphost had created that directory for
+# real, ln -sfn nested the dangling link inside it as ~/.mcphost/.mcphost. Clear
+# both, but only when they are symlinks that resolve to nothing.
+if [ -L ~/.mcphost ] && [ ! -e ~/.mcphost ]; then
+  rm -f ~/.mcphost
+fi
+if [ -L ~/.mcphost/.mcphost ] && [ ! -e ~/.mcphost/.mcphost ]; then
+  rm -f ~/.mcphost/.mcphost
+fi
+backup_and_link ~/.mcphost.yml "$SCRIPTPATH/.mcphost.yml"
+echo_success ".mcphost.yml linked."
 
 section_header "Setting up Claude Code config..."
 mkdir -p ~/.claude
