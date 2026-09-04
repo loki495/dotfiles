@@ -30,6 +30,16 @@ check_symlink() {
     return
   fi
 
+  # -e follows the link, so this is the check that actually catches a link
+  # pointing at nothing. The expected_real guard below cannot: readlink -f
+  # canonicalises a missing *final* component rather than failing, so it only
+  # ever fires when a parent directory is missing too.
+  if [ ! -e "$target" ]; then
+    echo "FAIL: $label - $target is a dangling symlink -> $(readlink "$target")"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+
   expected_real="$(readlink -f "$expected_source" 2>/dev/null)"
   target_real="$(readlink -f "$target" 2>/dev/null)"
 
@@ -78,7 +88,7 @@ check_symlink ~/.config/systemd "$SCRIPTPATH/.config/systemd" "~/.config/systemd
 
 echo "=== 50-ai-tools.sh ==="
 check_symlink ~/AGENTS.md "$SCRIPTPATH/ai/AGENTS.md" "~/AGENTS.md -> ai/AGENTS.md"
-check_symlink ~/.mcphost "$SCRIPTPATH/.mcphost" "~/.mcphost -> .mcphost"
+check_symlink ~/.mcphost.yml "$SCRIPTPATH/.mcphost.yml" "~/.mcphost.yml -> .mcphost.yml"
 for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
   check_symlink ~/.claude/"$f" "$SCRIPTPATH/ai/$f" "~/.claude/$f -> ai/$f"
 done
