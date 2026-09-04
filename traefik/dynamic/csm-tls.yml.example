@@ -1,7 +1,7 @@
 # Dynamic TLS config for app.dev.local.test - see docker-compose.yml's
 # --entrypoints.websecure.address=:443 comment for why this exists (Web
-# Push/Service Workers on claude-session-manager need a real secure
-# context, plain HTTP silently blocks them). Docker labels alone can't
+# Push/Service Workers need a real secure context, and plain HTTP
+# silently blocks them). Docker labels alone can't
 # carry an actual certificate file, hence this file-provider config -
 # --providers.file.directory=/dynamic (see docker-compose.yml).
 #

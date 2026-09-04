@@ -5,6 +5,21 @@ one subfolder per site. Run from inside a site's backup folder (or pass
 `--process-subfolders <base-dir>` to `full-backup`/`check-backup` to sweep
 every site under a base dir).
 
+## `backup-tools.conf` (machine-specific, gitignored)
+
+`backup_crons.sh`, `check-hd-space full`, and `common-git` read their site
+lists and base paths from `backup-tools.conf` in this directory. It is
+gitignored — the site list is client infrastructure and doesn't belong in a
+public repo — so a fresh clone has to create it first:
+
+```bash
+cp backup-tools.conf.example backup-tools.conf
+$EDITOR backup-tools.conf
+```
+
+Scripts that need it exit with a clear message if it's missing. See
+`backup-tools.conf.example` for the full set of variables.
+
 ## `backup.conf`
 
 Each site's folder needs a `backup.conf` (bash, sourced directly — `# vi: ft=bash`
@@ -37,9 +52,9 @@ files; not every variable is used by every site.
 - `RSYNC_FOLDERS` — extra folders to sync outside git (OpenCart sites use
   this for `image/` uploads that aren't tracked in their repo).
 - `NO_MYSQL=1` — skip the DB backup entirely for this site.
-- `GIT_DIR` / `GIT_WORK_TREE` — only for a bare-repo remote setup (one site,
-  `site-c.example.com`, uses this; everything else is a normal working-tree
-  repo with `.git` inside the code dir).
+- `GIT_DIR` / `GIT_WORK_TREE` — only for a bare-repo remote setup (one site
+  uses this; everything else is a normal working-tree repo with `.git` inside
+  the code dir).
 - `DRIVE`, `DRIVE_MIN` — disk-space check thresholds (used by `check-hd-space`).
 
 ## `pull` auto-commits on the REMOTE before pulling — know this going in

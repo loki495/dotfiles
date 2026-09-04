@@ -140,7 +140,7 @@ services:
     image: "containrrr/watchtower"
     labels:
       com.centurylinklabs.watchtower: "true"
-    command: "--include-restarting --http-api-update --http-api-periodic-polls --http-api-token \"REDACTED-ROTATE-ME\""
+    command: "--include-restarting --http-api-update --http-api-periodic-polls --http-api-token \"${WATCHTOWER_API_TOKEN:?set WATCHTOWER_API_TOKEN in .env}\""
     restart: "unless-stopped"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -174,9 +174,9 @@ services:
     command: "python3 /app/server.py"
     environment:
       - "TZ=Etc/UTC"
-      - "WOL_TOKEN=REDACTED-ROTATE-ME"
-      - "WOL_TARGET_MAC=00:00:00:00:00:00"
-      - "WOL_TARGET_IP=10.10.0.10"
+      - "WOL_TOKEN=${WOL_TOKEN:?set WOL_TOKEN in .env}"
+      - "WOL_TARGET_MAC=${WOL_TARGET_MAC:?set WOL_TARGET_MAC in .env}"
+      - "WOL_TARGET_IP=${WOL_TARGET_IP:?set WOL_TARGET_IP in .env}"
     ports:
       - "8799:8799/tcp"
     restart: "unless-stopped"

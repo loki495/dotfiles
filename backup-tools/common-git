@@ -1,6 +1,12 @@
 # vim: set filetype=sh :
 
-
+# Machine-specific settings (site lists, paths) live in backup-tools.conf,
+# which is gitignored. Sourced here as well as in the entry-point scripts so
+# this library works no matter which of them pulled it in.
+if [ -z "${BACKUP_TOOLS_CONF_LOADED// }" ]
+then
+    source "${BASH_SOURCE%/*}/backup-tools.conf" 2>/dev/null && BACKUP_TOOLS_CONF_LOADED=1
+fi
 
 GIT_COMMAND="git"
 
@@ -41,8 +47,15 @@ check_gitignore() {
     if [ $? -ne 0 ]
     then
         echo -e "${GREEN}NO .gitignore${NC}"
-        scp $SSH_KEY_OVERRIDE $PORT_OVERRIDE /home/andres/work/git-repos/.gitignore $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
-        echo -e "${GREEN}$CMD ${NC}"
+        # GITIGNORE_TEMPLATE comes from backup-tools.conf (gitignored). Unset or
+        # empty means "don't push a template" rather than scp'ing nothing.
+        if [ -n "${GITIGNORE_TEMPLATE// }" ]
+        then
+            scp $SSH_KEY_OVERRIDE $PORT_OVERRIDE "$GITIGNORE_TEMPLATE" $SSH_USER@$SSH_HOST:$SSH_BASE_PATH$SSH_PATH
+            echo -e "${GREEN}$CMD ${NC}"
+        else
+            echo -e "${GREEN}No GITIGNORE_TEMPLATE configured - skipping${NC}"
+        fi
     else
         echo -e "${GREEN}.gitignore found${NC}"
     fi

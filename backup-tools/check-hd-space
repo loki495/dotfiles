@@ -3,6 +3,11 @@
 DIRNAME="${0%/*}"
 source $DIRNAME/../bash/lib/echos
 source $DIRNAME/../bash/lib/pushdpopd
+source "$DIRNAME/backup-tools.conf" 2>/dev/null || {
+    echo "check-hd-space: missing $DIRNAME/backup-tools.conf" >&2
+    echo "Copy backup-tools.conf.example to backup-tools.conf and fill it in." >&2
+    exit 1
+}
 NOTIFY_EMAIL="$DIRNAME/../bin/notify-email"
 
 bytes2kb() {
@@ -80,12 +85,11 @@ check_local() {
 }
 
 check_all_sites() {
-    SITES=( "site-c.example.com" "site-e.example.com" "site-f.example.com" "site-a.example.com" "site-g.example.com")
-    for folder in ${SITES[@]}
+    for folder in ${CHECK_HD_SITES[@]}
     do
         pushd .
-        echo "Going to /home/ubuntu/backups/$folder"
-        cd /home/ubuntu/backups/$folder
+        echo "Going to $BACKUP_BASE_PATH/$folder"
+        cd $BACKUP_BASE_PATH/$folder
         $DIRNAME/check-hd-space
         popd
         exec &>/dev/tty

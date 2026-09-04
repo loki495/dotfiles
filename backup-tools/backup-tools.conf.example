@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# Machine-specific configuration for the backup-tools scripts.
+#
+# Copy this to `backup-tools.conf` (same directory) and fill it in. That file
+# is gitignored and never committed, which is the point: the real site list is
+# client infrastructure and has no business being in a public repo.
+#
+#   cp backup-tools.conf.example backup-tools.conf
+#
+# Scripts that need it source it via the usual `$DIRNAME/` convention and exit
+# with a clear message if it's missing.
+
+# Sites whose crontabs `backup_crons.sh` collects. Space-separated; each name
+# must match a directory under $BACKUP_BASE_PATH containing a `backup.conf`.
+BACKUP_CRON_HOSTS=""
+
+# Sites `check-hd-space full` walks. Bash array; same directory-name rule.
+CHECK_HD_SITES=()
+
+# Root holding one directory per backed-up site on the backup machine.
+BACKUP_BASE_PATH="/home/ubuntu/backups"
+
+# Where `backup_crons.sh` writes the crontabs it collects.
+CRON_BACKUP_PATH="/home/ubuntu/cronjobs/crons"
+
+# A .gitignore template `common-git` copies to a remote site that has none.
+# Leave empty to skip that step instead of copying anything.
+GITIGNORE_TEMPLATE=""

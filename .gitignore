@@ -12,3 +12,5 @@ traefik/docker-compose.yml
 traefik/dynamic/ac495-sites.yml
 traefik/cloudflared-media-config.yml
 misc/docker/docker-compose.yml
+traefik/dynamic/csm-tls.yml
+backup-tools/backup-tools.conf
