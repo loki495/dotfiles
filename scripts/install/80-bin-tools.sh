@@ -20,7 +20,8 @@ echo_success "ripgrep and composer installed."
 mkdir -p "$HOME/.local/bin"
 
 fetch_phar () {
-  local name="$1" url="$2" target="$HOME/.local/bin/$name"
+  local name="$1" url="$2"
+  local target="$HOME/.local/bin/$name"
   if command_exists "$name" && [ -z "${BIN_TOOLS_FORCE:-}" ]; then
     echo_info "$name already on PATH ($(command -v "$name")), skipping. Set BIN_TOOLS_FORCE=1 to reinstall."
     return
