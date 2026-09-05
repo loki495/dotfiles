@@ -14,7 +14,6 @@ traefik/acme/
 traefik/certs/
 traefik/cloudflared-media-config.yml
 misc/docker/docker-compose.yml
-traefik/dynamic/csm-tls.yml
 backup-tools/backup-tools.conf
 
 # Fetched by scripts/install/80-bin-tools.sh at install time instead of being

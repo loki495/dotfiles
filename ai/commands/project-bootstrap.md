@@ -94,9 +94,12 @@ services:
       # - ./docker/logs:/var/www/html/logs:rw
       # - ./storage/ssh:/var/www/html/storage/ssh:rw
     labels:
+      # No Host() router rule here on purpose - the main app's route lives
+      # centrally in ~/www/traefik/dynamic/ac495-sites.yml as
+      # <SLUG>.${TRAEFIK_DOMAIN}, added separately after this repo exists.
+      # This label set just needs enable+port so that central route can
+      # find this container.
       - "traefik.enable=true"
-      - "traefik.http.routers.<SLUG>.rule=Host(`<SLUG>.dev.local.test`)"
-      - "traefik.http.routers.<SLUG>.entrypoints=web"
       - "traefik.http.services.<SLUG>.loadbalancer.server.port=80"
     build:
       context: .
@@ -119,7 +122,7 @@ services:
       - ./:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.<SLUG>-vite.rule=Host(`vite.<SLUG>.dev.local.test`)"
+      - "traefik.http.routers.<SLUG>-vite.rule=Host(`vite.<SLUG>.ac495.net`)"
       - "traefik.http.routers.<SLUG>-vite.entrypoints=web"
       - "traefik.http.services.<SLUG>-vite.loadbalancer.server.port=5173"
     networks:
@@ -163,9 +166,13 @@ services:
     volumes:
       - ./:/var/www/html
     labels:
+      # No Host() router rule here on purpose - the main app's route lives
+      # centrally in ~/www/traefik/dynamic/ac495-sites.yml as
+      # <SLUG>.${TRAEFIK_DOMAIN}, added separately after this repo exists.
+      # This label set just needs enable+port so that central route can
+      # find this container; it still needs to be on the external `web`
+      # network below for Traefik to reach it at all.
       - "traefik.enable=true"
-      - "traefik.http.routers.<SLUG>.rule=Host(`<SLUG>.dev.local.test`)"
-      - "traefik.http.routers.<SLUG>.entrypoints=web"
       - "traefik.http.services.<SLUG>.loadbalancer.server.port=80"
     networks:
       - web
@@ -174,6 +181,14 @@ networks:
   web:
     external: true
 ```
+
+If this project is ever meant to also be publicly clonable/distributable (not
+just for Andres's own machine), the external `web` network requirement above
+will break a fresh clone outright with no pre-existing Traefik network - see
+homie's item-1 fix (2026-09-05) for the pattern that solves this: drop the
+network/label dependency from the default compose file, publish a host port
+instead, and put any Traefik network attachment in a gitignored
+`docker-compose.override.yml`. Ask which shape is wanted rather than assuming.
 
 **Notes on the OpenCart compose:**
 - Has `image: <SLUG>-app` (names the built image — consistent with all existing OC projects)
@@ -348,8 +363,8 @@ Skip for OpenCart unless `.claude/project.md` explicitly opts in.
 
 After all steps:
 - Project type, slug, container name
-- Traefik URL: `http://<SLUG>.dev.local.test`
-- Vite URL (if applicable): `http://vite.<SLUG>.dev.local.test`
+- Traefik URL: `http://<SLUG>.ac495.net` (once a route is added to `ac495-sites.yml`)
+- Vite URL (if applicable): `http://vite.<SLUG>.ac495.net`
 - Database setup (MariaDB / SQLite / other)
 - Setup script location (`docker/` vs root)
 - Tools: which were present vs newly installed

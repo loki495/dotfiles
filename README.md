@@ -257,8 +257,9 @@ home lab: routes both this machine's Docker-labeled containers and `media`'s
 own services — Sonarr, Radarr, etc. — via the file provider, and issues a
 wildcard cert for the home domain through Let's Encrypt DNS-01 against
 Cloudflare). `docker-compose.yml` runs Traefik itself; `dynamic/` holds the
-file-provider routes (`ac495-sites.yml`) and the one legacy self-signed TLS
-case (`csm-tls.yml`, for a plain-HTTP-only dev host needing a secure context).
+file-provider routes (`ac495-sites.yml`) — a former one-off self-signed TLS
+cert for sessioneer (`csm-tls.yml`, needed before the real wildcard cert
+existed) was removed once the wildcard cert made it redundant.
 `cloudflared-media-config.yml` is the Cloudflare Tunnel ingress config that
 actually runs on `media`. `docker-compose.yml`, `ac495-sites.yml`, and
 `cloudflared-media-config.yml` all contain real domain/IP/credential details

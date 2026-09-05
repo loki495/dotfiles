@@ -37,10 +37,10 @@ Runs as a Docker container on `work` (`~/www/traefik/docker-compose.yml`), ports
    on `work`). Service name in the router is `<name>@docker`.
 2. **File provider** (`--providers.file.directory=/dynamic`, watching
    `~/www/traefik/dynamic/*.yml`) — for everything else: media's services (different
-   host entirely) and the one legacy TLS-cert case (`csm-tls.yml`, see its own
-   comments for why — Web Push/Service Workers need a real secure context, so
-   `app.dev.local.test` gets a self-signed file-provider cert alongside the example.com
-   wildcard).
+   host entirely) and the `*.example.com` router table (`ac495-sites.yml`). Used to
+   also carry a one-off self-signed TLS cert for sessioneer (needed before the real
+   wildcard cert below existed, since Web Push/Service Workers require a secure
+   context) - removed once the wildcard cert made it redundant.
 
 **Certificates**: a single wildcard cert for `example.com` + `*.example.com`, issued via
 Let's Encrypt's DNS-01 challenge against Cloudflare's API (`CF_DNS_API_TOKEN` in
