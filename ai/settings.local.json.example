@@ -1,0 +1,96 @@
+{
+  "_comment": "Personal Claude Code settings that don't belong in the tracked ai/settings.json - copy the pieces you want into your own ~/.claude/settings.local.json (Claude Code merges it with settings.json automatically; this file is never linked from install.sh). The hooks below assume a separate `sessioneer` checkout at $HOME/www/sessioneer (github.com/loki495/sessioneer) and a personal $HOME/.claude/scripts/track-activity.sh script - adapt or drop what you don't use.",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/track-activity.sh release"
+          },
+          {
+            "type": "command",
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/stop.php"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/track-activity.sh release"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/user_prompt_submit.php"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/pre_tool_use.php"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/session_start.php"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/permission_request.php"
+          }
+        ]
+      }
+    ]
+  }
+}

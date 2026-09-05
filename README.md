@@ -66,9 +66,12 @@ non-interactively. To install or reinstall Neovim on its own later:
 
 - **Neovim:** plugins install automatically on first run via lazy.nvim.
 - **Claude Code:** `ai/settings.json`'s hook commands use `$HOME`, portable to any
-  username. Its `TrustedDirectories` entry is a plain JSON value (not shell-expanded,
-  so `$HOME` wouldn't resolve there) and stays a literal path — update it after
-  linking if it doesn't match this machine. The installer prints a reminder.
+  username. Personal hooks (referencing a separate, private `sessioneer` checkout)
+  live in your own **global** `~/.claude/settings.local.json` instead — not this
+  repo's project-scoped `.claude/settings.local.json` (see below), a different file
+  Claude Code also merges in, but only for sessions run inside this repo. Copy
+  `ai/settings.local.json.example`'s `hooks` block into the global one if you use
+  `sessioneer` too; nothing here assumes it exists.
 - **opencode:** if `opencode` is on `PATH`, `50-ai-tools.sh` also enables and
   starts `opencode-serve.service` — a background systemd user service that
   keeps running after the installer exits. Binds `127.0.0.1:4096` by default
@@ -226,16 +229,20 @@ than per tool.
 - `hooks/` — Pint/PHPStan/Rector/Pest automation on write
   (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`).
 - `lessons/` — an accumulated store of findings carried between sessions.
-- `settings.json`, `statusline-command.sh` — Claude Code settings and a custom
-  statusline. **`settings.json`'s `TrustedDirectories` entry is a literal path**
-  (its hook commands use `$HOME`, portable); see Post-install.
+- `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
+  Code settings and a custom statusline, portable (`$HOME` throughout).
+  `settings.local.json.example` is a copyable template for personal hooks
+  (referencing a separate `sessioneer` checkout) that intentionally live outside
+  this repo, in your global `~/.claude/settings.local.json`; see Post-install.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at
   `ai/skills`). Each is linked only if that tool is on `PATH`.
 
-`.claude/settings.local.json` is separate — this repo's own local permission
-allowlist, not part of the linked tree. `.mcphost.yml` configures `mcphost`
+This repo's own root-level `.claude/settings.local.json` is separate again from both
+of the above — Claude Code's project-scoped local permission allowlist, applying only
+to sessions run inside this checkout, not part of the linked `ai/` tree, and unrelated
+to your global `~/.claude/settings.local.json`. `.mcphost.yml` configures `mcphost`
 (local LLM agent host): MCP server definitions and model params.
 
 `.ai/` (distinct from `ai/`) holds this repo's own working notes — `plans/` for
