@@ -5,7 +5,7 @@ This is the Codex entrypoint for Andres's maintained cross-agent setup.
 Before substantive project work, read `~/dotfiles/ai/CLAUDE.md` completely. Treat it as global developer context and translate product-specific terminology as follows:
 
 - `CLAUDE.md` or `.claude/project.md` means the corresponding project instructions or notes; prefer a local `AGENTS.md` when one exists.
-- A named Claude skill, command, or agent maps to the matching Codex skill under `/home/andres/.codex/skills/claude-import-*`.
+- A named Claude skill, command, or agent maps to the matching Codex skill under `~/.codex/skills/claude-import-*`.
 - Claude hooks describe desired quality gates, but they do not authorize writes, pushes, production access, or other external actions.
 - Claude-only UI, notification, context-window, and OpenCode restart instructions do not apply to Codex.
 

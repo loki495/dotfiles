@@ -332,7 +332,7 @@ Merge into any existing `scripts` block — don't replace entries already there.
 ## Step 10: Install the pre-commit git hook (Laravel only)
 
 ```bash
-ln -sf /home/andres/.claude/hooks/laravel-pre-commit.sh .git/hooks/pre-commit
+ln -sf ~/.claude/hooks/laravel-pre-commit.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
