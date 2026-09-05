@@ -1,8 +1,6 @@
 [user]
 	email = andres@ac495.net
 	name = Andres Crucitti
-[http]
-	sslVerify = false
 [core]
 	quotepath = false
 	commitGraph = true
