@@ -113,6 +113,15 @@ decisions already made deliberately. Specifically already decided, do not re-fla
    tooling shipped inside a product, committed secrets-adjacent files, licence problems (e.g.
    vendored third-party code under my own licence with no attribution).
 
+6. **Repo hygiene — stale branches and leftover temp files.** Run `git branch -a` and
+   `git worktree list` and flag branches that are merged/abandoned and should be deleted (a
+   stranger browsing the branch list is part of the impression too). Scan for stray temp/scratch
+   artifacts that shouldn't be tracked or lingering: editor swap files, `.ai/plans/*/scratch/`
+   leftovers, `*.tmp`/`*.bak`, committed local-only output. This audit stays read-only — don't
+   delete anything yourself. Just flag what should go; the actual cleanup afterward should go
+   through the `git-helper` agent for branch deletion (push-safety checks) and normal file
+   deletion for temp files.
+
 ---
 
 ## What the recruiter/interviewer agent audits
