@@ -61,7 +61,28 @@ For every existing id in SUMMARY.md:
 Also flag ambiguous cases: files that plausibly belong to two subsystems, or a directory that
 doesn't cleanly fit any proposed boundary.
 
-## 5. Report back
+## 5. Coverage check — every file must belong to some subsystem
+
+This is a required, exhaustive pass, not opportunistic — it runs on every mapper invocation,
+whether or not an audit is planned afterward.
+
+Enumerate the real file tree (`git ls-files`, or `find` respecting `.gitignore` if not a git repo)
+and diff it against the union of every subsystem's `owned_paths` — both existing ids from
+`SUMMARY.md` and the candidate boundaries you just proposed in step 3. Exclude what's obviously not
+feature code: dependency directories (`vendor/`, `node_modules/`), build/dist output, lockfiles,
+generated artifacts. Everything else — including config, scripts, docs, and anything that looks
+like dead/orphaned code — must land inside some boundary.
+
+For anything left over after that diff, first try in good faith to fold it into an existing or
+newly-proposed boundary where it genuinely fits (e.g. a stray helper that's clearly part of a
+feature you already grouped) — don't create busywork by flagging something with an obvious home.
+Only what still doesn't cleanly fit anywhere becomes an **uncovered files** entry: the path(s),
+and your best read of why it's uncovered (dead code, a missing subsystem boundary, misplaced file,
+generic infra that hasn't been promoted to its own subsystem, or genuinely unclear). Never silently
+drop these into a catch-all "misc" subsystem yourself — that defeats the point of the check. Flag
+them for the human decision in your report.
+
+## 6. Report back
 
 Do not write any files. Return a structured report to the caller with these sections:
 - **New subsystems**: id, name, boundary description, owned_paths
@@ -69,6 +90,10 @@ Do not write any files. Return a structured report to the caller with these sect
 - **Removed subsystems**: id
 - **Unchanged subsystems**: id only
 - **Conflicts / ambiguities**: description, affected ids, why it needs a human decision
+- **Uncovered files**: path(s) not claimed by any subsystem boundary (existing or proposed), and
+  your best read of why
 
 Keep it compact — this report is what the coordinator uses to plan fan-out work, not a full
-codebase writeup.
+codebase writeup. Report only current state — never narrate what the registry looked like before
+this scan or speculate about why it differs; that's the coordinator's concern if it matters at all,
+and usually isn't worth recording anywhere.

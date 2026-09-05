@@ -26,22 +26,39 @@ else gets regenerated fresh against the current code; don't just patch deltas.
 Ground every claim in an actual `Read` — never guess a line number. Required sections:
 
 1. **Identity** — id and name (restate from input).
-2. **Ownership boundary** — the in-scope paths, and explicitly named neighboring subsystems for
+2. **Purpose / intent** — one short paragraph, in plain product/business language, on *why this
+   subsystem exists*: the problem it solves or capability it gives the user/business — not a
+   restatement of its mechanics. Ground it in real signal: naming, comments, docs/README, commit
+   messages, tests (what behavior they assert matters), and how it's actually called from other
+   subsystems. Do not guess at intent from code shape alone (e.g. don't infer "this is for GDPR
+   compliance" just because a table has a `deleted_at`-style column) — if the evidence doesn't
+   clearly support a confident statement of purpose, say so explicitly (e.g. "Purpose unclear from
+   code/docs alone: `<open question>`") instead of inventing one, and surface that same open
+   question in your final response to the coordinator so it can be put to the human — don't leave
+   it silently buried in the file.
+3. **Ownership boundary** — the in-scope paths, and explicitly named neighboring subsystems for
    what's out of scope.
-3. **Key implementation files** — the files that actually carry the logic, not every file in the
+4. **Key implementation files** — the files that actually carry the logic, not every file in the
    glob. One line each on what it's responsible for.
-4. **Public interfaces & contracts** — exported functions/classes/routes/API endpoints/events/props.
+5. **Public interfaces & contracts** — exported functions/classes/routes/API endpoints/events/props.
    For each: parameters, return type, thrown/expected errors, and any pre/post-conditions implied
    by the code (validation, auth checks, invariants).
-5. **Major call sites** — where this subsystem is invoked from, with special attention to callers
+6. **Major call sites** — where this subsystem is invoked from, with special attention to callers
    in *other* subsystems (grep for imports/usages outside `owned_paths`).
-6. **Tests** — which test files cover this subsystem, and a one-line note on shape (happy-path
+7. **Tests** — which test files cover this subsystem, and a one-line note on shape (happy-path
    only vs. happy+sad path) — don't do the full audit here, just record what exists.
-7. **Dependencies** — helpers/services/middleware/shared libraries used; other feature/subsystems
+8. **Dependencies** — helpers/services/middleware/shared libraries used; other feature/subsystems
    depended on and how (direct call, event, queue, HTTP); external packages/SDKs; and, in reverse,
    what depends on *this* subsystem.
-8. **Data & schema** — DB tables/migrations touched (columns, types, nullability where
+9. **Data & schema** — DB tables/migrations touched (columns, types, nullability where
    discoverable), models/structs/classes, enums, constants, request/response/DTO shapes.
+
+## Reporting back
+
+After writing `DETAILS.md`, your final response to the coordinator must explicitly list any open
+questions about purpose/intent you flagged (subsystem id + the question) — even just one line each
+— so the coordinator can collect them across subsystems and ask the human in one batch rather than
+you guessing.
 
 ## Output format
 
