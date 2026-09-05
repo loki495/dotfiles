@@ -182,7 +182,7 @@ backup-tools/README.md), and misc desktop scripts (`new-reddit-wallpaper`,
 `rg`, `phpactor`, `composer`, `phpbrew`, `phpcs`, and `phpcbf` are fetched by
 `scripts/install/80-bin-tools.sh` rather than committed — `rg` and `composer`
 via pacman, the rest as standalone release binaries/phars. `todo-tray` stays
-committed (19 MB, personal Qt tool with no other surviving source) — see
+committed (2.3 MB, personal Qt tool with no other surviving source) — see
 "Known rough edges". `mcphost` and its wrapper `boost-query.sh` were removed
 outright: both were a one-night experiment (Aug 2025) never actually adopted,
 and mcphost's own upstream is now archived/dead anyway.
