@@ -68,6 +68,12 @@ non-interactively. To install or reinstall Neovim on its own later:
 - **Claude Code:** `ai/settings.json` hardcodes this machine's home directory in
   its hook paths; under a different username those need editing after linking.
   The installer prints a reminder.
+- **opencode:** if `opencode` is on `PATH`, `50-ai-tools.sh` also enables and
+  starts `opencode-serve.service` — a background systemd user service that
+  keeps running after the installer exits. Binds `127.0.0.1:4096` by default
+  (localhost-only); see the comment in
+  `.config/systemd/user/opencode-serve.service` for how to override that with
+  a systemd drop-in if you want it reachable from elsewhere on your LAN.
 
 ## Tests
 
