@@ -1,0 +1,275 @@
+http:
+  routers:
+    adminer-ac495:
+      entryPoints: [web]
+      rule: Host(`adminer.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: adminer@docker
+    websecure-adminer-ac495:
+      entryPoints: [websecure]
+      rule: Host(`adminer.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: adminer@docker
+    csm-ac495:
+      entryPoints: [web]
+      rule: Host(`csm.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: sessioneer@docker
+    websecure-csm-ac495:
+      entryPoints: [websecure]
+      rule: Host(`csm.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: sessioneer@docker
+    sessioneer-ac495:
+      entryPoints: [web]
+      rule: Host(`sessioneer.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: sessioneer@docker
+    git-ac495:
+      entryPoints: [web]
+      rule: Host(`git.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: git@docker
+    websecure-git-ac495:
+      entryPoints: [websecure]
+      rule: Host(`git.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: git@docker
+    homie-ac495:
+      entryPoints: [web]
+      rule: Host(`homie.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: homie@docker
+    websecure-homie-ac495:
+      entryPoints: [websecure]
+      rule: Host(`homie.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: homie@docker
+    insights-ac495:
+      entryPoints: [web]
+      rule: Host(`insights.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: insights@docker
+    websecure-insights-ac495:
+      entryPoints: [websecure]
+      rule: Host(`insights.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: insights@docker
+    jp-ac495:
+      entryPoints: [web]
+      rule: Host(`jp.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: jp@docker
+    websecure-jp-ac495:
+      entryPoints: [websecure]
+      rule: Host(`jp.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: jp@docker
+    new-teambuilder-ac495:
+      entryPoints: [web]
+      rule: Host(`new-teambuilder.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: new-teambuilder@docker
+    websecure-new-teambuilder-ac495:
+      entryPoints: [websecure]
+      rule: Host(`new-teambuilder.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: new-teambuilder@docker
+    pandora-ac495:
+      entryPoints: [web]
+      rule: Host(`pandora.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: pandora@docker
+    websecure-pandora-ac495:
+      entryPoints: [websecure]
+      rule: Host(`pandora.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: pandora@docker
+    pandora-old-ac495:
+      entryPoints: [web]
+      rule: Host(`pandora-old.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: pandora-old@docker
+    websecure-pandora-old-ac495:
+      entryPoints: [websecure]
+      rule: Host(`pandora-old.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: pandora-old@docker
+    redis-ui-ac495:
+      entryPoints: [web]
+      rule: Host(`redis-ui.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: redis-ui@docker
+    websecure-redis-ui-ac495:
+      entryPoints: [websecure]
+      rule: Host(`redis-ui.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: redis-ui@docker
+    retrogamelist-pandora-ac495:
+      entryPoints: [web]
+      rule: Host(`retrogamelist-pandora.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogamelist-pandora@docker
+    websecure-retrogamelist-pandora-ac495:
+      entryPoints: [websecure]
+      rule: Host(`retrogamelist-pandora.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogamelist-pandora@docker
+    retrogaming-dev-ac495:
+      entryPoints: [web]
+      rule: Host(`retrogaming-dev.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogaming-dev@docker
+    websecure-retrogaming-dev-ac495:
+      entryPoints: [websecure]
+      rule: Host(`retrogaming-dev.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogaming-dev@docker
+    retrogaming-master-ac495:
+      entryPoints: [web]
+      rule: Host(`retrogaming-master.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogamingstore-master@docker
+    websecure-retrogaming-master-ac495:
+      entryPoints: [websecure]
+      rule: Host(`retrogaming-master.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogamingstore-master@docker
+    retrogamingstores-ac495:
+      entryPoints: [web]
+      rule: Host(`retrogamingstores.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retrogamingstores@docker
+    retroplayers-ac495:
+      entryPoints: [web]
+      rule: Host(`retroplayers.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: retroplayers@docker
+    stocker-ac495:
+      entryPoints: [web]
+      rule: Host(`stocker.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: stocker@docker
+    teambuilder-ac495:
+      entryPoints: [web]
+      rule: Host(`teambuilder.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: teambuilder@docker
+    termui-ac495:
+      entryPoints: [web]
+      rule: Host(`termui.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: termui@docker
+
+    # Media server sites (LAN HTTPS only -- remote/tunnel access still goes
+    # directly from cloudflared on media to localhost:<port>, bypassing
+    # Traefik entirely; this router exists purely so LAN clients get the
+    # same wildcard cert via Pi-hole pointing these names at the LAN host
+    # running Traefik instead of the media box directly).
+    bazarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`bazarr.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: bazarr-media
+    claude-ui-ac495:
+      entryPoints: [websecure]
+      rule: Host(`claude-ui.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: claude-ui-media
+    esphome-ac495:
+      entryPoints: [websecure]
+      rule: Host(`esphome.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: esphome-media
+    homeassistant-ac495:
+      entryPoints: [websecure]
+      rule: Host(`homeassistant.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: homeassistant-media
+    hyperion-ac495:
+      entryPoints: [websecure]
+      rule: Host(`hyperion.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: hyperion-media
+    jackett-ac495:
+      entryPoints: [websecure]
+      rule: Host(`jackett.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: jackett-media
+    lazydocker-ac495:
+      entryPoints: [websecure]
+      rule: Host(`lazydocker.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: lazydocker-media
+    nzbget-ac495:
+      entryPoints: [websecure]
+      rule: Host(`nzbget.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: nzbget-media
+    pihole-ac495:
+      entryPoints: [websecure]
+      rule: Host(`pihole.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: pihole-media
+    prowlarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`prowlarr.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: prowlarr-media
+    qbittorrent-ac495:
+      entryPoints: [websecure]
+      rule: Host(`qbittorrent.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: qbittorrent-media
+    radarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`radarr.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: radarr-media
+    sonarr-ac495:
+      entryPoints: [websecure]
+      rule: Host(`sonarr.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: sonarr-media
+    status-ac495:
+      entryPoints: [websecure]
+      rule: Host(`status.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: status-media
+    stocks-ac495:
+      entryPoints: [websecure]
+      rule: Host(`stocks.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: stocks-media
+
+    # LAN-only: redirect the bare apex to homie. Public/Cloudflare-side
+    # traffic to the apex is handled separately by a Cloudflare Redirect
+    # Rule (github.com/loki495), since Pi-hole resolves the apex straight
+    # to this host for LAN clients, bypassing Cloudflare entirely.
+    ac495-apex-redirect:
+      entryPoints: [web, websecure]
+      rule: Host(`{{ env "TRAEFIK_DOMAIN" }}`)
+      middlewares: [apex-to-homie]
+      service: homie@docker
+
+  middlewares:
+    apex-to-homie:
+      redirectRegex:
+        regex: '^https?://{{ env "TRAEFIK_DOMAIN" }}/(.*)'
+        replacement: 'https://homie.{{ env "TRAEFIK_DOMAIN" }}/${1}'
+        permanent: true
+
+  services:
+    bazarr-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:6767'
+    claude-ui-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_WORK_HOST" }}:3001'
+    esphome-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:6052'
+    homeassistant-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8123'
+    hyperion-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_RPI_HOST" }}:8090'
+    jackett-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:9117'
+    lazydocker-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:3333'
+    nzbget-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:6789'
+    pihole-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8001'
+    prowlarr-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:9696'
+    qbittorrent-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8080'
+    radarr-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:7878'
+    sonarr-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8989'
+    status-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8081'
+    stocks-media:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "TRAEFIK_MEDIA_HOST" }}:8085'
