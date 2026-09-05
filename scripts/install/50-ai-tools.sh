@@ -33,8 +33,9 @@ for d in skills commands agents hooks lessons; do
   ln -s "$SCRIPTPATH/ai/$d" ~/.claude/"$d"
 done
 echo_success "Claude Code config linked to ~/.claude."
-echo_info "  - Uses this machine's username in ~/.claude/settings.json's hook paths (/home/andres/...) —"
-echo_info "    if provisioning under a different username, update those paths after linking."
+echo_info "  - settings.json's hook commands use \$HOME, portable to any username. Its"
+echo_info "    TrustedDirectories entry (a plain JSON value, not shell-expanded) is still"
+echo_info "    a literal path — update it after linking if it doesn't match this machine."
 
 section_header "Setting up opencode config..."
 if command_exists opencode; then
