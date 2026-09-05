@@ -49,7 +49,7 @@ fail() {
     exit 1
 }
 
-echo "=== [1/6] install.sh (all sections, non-interactive nvim choice) ==="
+echo "=== [1/7] install.sh (all sections, non-interactive nvim choice) ==="
 NVIM_INSTALL_CHOICE=1 "$REPO_ROOT/install.sh" || fail "install.sh"
 
 # install_neovim.sh --user puts the nvim binary at $HOME/.local/bin/nvim but
@@ -75,16 +75,30 @@ if ! command -v nvim >/dev/null 2>&1; then
 fi
 echo "nvim resolved to: $(command -v nvim) ($(nvim --version | head -1))"
 
-echo "=== [2/6] assert-symlinks.sh ==="
+echo "=== [2/7] bin-tools on PATH (80-bin-tools.sh) ==="
+# rg/composer land in the container's normal PATH via pacman; the phars
+# (phpactor/phpbrew/phpcs/phpcbf) go to $HOME/.local/bin, already exported
+# above. Real --version invocations, not just a PATH check - a phar with a
+# broken shebang or a truncated download would resolve fine on PATH but
+# fail to actually run.
+for tool in rg composer phpactor phpbrew phpcs phpcbf; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        fail "$tool not found on PATH after install.sh"
+    fi
+    "$tool" --version >/dev/null || fail "$tool --version failed"
+    echo "$tool resolved to: $(command -v "$tool") ($("$tool" --version 2>&1 | head -1))"
+done
+
+echo "=== [3/7] assert-symlinks.sh ==="
 "$REPO_ROOT/scripts/ci/assert-symlinks.sh" || fail "assert-symlinks.sh"
 
-echo "=== [3/6] install_neovim.sh --parsers (full language set) ==="
+echo "=== [4/7] install_neovim.sh --parsers (full language set) ==="
 "$REPO_ROOT/install_neovim.sh" --parsers || fail "install_neovim.sh --parsers"
 
-echo "=== [4/6] install_neovim.sh --queries (full language set) ==="
+echo "=== [5/7] install_neovim.sh --queries (full language set) ==="
 "$REPO_ROOT/install_neovim.sh" --queries || fail "install_neovim.sh --queries"
 
-echo "=== [5/6] bootstrap lazy.nvim plugins (fresh nvim data dir needs this once) ==="
+echo "=== [6/7] bootstrap lazy.nvim plugins (fresh nvim data dir needs this once) ==="
 # On a real dev machine this is already done from prior usage, so it's easy to
 # forget - but a genuinely fresh $HOME (any container, including CI) has never
 # launched nvim before, and lazy.nvim needs an explicit sync to install AND
@@ -97,7 +111,7 @@ echo "=== [5/6] bootstrap lazy.nvim plugins (fresh nvim data dir needs this once
 # on plugin load order. Adding this step alone took the failures to 0/11.
 timeout 180 nvim --headless "+Lazy! sync" +qa || fail "Lazy! sync (plugin bootstrap)"
 
-echo "=== [6/6] nvim highlighting check (tmux-based, all languages) ==="
+echo "=== [7/7] nvim highlighting check (tmux-based, all languages) ==="
 "$REPO_ROOT/scripts/ci/test-nvim-highlighting.sh" || fail "test-nvim-highlighting.sh"
 
 echo ""

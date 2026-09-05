@@ -24,11 +24,13 @@ jobs:
         # everything install_neovim.sh --parsers needs (git for cloning
         # grammar repos, a C toolchain + node/npm for tree-sitter generate/
         # build, tree-sitter-cli itself so install_neovim.sh's own pacman
-        # fallback never triggers) plus tmux for the highlighting check and
-        # curl/wget/tar for install_neovim.sh's own nvim download.
+        # fallback never triggers) plus tmux for the highlighting check,
+        # curl/wget/tar for install_neovim.sh's own nvim download, and php
+        # for 80-bin-tools.sh's fetched phars (phpactor/phpbrew/phpcs/phpcbf)
+        # to actually be runnable in the verification step below.
         run: |
           pacman -Sy --noconfirm --needed \
-            git curl wget tar tmux base-devel nodejs npm tree-sitter-cli
+            git curl wget tar tmux base-devel nodejs npm tree-sitter-cli php
 
       - name: Checkout
         uses: actions/checkout@v4
