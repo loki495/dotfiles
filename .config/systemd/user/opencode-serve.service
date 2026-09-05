@@ -6,19 +6,32 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-# The OPENCODE_BIN and HOME values below are substituted by
-# host-agent/install.sh's render_unit() - never a literal path baked in,
-# so a fresh clone on a different machine gets units pointing at ITS OWN
-# paths instead of the original author's.
-WorkingDirectory=/home/andres
-ExecStart=/home/andres/.local/bin/opencode serve --hostname 0.0.0.0 --port 4096 --mdns
+# %h/%u are systemd's own specifiers for the running user's home dir/name -
+# this whole directory is symlinked as-is by scripts/install/40-systemd.sh,
+# with no templating step, so a literal /home/andres here would be wrong on
+# any other machine.
+WorkingDirectory=%h
+# Binds localhost-only by default - deliberate, since Sessioneer (this
+# service's only confirmed consumer) reaches it via OPENCODE_SERVE_URL,
+# which itself defaults to http://localhost:4096. If you want this reachable
+# from elsewhere on your LAN (another device's opencode client, mDNS
+# discovery), override just this line with a systemd drop-in instead of
+# editing this tracked file - run `systemctl --user edit opencode-serve.service`
+# and add:
+#   [Service]
+#   ExecStart=
+#   ExecStart=%h/.local/bin/opencode serve --hostname 0.0.0.0 --port 4096 --mdns
+# (the empty ExecStart= first is required to clear this file's own value -
+# it's not an additive directive). Then `systemctl --user daemon-reload &&
+# systemctl --user restart opencode-serve.service`.
+ExecStart=%h/.local/bin/opencode serve --hostname 127.0.0.1 --port 4096
 Restart=always
 RestartSec=5
-Environment=HOME=/home/andres
+Environment=HOME=%h
 # opencode resolves its plugins/tools via these - a systemd user unit's
 # default PATH is often JUST /usr/bin, which wouldn't see npm-global or
 # ~/.local/bin tooling the way an interactive shell does.
-Environment=PATH=/home/andres/.local/bin:/home/andres/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/bin
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/bin
 
 [Install]
 WantedBy=default.target
