@@ -100,10 +100,15 @@ git_commit() {
 
     if [ $? -ne 0 ]
     then
-        echo -e "${GREEN}No Global user name / email set. Setting...${NC}"
-        ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
-        GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.name \"Andres Crucitti\"
-        GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.email \"dasc495@gmail\""
+        if [ -z "${REMOTE_GIT_NAME// }" ] || [ -z "${REMOTE_GIT_EMAIL// }" ]
+        then
+            echo -e "${GREEN}No global git identity on the remote, and REMOTE_GIT_NAME/REMOTE_GIT_EMAIL aren't set in backup-tools.conf — skipping.${NC}"
+        else
+            echo -e "${GREEN}No Global user name / email set. Setting...${NC}"
+            ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "
+            GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.name \"$REMOTE_GIT_NAME\"
+            GIT_SSH_COMMAND=\"ssh $SSH_KEY_OVERRIDE -o IdentitiesOnly=yes\" $GIT_COMMAND config --global user.email \"$REMOTE_GIT_EMAIL\""
+        fi
     fi
 
     #check git status
