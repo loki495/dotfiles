@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/andres/.claude/hooks/laravel-post-write.sh"
+            "command": "$HOME/.claude/hooks/laravel-post-write.sh"
           }
         ]
       }
@@ -33,7 +33,7 @@
           },
           {
             "type": "command",
-            "command": "/home/andres/.claude/scripts/track-activity.sh release"
+            "command": "$HOME/.claude/scripts/track-activity.sh release"
           }
         ]
       },
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/sessioneer/host-agent/hooks/stop.php"
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/stop.php"
           }
         ]
       }
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
           }
         ]
       }
@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/andres/.claude/scripts/track-activity.sh release"
+            "command": "$HOME/.claude/scripts/track-activity.sh release"
           }
         ]
       }
@@ -72,7 +72,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
           }
         ]
       },
@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/sessioneer/host-agent/hooks/user_prompt_submit.php"
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/user_prompt_submit.php"
           }
         ]
       }
@@ -101,11 +101,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/sessioneer/host-agent/hooks/pre_tool_use.php"
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/pre_tool_use.php"
           },
           {
             "type": "command",
-            "command": "/home/andres/.claude/scripts/track-activity.sh acquire"
+            "command": "$HOME/.claude/scripts/track-activity.sh acquire"
           }
         ]
       }
@@ -116,7 +116,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/sessioneer/host-agent/hooks/session_start.php"
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/session_start.php"
           }
         ]
       }
@@ -127,7 +127,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/sessioneer/host-agent/hooks/permission_request.php"
+            "command": "php $HOME/www/sessioneer/host-agent/hooks/permission_request.php"
           }
         ]
       }
@@ -135,7 +135,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash /home/andres/.claude/statusline-command.sh"
+    "command": "bash $HOME/.claude/statusline-command.sh"
   },
   "theme": "dark",
   "verbose": true,

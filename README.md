@@ -65,9 +65,10 @@ non-interactively. To install or reinstall Neovim on its own later:
 ### Post-install
 
 - **Neovim:** plugins install automatically on first run via lazy.nvim.
-- **Claude Code:** `ai/settings.json` hardcodes this machine's home directory in
-  its hook paths; under a different username those need editing after linking.
-  The installer prints a reminder.
+- **Claude Code:** `ai/settings.json`'s hook commands use `$HOME`, portable to any
+  username. Its `TrustedDirectories` entry is a plain JSON value (not shell-expanded,
+  so `$HOME` wouldn't resolve there) and stays a literal path — update it after
+  linking if it doesn't match this machine. The installer prints a reminder.
 - **opencode:** if `opencode` is on `PATH`, `50-ai-tools.sh` also enables and
   starts `opencode-serve.service` — a background systemd user service that
   keeps running after the installer exits. Binds `127.0.0.1:4096` by default
@@ -226,8 +227,8 @@ than per tool.
   (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`).
 - `lessons/` — an accumulated store of findings carried between sessions.
 - `settings.json`, `statusline-command.sh` — Claude Code settings and a custom
-  statusline. **`settings.json` hardcodes an absolute home directory** in its
-  hook commands; see Post-install.
+  statusline. **`settings.json`'s `TrustedDirectories` entry is a literal path**
+  (its hook commands use `$HOME`, portable); see Post-install.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at
@@ -299,9 +300,6 @@ duplicated across two files). Neovim is now the only editor config here.
   array args across every call site.
 - `bin/` carries ~68 MB of compiled binaries checked into git rather than built
   or installed normally — `mcphost` alone is 49 MB.
-- `ai/settings.json` hardcodes an absolute `/home/<user>/` path in 13 hook
-  commands, so the Claude Code config is not portable to another username
-  without editing.
 - `install_neovim.sh` hardcodes the download for `linux-x86_64` — detecting
   the real OS/arch (`uname -s`/`uname -m`) would make it work on other
   architectures too.
