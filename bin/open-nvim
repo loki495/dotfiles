@@ -31,7 +31,7 @@ SOCK="/tmp/nvim_scratch.sock"
 # Launch scratchpad nvim if not running
 if [ ! -S "$SOCK" ]; then
     echo "Starting scratchpad nvim"
-    foot --app-id nvimfloat --title nvimfloat -e /home/andres/nvim/bin/nvim \
+    foot --app-id nvimfloat --title nvimfloat -e nvim \
         --listen "$SOCK" \
         "+${line}" "$file" &
     sleep 0.1

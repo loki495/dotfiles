@@ -29,7 +29,7 @@ mcpServers:
      type: "builtin"
      name: "fs"
      options:
-       allowed_directories: ["/tmp", "/home/andres"]
+       allowed_directories: ["/tmp", "${env://HOME}"]
      allowedTools: ["read_file", "write_file", "list_directory"]
 #   
    # Minimal builtin server - defaults to current working directory
