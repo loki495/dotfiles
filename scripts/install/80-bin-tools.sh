@@ -46,4 +46,12 @@ section_header "Installing phpcs/phpcbf (PHP_CodeSniffer, standalone phars)..."
 fetch_phar phpcs "https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/latest/download/phpcs.phar"
 fetch_phar phpcbf "https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/latest/download/phpcbf.phar"
 
+if ! php -m 2>/dev/null | grep -qi '^iconv$'; then
+  echo_info "php's iconv extension isn't enabled - phpactor's own requirements"
+  echo_info "check will refuse to run without it (symfony/polyfill-mbstring needs"
+  echo_info "it). Arch's php package ships iconv.so but doesn't enable it by"
+  echo_info "default; fix with:"
+  echo_info "  echo 'extension=iconv.so' | sudo tee /etc/php/conf.d/iconv.ini"
+fi
+
 echo_success "bin-tools installed. phpactor/phpbrew/phpcs/phpcbf need php on PATH to run (they're phars)."

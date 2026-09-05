@@ -31,6 +31,13 @@ jobs:
         run: |
           pacman -Sy --noconfirm --needed \
             git curl wget tar tmux base-devel nodejs npm tree-sitter-cli php
+          # Arch's php package ships iconv.so but doesn't enable it by
+          # default - phpactor's own Box requirements checker refuses to run
+          # without it (symfony/polyfill-mbstring depends on the extension).
+          # Confirmed the same gap exists outside CI too, not container-
+          # specific - a real machine running this install needs the same
+          # fix (or its distro's equivalent) before phpactor works.
+          echo "extension=iconv.so" > /etc/php/conf.d/iconv.ini
 
       - name: Checkout
         uses: actions/checkout@v4
