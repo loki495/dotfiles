@@ -5,4 +5,4 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/andres/.local/bin/codex remote-control start --json
+ExecStart=%h/.local/bin/codex remote-control start --json

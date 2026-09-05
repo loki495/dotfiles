@@ -4,8 +4,8 @@ After=default.target
 
 [Service]
 Type=simple
-EnvironmentFile=-/home/andres/www/sessioneer/host-agent/.env
-ExecStart=/usr/bin/php /home/andres/www/sessioneer/host-agent/codex_bridge.php
+EnvironmentFile=-%h/www/sessioneer/host-agent/.env
+ExecStart=/usr/bin/php %h/www/sessioneer/host-agent/codex_bridge.php
 Restart=on-failure
 RestartSec=2
 RestartSteps=5

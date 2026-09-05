@@ -4,5 +4,5 @@ Description=Sessioneer push-notification check (one run)
 [Service]
 Type=oneshot
 # Optional (leading "-" = don't fail if missing). See host-agent/.env.example.
-EnvironmentFile=-/home/andres/www/sessioneer/host-agent/.env
-ExecStart=/usr/bin/php /home/andres/www/sessioneer/host-agent/push_trigger.php
+EnvironmentFile=-%h/www/sessioneer/host-agent/.env
+ExecStart=/usr/bin/php %h/www/sessioneer/host-agent/push_trigger.php
