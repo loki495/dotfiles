@@ -88,7 +88,6 @@ check_symlink ~/.config/systemd "$SCRIPTPATH/.config/systemd" "~/.config/systemd
 
 echo "=== 50-ai-tools.sh ==="
 check_symlink ~/AGENTS.md "$SCRIPTPATH/ai/AGENTS.md" "~/AGENTS.md -> ai/AGENTS.md"
-check_symlink ~/.mcphost.yml "$SCRIPTPATH/.mcphost.yml" "~/.mcphost.yml -> .mcphost.yml"
 for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
   check_symlink ~/.claude/"$f" "$SCRIPTPATH/ai/$f" "~/.claude/$f -> ai/$f"
 done
