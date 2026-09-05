@@ -174,15 +174,18 @@ dev-tool wrappers (`phpactor`, `phpcs`, `phpcbf`, `composer`, `phpbrew`), system
 utilities (`battery_level_alarm.sh`, `hybrid-sleep`, `pulseaudio-control`,
 `reboot-needed-check.sh`, `find-dupes`, `clear-hd-space.php`), an OpenCart
 package-mapping tool (`oc`), Claude Code/tmux helpers (`claude-quota`,
-`tmux-sessions`, `mcphost`, `boost-query.sh`), a Docker SQL-import helper
-(`import-sqlgz-files-docker.sh`), an email notifier (`notify-email`, via curl's
-SMTPS support — see backup-tools/README.md), and misc desktop scripts
-(`new-reddit-wallpaper`, `dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).
+`tmux-sessions`), a Docker SQL-import helper (`import-sqlgz-files-docker.sh`),
+an email notifier (`notify-email`, via curl's SMTPS support — see
+backup-tools/README.md), and misc desktop scripts (`new-reddit-wallpaper`,
+`dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).
 
-`mcphost` (49 MB), `rg`, `todo-tray`, `phpactor`, `composer`, `phpbrew`, `phpcs`
-and `phpcbf` are compiled binaries committed directly to the repo rather than
-built from source or installed via package manager — about 68 MB in total, and
-worth revisiting.
+`rg`, `phpactor`, `composer`, `phpbrew`, `phpcs`, and `phpcbf` are fetched by
+`scripts/install/80-bin-tools.sh` rather than committed — `rg` and `composer`
+via pacman, the rest as standalone release binaries/phars. `todo-tray` stays
+committed (19 MB, personal Qt tool with no other surviving source) — see
+"Known rough edges". `mcphost` and its wrapper `boost-query.sh` were removed
+outright: both were a one-night experiment (Aug 2025) never actually adopted,
+and mcphost's own upstream is now archived/dead anyway.
 
 ### `backup-tools/` — remote-site backup/clone toolkit
 
@@ -242,8 +245,7 @@ than per tool.
 This repo's own root-level `.claude/settings.local.json` is separate again from both
 of the above — Claude Code's project-scoped local permission allowlist, applying only
 to sessions run inside this checkout, not part of the linked `ai/` tree, and unrelated
-to your global `~/.claude/settings.local.json`. `.mcphost.yml` configures `mcphost`
-(local LLM agent host): MCP server definitions and model params.
+to your global `~/.claude/settings.local.json`.
 
 `.ai/` (distinct from `ai/`) holds this repo's own working notes — `plans/` for
 multi-session initiatives and `lessons/` for what they turned up.
@@ -305,8 +307,6 @@ duplicated across two files). Neovim is now the only editor config here.
   from trusted local `.conf` files, not untrusted input) but a real fragility if
   ever touched; a full fix means restructuring `run_ssh`/`run_ssh_silent` to take
   array args across every call site.
-- `bin/` carries ~68 MB of compiled binaries checked into git rather than built
-  or installed normally — `mcphost` alone is 49 MB.
 - `install_neovim.sh` hardcodes the download for `linux-x86_64` — detecting
   the real OS/arch (`uname -s`/`uname -m`) would make it work on other
   architectures too.

@@ -16,3 +16,14 @@ traefik/cloudflared-media-config.yml
 misc/docker/docker-compose.yml
 traefik/dynamic/csm-tls.yml
 backup-tools/backup-tools.conf
+
+# Fetched by scripts/install/80-bin-tools.sh at install time instead of being
+# committed - see README's "bin/ - personal CLI utilities" section. todo-tray
+# is deliberately NOT here - no surviving source exists to re-fetch it from,
+# it stays committed as its only remaining copy.
+/bin/rg
+/bin/phpactor
+/bin/composer
+/bin/phpbrew
+/bin/phpcs
+/bin/phpcbf
