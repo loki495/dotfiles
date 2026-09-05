@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# >>> claude-session-manager: capture stdin for session-id marker (managed, safe to delete) >>>
-csm_statusline_input=$(cat)
-exec 0<<< "$csm_statusline_input"
-# <<< claude-session-manager: capture stdin <<<
+# >>> sessioneer: capture stdin for session-id marker (managed, safe to delete) >>>
+sessioneer_statusline_input=$(cat)
+exec 0<<< "$sessioneer_statusline_input"
+# <<< sessioneer: capture stdin <<<
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
 model=$(echo "$input" | jq -r '.model.display_name // ""')
@@ -68,14 +68,14 @@ fi
 
 echo ""
 
-# >>> claude-session-manager: session-id marker (managed, safe to delete) >>>
-csm_json=$(printf '%s' "$csm_statusline_input" | jq -c '{session_id: .session_id, ctx_pct: .context_window.used_percentage, git_worktree: (.workspace.git_worktree // .worktree.name)} | with_entries(select(.value != null))' 2>/dev/null)
-[ -n "$csm_json" ] && [ "$csm_json" != "{}" ] && printf "\033[2mcsm-data:%s\033[0m\n" "$csm_json"
-# <<< claude-session-manager: session-id marker <<<
+# >>> sessioneer: session-id marker (managed, safe to delete) >>>
+sessioneer_json=$(printf '%s' "$sessioneer_statusline_input" | jq -c '{session_id: .session_id, ctx_pct: .context_window.used_percentage, git_worktree: (.workspace.git_worktree // .worktree.name)} | with_entries(select(.value != null))' 2>/dev/null)
+[ -n "$sessioneer_json" ] && [ "$sessioneer_json" != "{}" ] && printf "\033[2msessioneer-data:%s\033[0m\n" "$sessioneer_json"
+# <<< sessioneer: session-id marker <<<
 
-# >>> claude-session-manager: quota state capture (managed, safe to delete) >>>
-csm_quota_new=$(printf '%s' "$csm_statusline_input" | jq -c '{five_hour: .rate_limits.five_hour, seven_day: .rate_limits.seven_day} | with_entries(select(.value != null))' 2>/dev/null)
-if [ -n "$csm_quota_new" ] && [ "$csm_quota_new" != "{}" ]; then
-  printf '%s' "$csm_quota_new" | php /home/andres/www/claude-session-manager/host-agent/quota_live_state_write.php >/dev/null 2>&1
+# >>> sessioneer: quota state capture (managed, safe to delete) >>>
+sessioneer_quota_new=$(printf '%s' "$sessioneer_statusline_input" | jq -c '{five_hour: .rate_limits.five_hour, seven_day: .rate_limits.seven_day} | with_entries(select(.value != null))' 2>/dev/null)
+if [ -n "$sessioneer_quota_new" ] && [ "$sessioneer_quota_new" != "{}" ]; then
+  printf '%s' "$sessioneer_quota_new" | php "${SESSIONEER_REPO_ROOT:-$HOME/www/sessioneer}/host-agent/quota_live_state_write.php" >/dev/null 2>&1
 fi
-# <<< claude-session-manager: quota state capture <<<
+# <<< sessioneer: quota state capture <<<
