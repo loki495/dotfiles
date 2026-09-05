@@ -302,6 +302,9 @@ duplicated across two files). Neovim is now the only editor config here.
 - `ai/settings.json` hardcodes an absolute `/home/<user>/` path in 13 hook
   commands, so the Claude Code config is not portable to another username
   without editing.
+- `install_neovim.sh` hardcodes the download for `linux-x86_64` — detecting
+  the real OS/arch (`uname -s`/`uname -m`) would make it work on other
+  architectures too.
 
 ## Licence
 

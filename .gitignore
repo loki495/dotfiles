@@ -5,6 +5,9 @@ tags
 nvim/plugin
 nvim/lazy-lock.json
 .ai/plans/*/scratch/
+/TODO
+/todo
+/nvim/TODO
 
 traefik/acme/
 traefik/certs/
