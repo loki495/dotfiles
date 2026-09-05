@@ -377,9 +377,10 @@ existing `~/www/` docker-compose patterns to generate new project docker-compose
 Traefik config + setup.sh, adds composer script wrappers, writes `.claude/project.md`
 when worktree/branch structure is ambiguous.
 
-`/feature-atlas` — discovers and audits every feature/subsystem in the current project
+`/feature-atlas` — discovers and inventories every feature/subsystem in the current project
 (frontend + backend), writing `.ai/feature-atlas/` as the project's source of truth for its
-feature inventory and standing maintainability findings. Re-runnable; only refreshes what
+feature inventory (including each subsystem's purpose/intent), then offers — doesn't force — a
+maintainability audit pass on top once the inventory is done. Re-runnable; only refreshes what
 changed. See "Feature atlas" section above.
 
 `/feature-atlas-subsystem <name>` — refreshes one subsystem's entry cheaply, without rescanning
