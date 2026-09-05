@@ -2,7 +2,7 @@
 Description=Clipboard Bridging Service
 
 [Service]
-ExecStart=/home/andres/bin/clipboard-sync.sh
+ExecStart=%h/bin/clipboard-sync.sh
 Restart=always
 RestartSec=3
 # Prevent runaway respawn if clipboard-sync.sh crash-loops
