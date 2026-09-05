@@ -254,3 +254,6 @@ syncclone() {
 # >>> Codex installer >>>
 export PATH="/home/andres/.local/bin:$PATH"
 # <<< Codex installer <<<
+
+# opencode
+export PATH=/home/andres/.opencode/bin:$PATH
