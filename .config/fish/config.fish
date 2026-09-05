@@ -8,6 +8,10 @@ set -x SHELL /usr/bin/fish
 set -xU MANPAGER "sh -c 'col -bx | bat -l man -p'"
 set -xU MANROFFOPT "-c"
 
+# fish "done" plugin - notify on long-running commands finishing
+set -U __done_min_cmd_duration 10000
+set -U __done_notification_urgency_level low
+
 # Hint to exit PKGBUILD review in Paru
 set -x PARU_PAGER "less -P \"Press 'q' to exit the PKGBUILD review.\""
 
@@ -187,6 +191,12 @@ set -x socks_proxy ''
 # PATH additions
 set -x PATH $HOME/.cargo/bin $HOME/bin $HOME/.config/composer/vendor/bin $HOME/dotfiles/backup-tools $HOME/dotfiles/bin $PATH
 
+# pyenv - was only set via a tracked fish_variables universal-variable dump
+# (machine-specific auto-generated state, now gitignored instead), moved
+# here so it's real, portable, human-authored config instead.
+set -gx PYENV_ROOT $HOME/.pyenv
+fish_add_path $HOME/.pyenv/bin
+
 # PHP server helper
 functions -e phpserver
 function phpserver
@@ -308,8 +318,5 @@ end
 
 
 
-# Added by Antigravity CLI installer
-set -gx PATH "/home/andres/.local/bin" $PATH
-
 # opencode
-fish_add_path /home/andres/.opencode/bin
+fish_add_path $HOME/.opencode/bin

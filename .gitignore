@@ -4,6 +4,7 @@ tags
 .env
 nvim/plugin
 nvim/lazy-lock.json
+.config/fish/fish_variables
 .ai/plans/*/scratch/
 /TODO
 /todo

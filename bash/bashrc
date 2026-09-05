@@ -251,9 +251,5 @@ syncclone() {
 
 [ -f ~/.bashrc.local ] && source ~/.bashrc.local
 
-# >>> Codex installer >>>
-export PATH="/home/andres/.local/bin:$PATH"
-# <<< Codex installer <<<
-
 # opencode
-export PATH=/home/andres/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
