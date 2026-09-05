@@ -46,10 +46,10 @@ you touched is the normal way to work here.
 | `traefik` | `~/www/traefik` |
 
 Most sections move an existing target aside to `<target>.old` before linking
-(`backup_and_link` in `scripts/install/lib.sh`) and are safe to re-run. Two do
-not: `desktop-config` and the `~/.claude/` links in `ai-tools` remove their
-targets outright, so a real directory sitting at one of those paths is lost
-rather than backed up.
+(`backup_and_link` in `scripts/install/lib.sh`) and are safe to re-run. Three do
+not: `desktop-config`, the `~/.claude/` links in `ai-tools`, and `neovim`
+(`rm -rf ~/.config/nvim`) remove their targets outright, so a real directory
+sitting at one of those paths is lost rather than backed up.
 
 The `neovim` section prompts for how to install Neovim itself:
 
@@ -198,7 +198,7 @@ A small installable PSR-4 package (`loki495/php-lib`, see `composer.json`):
 OpenCart 1.5.x install's directory/file structure, used by backup-tools scripts
 for change detection. Not executable code.
 
-### AI agent config (`ai/`, `.claude/`)
+### AI agent config (`ai/`)
 
 One shared config tree, linked into each agent's own expected location by
 `scripts/install/50-ai-tools.sh` — so a skill or hook is written once rather
@@ -293,12 +293,6 @@ duplicated across two files). Neovim is now the only editor config here.
   array args across every call site.
 - `bin/` carries ~68 MB of compiled binaries checked into git rather than built
   or installed normally — `mcphost` alone is 49 MB.
-- `scripts/install/50-ai-tools.sh` links `~/.mcphost` to a path that does not
-  exist in this repo (the config here is `.mcphost.yml`), leaving a dangling
-  symlink, and never links `.mcphost.yml` itself. `assert-symlinks.sh` does not
-  catch it: `check_symlink` compares `readlink -f` on both sides, which
-  canonicalises a missing final path component instead of failing, so the
-  assertion passes on a link pointing at nothing.
 - `ai/settings.json` hardcodes an absolute `/home/<user>/` path in 13 hook
   commands, so the Claude Code config is not portable to another username
   without editing.
