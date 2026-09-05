@@ -13,6 +13,9 @@
 	denyCurrentBranch = updateInstead
 [alias]
     conflicts = diff --name-only --diff-filter=U
+    logl = log --pretty=format:'%C(auto)%h %C(blue)%an %C(cyan)<%ae> %Creset%s'
+    logf = log --pretty=format:'%C(auto)%h %C(blue)%an %C(cyan)<%ae> %Creset%s' --name-status
+
 [log]
 	date = local
 [init]
