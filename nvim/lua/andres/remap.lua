@@ -148,7 +148,7 @@ vim.api.nvim_set_keymap(
 local php_dev = require("andres.php_dev")
 
 vim.keymap.set("n", "<leader>cc", function()
-  StreamCommandInVSplit({ "make", "fast_cli" }, "/home/andres/dev/php-src")
+  StreamCommandInVSplit({ "make", "fast_cli" }, php_dev.PHP_SRC)
 end, { desc = "Build PHP with Highlighting" })
 
 vim.keymap.set("n", "<leader>cv", php_dev.run_php_test, { desc = "Pick + run PHP test" })

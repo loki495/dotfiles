@@ -1,11 +1,15 @@
 local M = {}
 
+-- Override with $PHP_SRC if your php-src checkout lives somewhere else.
+local PHP_SRC = vim.env.PHP_SRC or vim.fn.expand("~/dev/php-src")
+M.PHP_SRC = PHP_SRC
+
 function M.build_fast()
   local output = {}
   local errors = {}
 
   vim.fn.jobstart("make fast_cli", {
-    cwd = "/home/andres/dev/php-src",  -- adjust this path
+    cwd = PHP_SRC,
     stdout_buffered = true,
 
 
@@ -45,7 +49,7 @@ end
 
 function M.toggle_debug_macro()
   vim.fn.jobstart("make toggle-macro", {
-    cwd = "/home/andres/dev/php-src",  -- adjust this path
+    cwd = PHP_SRC,
     stdout_buffered = true,
     on_stdout = function(_, data) print(table.concat(data, "\n")) end,
     on_stderr = function(_, data) print(table.concat(data, "\n")) end
@@ -59,7 +63,7 @@ function M.run_php_test()
 
   pickers.find_files({
     prompt_title = "Pick PHP Test File",
-    cwd = "/home/andres/dev/php-src/php_tests",  -- adjust this path
+    cwd = PHP_SRC .. "/php_tests",
     find_command = { "rg", "--files", "--iglob", "*.php", "--hidden" },
 
     attach_mappings = function(prompt_bufnr, map)
@@ -71,7 +75,7 @@ function M.run_php_test()
         local output = {}
         local errors = {}
 
-        StreamCommandInVSplit({ "make", "run", "FILE=" .. filename }, "/home/andres/dev/php-src")
+        StreamCommandInVSplit({ "make", "run", "FILE=" .. filename }, PHP_SRC)
       end)
 
       return true
