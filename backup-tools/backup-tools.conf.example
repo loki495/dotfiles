@@ -27,3 +27,8 @@ CRON_BACKUP_PATH="/home/ubuntu/cronjobs/crons"
 # A .gitignore template `common-git` copies to a remote site that has none.
 # Leave empty to skip that step instead of copying anything.
 GITIGNORE_TEMPLATE=""
+
+# Global git identity `common-git` sets on a remote site if it has none yet.
+# Leave both empty to skip that step instead of setting something wrong.
+REMOTE_GIT_NAME=""
+REMOTE_GIT_EMAIL=""
