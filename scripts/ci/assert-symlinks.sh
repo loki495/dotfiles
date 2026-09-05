@@ -122,6 +122,9 @@ fi
 echo "=== 60-neovim.sh ==="
 check_symlink ~/.config/nvim "$SCRIPTPATH/nvim" "~/.config/nvim -> nvim"
 
+echo "=== 70-traefik.sh ==="
+check_symlink ~/www/traefik "$SCRIPTPATH/traefik" "~/www/traefik -> traefik"
+
 echo "=== ~/.bashrc sourcing ==="
 if bash -c "source ~/.bashrc" >/dev/null 2>&1; then
   echo "PASS: ~/.bashrc sources without error"
