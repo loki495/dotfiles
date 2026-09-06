@@ -20,6 +20,10 @@ http:
       entryPoints: [web]
       rule: Host(`sessioneer.{{ env "TRAEFIK_DOMAIN" }}`)
       service: sessioneer@docker
+    websecure-sessioneer-ac495:
+      entryPoints: [websecure]
+      rule: Host(`sessioneer.{{ env "TRAEFIK_DOMAIN" }}`)
+      service: sessioneer@docker
     git-ac495:
       entryPoints: [web]
       rule: Host(`git.{{ env "TRAEFIK_DOMAIN" }}`)
