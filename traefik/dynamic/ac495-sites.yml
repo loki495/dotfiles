@@ -8,14 +8,6 @@ http:
       entryPoints: [websecure]
       rule: Host(`adminer.{{ env "TRAEFIK_DOMAIN" }}`)
       service: adminer@docker
-    csm-ac495:
-      entryPoints: [web]
-      rule: Host(`csm.{{ env "TRAEFIK_DOMAIN" }}`)
-      service: sessioneer@docker
-    websecure-csm-ac495:
-      entryPoints: [websecure]
-      rule: Host(`csm.{{ env "TRAEFIK_DOMAIN" }}`)
-      service: sessioneer@docker
     sessioneer-ac495:
       entryPoints: [web]
       rule: Host(`sessioneer.{{ env "TRAEFIK_DOMAIN" }}`)
