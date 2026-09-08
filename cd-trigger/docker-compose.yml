@@ -1,0 +1,13 @@
+name: cd-trigger
+
+services:
+  app:
+    container_name: cd-trigger
+    build: .
+    restart: unless-stopped
+    # Host networking (not a published port) so this can reach Watchtower's
+    # own published port (localhost:8082) directly, without joining a
+    # separate Docker network shared with Watchtower's own compose project.
+    network_mode: host
+    env_file:
+      - .env
