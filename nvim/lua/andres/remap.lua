@@ -169,3 +169,15 @@ vim.keymap.set("n", "<leader>m", function()
   run.run(cmd)
 end, { desc = "Run shell command in right vsplit" })
 
+vim.keymap.set("n", "<C-p>", function()
+  local file = vim.fn.expand("%:p")
+
+  vim.cmd("vnew")
+  vim.bo.buftype = "nofile"
+  vim.bo.bufhidden = "wipe"
+  vim.bo.swapfile = false
+  vim.bo.filetype = "json"
+
+  vim.cmd("0read !jq . " .. vim.fn.shellescape(file))
+  vim.cmd("1delete _")
+end, { desc = "Pretty JSON in vsplit" })
