@@ -261,11 +261,17 @@ file-provider routes (`ac495-sites.yml`) — a former one-off self-signed TLS
 cert for sessioneer (`csm-tls.yml`, needed before the real wildcard cert
 existed) was removed once the wildcard cert made it redundant.
 `cloudflared-media-config.yml` is the Cloudflare Tunnel ingress config that
-actually runs on `media`. `docker-compose.yml`, `ac495-sites.yml`, and
-`cloudflared-media-config.yml` all contain real domain/IP/credential details
-for this specific home network, so they're gitignored and populated locally
-rather than committed — each has a genericized `*.example` counterpart
-checked in for reference.
+actually runs on `media`; it holds real ingress/credential detail, so it is
+gitignored and only its `*.example` counterpart is checked in.
+
+`docker-compose.yml` and `dynamic/ac495-sites.yml` *are* committed, with the
+domain templated as `{{ env "TRAEFIK_DOMAIN" }}` rather than written out. The
+routes that shouldn't be public live in `dynamic/local-sites.yml`, which is
+gitignored. Traefik's file provider watches the whole `dynamic/` directory
+(`--providers.file.directory=/dynamic`, `--providers.file.watch=true`) and
+merges every `.yml` in it, so splitting the routes across two files costs
+nothing at runtime — the committed file carries the routes I don't mind
+publishing, the ignored one carries the rest.
 
 **`.env` (Cloudflare API token), `acme/` (the real Let's Encrypt account +
 wildcard private key), and `certs/` (a self-signed private key) are

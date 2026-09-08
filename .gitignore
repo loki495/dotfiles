@@ -13,6 +13,7 @@ nvim/lazy-lock.json
 traefik/acme/
 traefik/certs/
 traefik/cloudflared-media-config.yml
+traefik/dynamic/local-sites.yml
 misc/docker/docker-compose.yml
 backup-tools/backup-tools.conf
 
