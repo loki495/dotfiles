@@ -239,7 +239,11 @@ full mechanics); summary of what it means day to day:
 - **Resuming cold:** at the start of multi-step work, `todo_list`/`todo_context`
   (filter `label=plan`) for an in-progress plan on this objective before starting
   new work, and ask which to resume (or confirm starting fresh) rather than
-  assuming.
+  assuming. Before touching a task's files, check `todo_claim_status` — a live claim
+  (`isCurrentlyAlive: true`) means another process is genuinely working on it right
+  now; skip it for a different unclaimed task rather than editing alongside it or
+  asking to override, whether the work is delegated or solo (see the
+  `orchestrator-worker` skill's Task Claims section).
 - **Escalating to full delegation** (spawning workers, model tiering, parallel
   execution): automatic once it's clearly warranted, or a quick check-in when it's
   ambiguous — never silently. This satisfies the "work one item at a time, get a

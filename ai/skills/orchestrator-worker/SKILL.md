@@ -269,6 +269,19 @@ rather than waiting out the lease. `todo_claim_status` reads a task's current cl
 (if any) without needing to hold one yourself — useful for the orchestrator checking
 in on a worker without interrupting it.
 
+**Check claim status before starting any task — solo work too, not only delegated
+workers, decided 2026-09-13.** Before touching a task's files (or resuming a plan at
+all), `todo_claim_status` it — or check `todo_context`'s live-claims list. If it's
+already claimed and `isCurrentlyAlive` is true, that's another live process (another
+session, another tool, a parallel window) genuinely working on it right now — treat
+it as off-limits. Skip to a different unclaimed task or plan instead of editing its
+files, without asking Andres to confirm first (this is exactly the collision the
+claim mechanism exists to prevent, so respecting it is the default, not a judgment
+call each time). This matters because file edits happen immediately regardless of
+which process made them — discovering unexplained uncommitted changes mid-plan is a
+sign to check claim status before assuming anything, not to overwrite or "helpfully"
+finish someone else's in-progress edit.
+
 ### Scratch work
 
 Exploration notes, one-off scripts, and temp diffs that support a plan but aren't
