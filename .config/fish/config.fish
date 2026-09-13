@@ -27,6 +27,11 @@ if test -f ~/.fish_profile
   source ~/.fish_profile
 end
 
+# Local-only config, not committed to git (aliases/secrets/machine-specific tweaks)
+if test -f ~/.config/fish/config.local.fish
+  source ~/.config/fish/config.local.fish
+end
+
 # Add ~/.local/bin to PATH
 if test -d ~/.local/bin
     if not contains -- ~/.local/bin $PATH
