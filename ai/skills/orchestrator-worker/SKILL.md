@@ -216,6 +216,16 @@ Do not close a task (`todo_complete`) merely because a worker (or direct work)
 claims completion — the acceptance criteria in the plan body must actually be
 satisfied first, exactly as before. That check is the orchestrator's job.
 
+**Break the plan into child task issues as soon as its scope is known, decided
+2026-09-13 — not only when delegating to workers.** A plan worked entirely solo,
+inline, in one sitting still needs this: one `todo_create`/`todo_scaffold_plan` child
+per concrete step, closed via `todo_complete` as each finishes. This is what makes
+"what's left" a scannable checklist (`todo_show` the plan; open children are
+remaining, closed ones are done) instead of something that has to be reconstructed by
+rereading narrative comments. A prose-only progress comment ("done: X, Y; still need:
+Z") is not a substitute — it decays the moment the list changes and nothing marks an
+item complete. Add new child tasks the same way if scope grows mid-plan.
+
 ### Checkpoints, questions, and results
 
 What `STATE.md`/`QUESTIONS.md`/`RESULT.md` used to separate are now all
