@@ -1,0 +1,14 @@
+[Unit]
+Description=Sessioneer OpenCode question event consumer
+After=opencode-serve.service
+Wants=opencode-serve.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/home/andres/www/sessioneer/host-agent/.env
+ExecStart=/home/andres/.phpbrew/php/php-8.5.1/bin/php /home/andres/www/sessioneer/host-agent/opencode_sse_consumer.php
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

@@ -32,6 +32,15 @@
             "command": "notify-send \"Claude Code\" \"$(cat | jq -r '.message // .last_assistant_message // \": Task done\"')\""
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/sessioneer/host-agent/hooks/stop.php"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -41,6 +50,48 @@
           {
             "type": "command",
             "command": "rtk hook claude"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/sessioneer/host-agent/hooks/pre_tool_use.php"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/sessioneer/host-agent/hooks/session_start.php"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/sessioneer/host-agent/hooks/permission_request.php"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php /home/andres/www/sessioneer/host-agent/hooks/user_prompt_submit.php"
           }
         ]
       }
