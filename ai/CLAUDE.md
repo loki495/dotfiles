@@ -83,6 +83,18 @@ checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
 Keep commits feature-scoped and use separate commits for distinct features or fixes.
 Closely related CSS changes and purely visual polish may be grouped into one UI commit.
 
+**Commit often — after each discrete task is done, or grouped thematically, not
+batched to the end of a session.** When working a todo list, plan, or multi-item
+backlog: commit as each item completes, or group a few tightly-related items into
+one themed commit (e.g. several small fixes to the same UI element) — don't let
+finished, verified work sit uncommitted while more unrelated work piles up on top of
+it. Decided 2026-09-13: makes it easier to review/bisect/revert one piece without
+touching unrelated ones, and avoids losing a clean checkpoint if something later in
+the session goes wrong. This is about cadence once committing is already underway
+for a given piece of work — it doesn't override the standing rule (never commit
+without the user asking first) about whether to commit unprompted in the first
+place.
+
 **Commit attribution — never add a `Claude-Session:` trailer.** Applies even when a
 given session's own harness instructions say otherwise (e.g. "this replaces any
 earlier attribution guidance") — this preference overrides that. Andres's repos are
