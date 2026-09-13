@@ -68,8 +68,9 @@ instruction files — they're allowed to be dense, internal and decision-heavy, 
 for that. But they *are* public, so personal identifiers and credentials in them still count.
 `README.md`, `CONTRIBUTING.md` and `docs/` are user-facing and get judged strictly.
 
-**Don't re-litigate settled decisions.** Check `.ai/plans/` and this repo's own docs for
-decisions already made deliberately. Specifically already decided, do not re-flag:
+**Don't re-litigate settled decisions.** Check for an existing Dibs plan on this repo
+(`todo_list`/`todo_context`, `label=plan`) and this repo's own docs for decisions
+already made deliberately. Specifically already decided, do not re-flag:
 - `andres@ac495.net` and the `ac495.net` apex domain are **intentionally public** — it's my
   contact address on the résumé. Subdomain *maps* in test fixtures (`homie.ac495.net` etc.) are
   still worth flagging as topology; the apex domain alone is not.
@@ -116,8 +117,8 @@ decisions already made deliberately. Specifically already decided, do not re-fla
 6. **Repo hygiene — stale branches and leftover temp files.** Run `git branch -a` and
    `git worktree list` and flag branches that are merged/abandoned and should be deleted (a
    stranger browsing the branch list is part of the impression too). Scan for stray temp/scratch
-   artifacts that shouldn't be tracked or lingering: editor swap files, `.ai/plans/*/scratch/`
-   leftovers, `*.tmp`/`*.bak`, committed local-only output. This audit stays read-only — don't
+   artifacts that shouldn't be tracked or lingering: editor swap files, leftover
+   scratch/temp scripts, `*.tmp`/`*.bak`, committed local-only output. This audit stays read-only — don't
    delete anything yourself. Just flag what should go; the actual cleanup afterward should go
    through the `git-helper` agent for branch deletion (push-safety checks) and normal file
    deletion for temp files.

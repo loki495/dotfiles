@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Default file-based protocol for any multi-step coding work — solo, forked, or delegated to workers. A plan lives in its own folder under .ai/plans/<plan-slug>/ (PLAN.md, STATE.md, QUESTIONS.md, RESULT.md, scratch/), created automatically once work is explicitly multi-phase or spans sessions, so a fresh session (this one resuming later, or a different tool entirely) can pick it up cold from the files alone. Small work escalates to full delegation (workers, model tiering, parallel execution) automatically when it's clearly warranted, or with a quick check when it's ambiguous — never silently. Two shared, cross-plan stores back every plan: .ai/research/ (checksum-versioned investigative findings, reused until the files they're based on change) and .ai/lessons/ (durable non-code gotchas — platform quirks, library fine print, logic traps — checked before and updated after any research or implementation step). Tool-agnostic throughout: Claude Code, opencode, Codex, and agy can each play orchestrator or worker, and every file here is plain text any of them can read and write. Use this by default for multi-step work, not only when explicitly asked.
+description: Default protocol for any multi-step coding work — solo, forked, or delegated to workers. A plan is a `plan`-labeled issue in Dibs (the personal MCP-backed task tracker, registered as the `dibs` MCP server; CLI fallback via `docker compose -f /home/andres/www/dibs/docker-compose.yml exec` when a tool can't reach MCP directly), created automatically once work is explicitly multi-phase or spans sessions, so a fresh session (this one resuming later, or a different tool entirely) can pick it up cold from Dibs alone — no local plan files. Small work escalates to full delegation (workers, model tiering, parallel execution) automatically when it's clearly warranted, or with a quick check when it's ambiguous — never silently. Two shared, cross-plan knowledge stores back every plan, also in Dibs: `research`-labeled issues (checksum-versioned against the files they're based on) and `lesson`-labeled issues (durable non-code gotchas — platform quirks, library fine print, logic traps) — checked before and updated after any research or implementation step, filed under Personal Projects → AI workflows unless project-specific. Tool-agnostic throughout: Claude Code, opencode, Codex, and agy can each play orchestrator or worker — via the `dibs` MCP server where registered, the `todo:agent:*` CLI otherwise. Use this by default for multi-step work, not only when explicitly asked.
 ---
 
 # Orchestrator/Worker Protocol
@@ -55,7 +55,7 @@ is expected to listen.
 Two separate thresholds — don't conflate them. Crossing the first doesn't mean
 crossing the second.
 
-**Create a plan folder** (`.ai/plans/<plan-slug>/`) when the task is:
+**Create a plan** (a `plan`-labeled issue in Dibs, via `todo_scaffold_plan`) when the task is:
 
 - explicitly multi-phase, an audit, or framed as a plan/todo list by the user;
 - expected to span more than one session (paused and resumed later, possibly by a
@@ -63,11 +63,12 @@ crossing the second.
 - work I would already reach for the in-session `TodoWrite` tool for, **and** it
   needs to survive a session boundary rather than just this conversation.
 
-Skip the folder for single-turn, single-file, quickly-resolved work — a plain reply
-or an ordinary `TodoWrite` list is enough, and creating a folder for a three-line fix
+Skip Dibs for single-turn, single-file, quickly-resolved work — a plain reply
+or an ordinary `TodoWrite` list is enough, and scaffolding a plan for a three-line fix
 is pure overhead. When genuinely unsure whether a task clears this bar, err toward
-creating the folder — cheap to create, cheap to leave nearly empty, expensive to
-reconstruct provenance for later if skipped and the task turns out to run long.
+creating the plan — cheap to create (one `todo_scaffold_plan` call), cheap to leave
+nearly empty, expensive to reconstruct provenance for later if skipped and the task
+turns out to run long.
 
 **Escalate to full delegation** (spawn workers, apply
 [Model Tiering](#model-tiering), consider parallel execution) once a plan is
@@ -82,12 +83,12 @@ underway, when:
 
 This should happen **automatically when it's clearly warranted, or with one quick
 check-in when it's ambiguous** — never silently. If a plan turns out to need
-delegation partway through, that's normal; nothing about the folder structure
-changes, only how heavily its files get used (see [Project State](#project-state) —
-every plan gets all four files from creation, light or not).
+delegation partway through, that's normal; nothing about the plan issue changes,
+only how heavily its comments/claims get used (see [Project State](#project-state) —
+every plan is a real Dibs issue from creation, light or not).
 
 A plan that never needs delegation is not a failure of the protocol — most solo
-work, once it clears the "create a folder" bar, stays solo the whole way through.
+work, once it clears the "create a plan" bar, stays solo the whole way through.
 
 ---
 
@@ -133,9 +134,12 @@ A worker is an implementation agent responsible for:
 6. Implementing the task.
 7. Running appropriate tests/checks.
 8. Updating task status.
-9. Recording relevant results — in `RESULT.md`, and in the shared research/lessons
-   stores when applicable (see [Worker Completion Protocol](#worker-completion-protocol)).
-10. Reporting completion or blockers.
+9. Recording relevant results — as a `todo_comment` checkpoint on its task issue, and
+   in the shared research/lessons knowledge records when applicable (see
+   [Worker Completion Protocol](#worker-completion-protocol)).
+10. Reporting completion or blockers, and self-reporting via `todo_report_bug` if the
+    Dibs tooling itself misbehaves along the way (distinct from a plan question —
+    see [Worker Questions and Blockers](#worker-questions-and-blockers)).
 
 The worker should not redesign the project without consulting the orchestrator. It
 may make reasonable local implementation decisions consistent with the plan; major
@@ -154,233 +158,195 @@ unrelated files, repositories, configuration, credentials, or user data.
 
 ## Project State
 
-A project can have more than one plan active, paused, or completed at once —
-different objectives, launched by different sessions, sometimes at the same time.
-Each gets its own folder so they can't collide, and so any session — this one
-resuming later, or a completely different one — can find and pick up exactly where
-another left off:
+A project's multi-step work lives in **Dibs** — the personal MCP-backed task
+tracker (`/home/andres/www/dibs`) — instead of local plan files. Reach it through
+the `dibs` MCP server (registered at user scope for Claude Code as of 2026-09-13;
+register it the same way in any other tool's own MCP config before relying on it
+there — `claude mcp list`/that tool's equivalent shows whether it's connected) or,
+when a tool can't reach MCP directly, the `todo:agent:*` CLI fallback:
+`docker compose -f /home/andres/www/dibs/docker-compose.yml exec -T -u www-data app
+php artisan todo:agent:<command>`. Call `todo_status` (or `todo:agent:list`) once per
+session to confirm connectivity before relying on it further.
 
-    .ai/plans/INDEX.md                    <- registry of every plan
-    .ai/plans/<plan-slug>/PLAN.md
-    .ai/plans/<plan-slug>/STATE.md
-    .ai/plans/<plan-slug>/QUESTIONS.md
-    .ai/plans/<plan-slug>/RESULT.md
-    .ai/plans/<plan-slug>/scratch/
-    .ai/plans/archive/<plan-slug>/        <- completed plans, moved here after confirmation
+A **plan** is a `plan`-labeled issue in Dibs; its **tasks** are that issue's child
+issues, created together via `todo_scaffold_plan` (one atomic call: plan + all
+initial children) or added individually afterward with
+`todo_create(parentId: <plan issue id>)`. Each task's own local Dibs id/number is its
+task ID — already stable, and what every other tool call keys on (`todo_show`,
+`todo_claim`, `todo_revise`, `todo_comment`).
 
-**`<plan-slug>`**: `<YYYY-MM-DD>-<kebab-slug-of-the-objective>`, e.g.
-`2026-08-30-cards-domain-migration`. Human-readable, sorts naturally by date, and only
-collides if two plans started the same day land on the same slug — if that
-happens, make the slug more specific rather than appending an arbitrary suffix.
+**Before starting work that might already have a plan, always check first** — don't
+assume this is a fresh start:
 
-**Before starting work on a project that has `.ai/plans/`, always check for existing
-plans first** — don't assume the directory is empty or that this is a fresh start:
+1. Call `todo_context` (areas/Groups/labels/live-claims overview) and `todo_list`
+   (filter `label=plan`, scoped to the Group matching this project/website if one
+   exists) to find an existing, unfinished plan for this objective.
+2. If a matching open plan exists, ask which to resume rather than assuming — then
+   `todo_show` the plan issue and its children to read current state. A new session
+   has no memory of the old one; Dibs is the authoritative record, the same reason
+   this was file-based before.
+3. Only scaffold a new plan for a genuinely distinct objective.
 
-1. Read `INDEX.md` if it exists (or list `.ai/plans/*/` if it doesn't yet — a folder
-   can exist without ever having been indexed, if whatever created it was
-   interrupted before writing its row).
-2. If an entry matches the requested objective and isn't `done`, ask which to resume
-   rather than assuming — then read its four files and continue from `STATE.md`'s
-   current step. A new session has no memory of the old one, but the files are the
-   authoritative record — that's the entire point of this being file-based rather
-   than conversation-based.
-3. Only create a new `<plan-slug>` folder for a genuinely distinct objective.
+**Placement**: file the plan under the Project area (Work / Personal Projects /
+Learning & Self-Improvement / Random Tasks) and Group (website/topic) matching the
+current project — `todo_context` shows existing Groups; `todo_create`'s
+`newGroupName` makes one if none matches yet. **If it's genuinely unclear which
+Project area this belongs under** (most often Work vs. Personal Projects), **ask**
+rather than guess.
 
-**`INDEX.md`** is a flat list, one line per plan:
+There's no separate registry file to keep in sync — `todo_list`/`todo_show` always
+reflect current state directly. Multiple plans can run concurrently across
+different Groups/areas without needing any coordination file at all; if two plans
+would touch the same project files, that's a sign they should be one plan or
+sequenced, the same judgment call as before, just without an `INDEX.md` to check
+first (`todo_list` filtered to `label=plan` serves the same purpose, live).
 
-    - <plan-slug> | <status> | <one-line objective> | updated <date>
+### Plan body
 
-Each orchestrator only ever writes its own line — never edit another plan's row,
-even to fix formatting, the same way parallel workers only touch their own status
-line in `PLAN.md` (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)).
-Add a line when creating a folder; update only your own line's status/date as things
-progress.
+The plan issue's own body is the authoritative implementation plan — revise it with
+`todo_revise` (optimistic-concurrency protected; a stale write comes back as a
+non-error `{conflict: true, current: ...}` to reread and reconcile, never a silent
+overwrite). It holds what `PLAN.md` used to: objective, decisions, dependency order,
+current status, completion gates. Each task's own state stands in for a per-task
+status field: `CLOSED` is done, an active `todo_claim_status` is in-progress, `OPEN`
+with no claim is pending; use a `todo_comment` or the `waiting` label for a task
+that's specifically blocked, since there's no dedicated status enum on an issue.
 
-Multiple plans can run concurrently in the same project as long as their scopes
-don't overlap. If two plans would touch the same files, that's a sign they should be
-one plan, or sequenced, rather than two independent ones — check `INDEX.md` for that
-before starting a second one that might collide with a still-active first.
+Do not close a task (`todo_complete`) merely because a worker (or direct work)
+claims completion — the acceptance criteria in the plan body must actually be
+satisfied first, exactly as before. That check is the orchestrator's job.
 
-The four files inside a plan's own folder are the **authoritative** communication
-channel for that plan. A worker's direct response — whatever the launching tool
-returns immediately after the call — is a convenience for the orchestrator's next
-step, nothing more. If it ever conflicts with what these files say, the files win;
-fix the files if they're wrong. Any orchestrator (even a fresh session, even a
-different tool) must be able to resume a plan from its four files alone, with no
-memory of prior conversation.
+### Checkpoints, questions, and results
 
-Only the orchestrator writes to `STATE.md`. Workers append to `QUESTIONS.md` and
-`RESULT.md`, and update only their own task's status line in `PLAN.md` — this matters
-once workers run in parallel (see [Parallel vs Sequential Workers](#parallel-vs-sequential-workers)).
+What `STATE.md`/`QUESTIONS.md`/`RESULT.md` used to separate are now all
+`todo_comment` calls: on the **plan issue** for anything spanning the whole plan
+(current step, worker model/mechanism/cost — see [Cost Reporting](#cost-reporting) —
+architectural decisions, known limitations, outstanding blockers), or on the
+**specific task issue** for anything task-scoped (a blocker, a result, a
+verification outcome — see [Worker Questions and Blockers](#worker-questions-and-blockers)).
+Post concise checkpoints, not a narration log — the same discipline the old files
+required, now enforced by the same convention Dibs's own project already documents:
+the issue body is the maintained canonical document, comments hold supporting
+evidence and checkpoints.
 
-Every plan gets all four files from creation, even a light one that never needs
-delegation — they can start as stubs (`STATE.md` can just say "researching, no plan
-yet"). What "graduating to full delegation" changes is how heavily these files get
-used (worker launches, cost reporting, parallel coordination), not whether they
-exist. This keeps a plan from ever needing to move or be restructured mid-flight —
-see [When This Applies](#when-this-applies).
+**A tooling problem is not a plan question.** If a worker hits a bug, confusing
+behavior, or unexpected error *in the Dibs MCP/CLI tooling itself* — not a plan
+decision needing a human call — self-report it via `todo_report_bug` (`summary`,
+`details`, optionally `toolOrCommand`/`arguments`) rather than working around it
+silently or leaving it as an offhand comment. This lands in Dibs's own backlog
+(labeled `agent-report`) for later fixing, without blocking the plan on it unless it
+actually does.
 
-### PLAN.md
+### Task claims
 
-The authoritative implementation plan. Each task/step contains:
+A worker claims its assigned task with `todo_claim` before starting — this replaces
+marking a task `in_progress` in `PLAN.md`. Unlike a plain status field, a live claim
+is bound to the worker's actual OS process and independently verified (host, pid,
+process start time — see Dibs's own `docs/agent-interface.md` for the full model):
+two workers genuinely cannot both claim the same task, and a claim whose process has
+died becomes automatically recoverable on the next claim attempt, neither of which a
+status field in a file could ever guarantee. `todo_claim` returns a capability token
+— hold onto it; every subsequent `todo_heartbeat`/`todo_release`/`todo_complete` call
+on that claim needs it.
 
-- ID
-- objective
-- relevant files
-- dependencies
-- acceptance criteria
-- implementation notes
-- status: `pending` / `in_progress` / `blocked` / `needs_review` / `done`
+Heartbeat (`todo_heartbeat`) periodically during a long task so the lease doesn't
+expire out from under it — this creates no comment/push-queue noise, it's purely
+local bookkeeping. On completion, `todo_complete` closes the task, optionally posts
+a result summary as a comment, and releases the claim in one call — the worker's
+completion report landing durably, not a separate step. Abandoning a task without
+finishing it is `todo_release` instead, so another worker can pick it up immediately
+rather than waiting out the lease. `todo_claim_status` reads a task's current claim
+(if any) without needing to hold one yourself — useful for the orchestrator checking
+in on a worker without interrupting it.
 
-A light plan's tasks can be simple checkbox-style entries without every field filled
-in — the format scales down, it doesn't need a separate lighter file.
+### Scratch work
 
-Do not mark a task `done` merely because the worker (or your own direct work) claims
-completion — the acceptance criteria must actually be satisfied. That check is the
-orchestrator's job.
+Exploration notes, one-off scripts, and temp diffs that support a plan but aren't
+meant to become permanent records still don't belong in Dibs — keep them in the
+session's own scratchpad directory, same as any other throwaway working file. Dibs
+holds the plan/task/checkpoint record, not scratch files.
 
-### STATE.md
+### Completion
 
-The current plan state, kept concise and current:
-
-- current objective;
-- current step;
-- current worker status;
-- worker model, how it was launched (in-process, or cross-tool via which CLI), why
-  that one was picked, and its cost as actually reported (exact or proxy — see
-  [Cost Reporting](#cost-reporting)) — see [Model Tiering](#model-tiering) and
-  [In-Process vs Cross-Tool](#in-process-vs-cross-tool);
-- important architectural decisions;
-- known limitations;
-- outstanding blockers.
-
-### QUESTIONS.md
-
-The communication channel for worker questions and blockers. A question needs enough
-context for the orchestrator to decide without reconstructing the worker's entire
-thought process (see [Worker Questions and Blockers](#worker-questions-and-blockers)).
-
-### RESULT.md
-
-A durable record of meaningful discoveries and results **for this plan specifically**:
-important findings about external data, architectural decisions, unexpected
-constraints, completed worker iterations, significant implementation decisions,
-verification results. Not a narration log — record what matters, not every step
-taken. Findings that outlive this plan — reusable investigative facts, or durable
-non-code gotchas — belong in [Shared Research Cache](#shared-research-cache) or
-[Shared Lessons Store](#shared-lessons-store) instead (or as well, if genuinely both
-plan-specific context and reusable knowledge).
-
-### scratch/
-
-Exploration notes, generated one-off scripts, temp diffs, working files that support
-the plan but aren't meant to become permanent project files. Not part of the
-authoritative record — `RESULT.md` is. Safe to be messy; safe to gitignore
-(`.ai/plans/*/scratch/` is a reasonable project `.gitignore` entry, added via
-`/project-bootstrap` or by hand — not required, but the four top-level files are
-committed by convention and `scratch/` deliberately is not).
-
-### Archiving
-
-When a plan is marked `done` in `INDEX.md` and the user confirms it's genuinely
-finished (not just paused), move its folder to `.ai/plans/archive/<plan-slug>/` and
-update its `INDEX.md` line's status to `archived`. Don't auto-archive without that
-confirmation — a "done" plan sometimes gets reopened, and archiving is a courtesy for
-keeping the active list scannable, not a hard deletion.
+A plan is done once every task is closed via `todo_complete` with satisfied
+acceptance criteria. `todo_revise` the plan issue's body to reflect final status,
+then close the plan issue itself the same way `closeIssue`/`todo_complete` closes any
+issue. No separate archiving step: a closed issue already reads as done and stays
+discoverable via `todo_list(state: 'ALL')` or a direct `todo_show`, the same way any
+completed issue does — nothing to move.
 
 ---
 
 ## Shared Research Cache
 
-`.ai/research/` holds investigative findings that outlive any single plan — about
-this codebase specifically, or about general technical facts (a library's behavior,
-an API's shape, a format's quirks) — so the next plan, any plan, any tool, doesn't
-re-investigate something already answered.
+Investigative findings that outlive any single plan — about a specific codebase, or
+general technical facts (a library's behavior, an API's shape, a format's quirks) —
+live as `research`-labeled issues in **Dibs**, not `.ai/research/` files, so the
+next plan, any plan, any project, any tool, doesn't re-investigate something already
+answered. File these under Personal Projects → the "AI workflows" Group (check
+`todo_context` for its exact id; it already exists for cross-cutting agent/tooling
+knowledge) unless the finding is specific to one project's own business domain, in
+which case file it under that project's own Group instead.
 
-    .ai/research/INDEX.md
-    .ai/research/<topic-slug>.md
+An issue's title is the topic; its body holds the findings plus, when the research
+is tied to specific files rather than a general fact, a `covers` list embedded
+directly in the body:
 
-**`INDEX.md`**, one line per topic:
-
-    - <topic-slug> | <keywords> | <files/paths this topic covers> | verified <date>
-
-**`<topic-slug>.md`**, a small header plus the findings:
-
-    ---
-    topic: <topic-slug>
     covers:
       - path: <file path>
         hash: <git hash-object output, or sha256:<digest> for untracked files>
       - path: <file path>
         hash: <...>
-    updated: <date>
-    ---
 
-    <findings — concise, information-dense, written for a cold reader>
-
-A topic with no `covers` entries (a general fact not tied to specific files — how a
+A topic with no `covers` list (a general fact not tied to specific files — how a
 library behaves, an API contract) has no hash to check and is simply trusted until
 manually revised, same as [Shared Lessons Store](#shared-lessons-store).
 
-**Before any research** — inline, forked, or delegated to a worker — check
-`.ai/research/INDEX.md` for a matching topic first. If one exists with `covers`
-entries:
+**Before any research** — inline, forked, or delegated to a worker — `todo_list`
+(filter `label=research`, `search=<keywords>`) for a matching topic first. If one
+exists with a `covers` list (`todo_show` for the full body):
 
 1. Re-hash each listed file (`git hash-object <path>` for tracked files; `sha256sum`
    for untracked ones — cheap, exact, no need to read full file content to compute).
-2. All hashes match → reuse the cached findings directly, cite the topic file, skip
-   new research entirely.
+2. All hashes match → reuse the cached findings directly, cite the issue (by number),
+   skip new research entirely.
 3. A few files changed → delegate a narrow re-verify scoped only to the diff of
-   those files (cheap — this is not a full re-research), then patch the note's
-   affected sections, hashes, and `updated` date.
+   those files (cheap — this is not a full re-research), then `todo_revise` the
+   affected sections and hashes in the issue body.
 4. Most or all files changed, or the topic's actual scope has clearly shifted →
-   treat the note as stale, do full research, overwrite.
+   treat the issue as stale, do full research, `todo_revise` it wholesale.
 
-**After any research** — whether it hit the cache or ran fresh — write or update the
-topic's entry in both `INDEX.md` and its own file. This is what makes the cache
-actually pay off on the next plan; skipping the write-back defeats the point.
+**After any research** — whether it hit the cache or ran fresh — `todo_create` (new
+topic) or `todo_revise` (existing one) with the `research` label. This is what makes
+the cache actually pay off on the next plan; skipping the write-back defeats the
+point.
 
 ---
 
 ## Shared Lessons Store
 
-`.ai/lessons/` holds durable, **non-code-specific** knowledge: gotchas, edge cases,
-fine-print behavior, platform/OS quirks, logic or math traps, tips and snippets —
-things that don't go stale when this codebase's files change, only when the
-underlying tool, platform, or understanding changes. This is the key distinction
-from [Shared Research Cache](#shared-research-cache): research is versioned against
-file hashes because code changes invalidate it; lessons aren't, because they're not
-about this code's current state, they're about how something outside this codebase
-actually behaves.
-
-    .ai/lessons/INDEX.md
-    .ai/lessons/<topic-slug>.md
-
-**`INDEX.md`**, one line per topic:
-
-    - <topic-slug> | <keywords/tags> | <one-line hook>
-
-**`<topic-slug>.md`**:
-
-    ---
-    topic: <topic-slug>
-    tags: [php, laravel, opencart, bash, os, general, ...]
-    ---
-
-    <the gotcha, concise, information-dense>
+Durable, **non-code-specific** knowledge — gotchas, edge cases, fine-print behavior,
+platform/OS quirks, logic or math traps, tips and snippets — live as `lesson`-labeled
+issues in Dibs, same placement convention as [Shared Research Cache](#shared-research-cache)
+(Personal Projects → "AI workflows" Group for cross-cutting tooling lessons, or the
+relevant project's own Group for something project-specific). These things don't go
+stale when a codebase's files change, only when the underlying tool, platform, or
+understanding changes — the key distinction from research: research is versioned
+against file hashes because code changes invalidate it; lessons aren't, because
+they're not about a codebase's current state, they're about how something outside it
+actually behaves. No `covers`/hash list needed on a lesson issue for this reason.
 
 **Before** research or implementation touching something that smells like a gotcha
 domain (an unfamiliar library, OS-specific behavior, a math/logic edge case, a
-platform quirk) — check `.ai/lessons/INDEX.md` for a matching topic. **After**
-discovering something durable and non-code-specific worth keeping — write it, in
-both `INDEX.md` and its own topic file.
+platform quirk) — `todo_list` (filter `label=lesson`, `search=<keywords>`) for a
+matching topic. **After** discovering something durable and non-code-specific worth
+keeping — `todo_create`/`todo_revise` it with the `lesson` label.
 
-Scoped to the current project for now (`.ai/lessons/` at the project root). When a
-lesson is clearly general-purpose — not tied to this codebase or business logic at
-all — flag it and offer to also save it to a machine-wide location, the same way
-global `CLAUDE.md`'s memory-scope-discipline rule already handles workflow
-preferences that turn out to be general rather than project-specific. Don't do this
-silently; ask, the same as that rule does.
+Being centrally in Dibs rather than per-project `.ai/lessons/` means a lesson found
+while working on one project is already visible the next time any project hits the
+same gotcha — no separate "is this general enough to promote" judgment call needed
+the way `CLAUDE.md`'s memory-scope-discipline rule requires for personal workflow
+preferences; a Dibs lesson is cross-project by construction.
 
 ---
 
@@ -388,11 +354,11 @@ silently; ask, the same as that rule does.
 
 Before delegating any implementation:
 
-1. Check `.ai/plans/INDEX.md` for an existing, unfinished plan on this objective
+1. `todo_list`/`todo_context` for an existing, unfinished plan on this objective
    before creating a new one (see [Project State](#project-state)). If starting
-   fresh, pick a `<plan-slug>`, add its row to `INDEX.md`, and scaffold `PLAN.md`,
-   `STATE.md`, `QUESTIONS.md`, `RESULT.md`, `scratch/` in its folder — they can start
-   as stubs. This gives research even before a plan exists somewhere durable to land.
+   fresh, `todo_scaffold_plan` it under the right area/Group — a bare plan issue
+   with no children yet is a fine stub. This gives research somewhere durable to
+   land even before a full plan exists.
 2. Check [Shared Research Cache](#shared-research-cache) and
    [Shared Lessons Store](#shared-lessons-store) for anything already known about
    this objective before investigating from scratch.
@@ -441,12 +407,13 @@ and has to re-derive that context itself, but can run on a genuinely cheaper mod
 Pick based on which cost actually dominates for this question — context
 re-derivation, or per-token price — not by default.
 
-Research workers are lighter-weight than implementation workers: there's no
-`PLAN.md` yet at this point, so they don't need a task ID or the full worker
-protocol — just the question, read-only, plus the instruction to check and update
-the shared research/lessons stores. Cross-tool research workers still get the
-[worker session tag](#worker-session-tagging) prepended as their literal first line
-(use `<task-id>=research` since there's no real task ID yet); in-process ones skip it.
+Research workers are lighter-weight than implementation workers: there's no task
+issue yet at this point, so they don't need a task ID or the full worker protocol —
+just the question, read-only, plus the instruction to check and update the shared
+research/lessons knowledge records in Dibs. Cross-tool research workers still get
+the [worker session tag](#worker-session-tagging) prepended as their literal first
+line (use `research` in place of a real task id, since there isn't one yet);
+in-process ones skip it.
 
 ```
 You are a RESEARCH WORKER in the orchestrator/worker protocol
@@ -454,20 +421,23 @@ You are a RESEARCH WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
-Plan: .ai/plans/<plan-slug>/
+Plan: Dibs issue #<plan issue id> (dibs MCP server, or the todo:agent:* CLI if MCP
+isn't reachable from this tool — see Project State)
 Research question(s): <specific and bounded — not "investigate the codebase">
 
-First check .ai/research/INDEX.md and .ai/lessons/INDEX.md for anything already
-known about this — reuse or narrowly re-verify per Shared Research Cache rather than
-starting from scratch if a matching topic exists.
+First todo_list (label=research, then label=lesson; search=<keywords>) for anything
+already known about this — reuse or narrowly re-verify per Shared Research Cache
+rather than starting from scratch if a matching topic exists.
 
 Investigate read-only — do not modify anything. Report back concisely: what you
 found, where (file paths/line numbers, commands run), and flag anything you
 couldn't confirm rather than guessing. State which agent/subagent type and model
-you ran as. Write durable findings to .ai/research/<topic-slug>.md (with file
-hashes) and any non-code-specific gotcha to .ai/lessons/<topic-slug>.md — update
-each INDEX.md. If it's also worth keeping in this plan's own record, append it to
-RESULT.md too.
+you ran as. Write durable findings as a research-labeled Dibs issue (with a covers
+list of file paths/hashes) and any non-code-specific gotcha as a lesson-labeled one
+(todo_create, or todo_revise if updating an existing topic). If it's also worth
+keeping in this plan's own record, todo_comment it on the plan issue too. If the
+Dibs tooling itself misbehaves along the way, todo_report_bug it rather than working
+around it silently.
 ```
 
 **Trust, but verify what matters.** Treat a research worker's findings as reliable
@@ -475,9 +445,9 @@ for minor/local facts. For anything the plan critically depends on — a claim t
 if wrong, would derail multiple downstream tasks — spot-check it yourself before
 committing to the plan. A wrong implementation usually fails a test; a wrong research
 finding just quietly becomes a wrong plan, so it doesn't get the same automatic
-safety net. The same caution applies to a cache hit from `.ai/research/` that a
-critical decision rests on — a matching hash means the file hasn't changed, not that
-the original finding was correct.
+safety net. The same caution applies to a cache hit from a `research`-labeled Dibs
+issue that a critical decision rests on — a matching hash means the file hasn't
+changed, not that the original finding was correct.
 
 ---
 
@@ -503,9 +473,10 @@ Every worker must be instructed, at minimum, to read:
 - this protocol (the `orchestrator-worker` skill if the worker's tool auto-loads
   shared skills; otherwise point it explicitly at
   `~/dotfiles/ai/skills/orchestrator-worker/SKILL.md`);
-- this plan's `PLAN.md`, `STATE.md`, `QUESTIONS.md` (under
-  `.ai/plans/<plan-slug>/`, per [Project State](#project-state));
-- `.ai/research/INDEX.md` and `.ai/lessons/INDEX.md` for anything already known
+- this plan's issue and its own task issue in Dibs (`todo_show` on each, per
+  [Project State](#project-state)) — via the `dibs` MCP server if this worker's tool
+  has it registered, the `todo:agent:*` CLI otherwise;
+- `todo_list` (label=research, then label=lesson) for anything already known
   relevant to its task.
 
 The worker inspects the repository itself rather than relying entirely on the
@@ -527,20 +498,24 @@ You are a WORKER in the orchestrator/worker protocol
 ~/dotfiles/ai/skills/orchestrator-worker/SKILL.md if not auto-loaded).
 
 Project: <absolute path>
-Plan: .ai/plans/<plan-slug>/
-Your task: <task ID from PLAN.md>
+Plan: Dibs issue #<plan issue id> (dibs MCP server, or the todo:agent:* CLI if MCP
+isn't reachable from this tool)
+Your task: Dibs issue #<task issue id>
 
 Before doing anything:
-1. Read PLAN.md, STATE.md, and QUESTIONS.md from this plan's folder.
-2. Check .ai/research/INDEX.md and .ai/lessons/INDEX.md for anything already known
+1. todo_show the plan issue and your own task issue.
+2. todo_list (label=research, then label=lesson) for anything already known
    relevant to this task.
-3. Confirm your assigned task and its acceptance criteria.
-4. Inspect the actual code/data yourself.
+3. todo_claim your task issue (capability token comes back once — hold onto it for
+   todo_heartbeat/todo_release/todo_complete).
+4. Confirm your assigned task and its acceptance criteria.
+5. Inspect the actual code/data yourself.
 
 Then implement the task and follow the Worker Completion Protocol, or the Worker
-Questions and Blockers protocol if you hit something you must not guess on. Include
-which agent/subagent type and model you ran as, and your cost per Cost Reporting, in
-your report.
+Questions and Blockers protocol if you hit something you must not guess on — and
+todo_report_bug anything that's actually broken in the Dibs tooling itself, as
+distinct from a plan question. Include which agent/subagent type and model you ran
+as, and your cost per Cost Reporting, in your report.
 ```
 
 ---
@@ -551,24 +526,26 @@ When a worker successfully completes a task:
 
 1. Verify the acceptance criteria are actually satisfied.
 2. Run appropriate tests/checks.
-3. Mark the task `done` in `PLAN.md`.
-4. Update `STATE.md` if relevant to the overall state (the orchestrator should
-   confirm/finalize this on review, not treat the worker's edit as final).
-5. Record meaningful results in `RESULT.md`.
-6. If the task produced a reusable investigative finding (code-specific or general),
-   write/update it in [Shared Research Cache](#shared-research-cache). If it
-   surfaced a durable non-code-specific gotcha, write/update it in
+3. `todo_complete` the task issue (optionally with a `summary` — posts as a result
+   comment and releases the claim in the same call).
+4. `todo_comment` the plan issue if relevant to the overall state (the orchestrator
+   should confirm/finalize this on review, not treat the worker's own comment as
+   final).
+5. If the task produced a reusable investigative finding (code-specific or general),
+   `todo_create`/`todo_revise` it in [Shared Research Cache](#shared-research-cache).
+   If it surfaced a durable non-code-specific gotcha, do the same in
    [Shared Lessons Store](#shared-lessons-store).
-7. Return a concise completion report covering: what changed, what was tested, any
+6. Return a concise completion report covering: what changed, what was tested, any
    assumptions made, any remaining concerns, and which agent/subagent type and model
    it actually ran as (confirms what was used, in case of a fallback from what the
    orchestrator requested).
-8. Report cost — see [Cost Reporting](#cost-reporting) for what's actually available
+7. Report cost — see [Cost Reporting](#cost-reporting) for what's actually available
    to report and how to report it honestly.
 
 This applies equally whether the step was done by a delegated worker or by the
-orchestrator working directly on a light plan — whoever did the step updates
-`PLAN.md`/`RESULT.md`/the shared stores, not just workers.
+orchestrator working directly on a light plan — whoever did the step closes/comments
+the task, updates the plan issue, and updates the shared knowledge records, not just
+workers.
 
 A worker's `OK` is not sufficient evidence the task is correct — the orchestrator
 independently reviews every result (see [Code Review](#code-review)).
@@ -605,12 +582,13 @@ pass as an exact figure:
 - **Cross-tool workers launched without a JSON/verbose mode have genuinely
   unrecoverable cost** — the orchestrator never sees their token usage, and their
   real cost (a separate provider's billing) isn't visible from here at all. State
-  this plainly in `RESULT.md` rather than omitting a cost line silently; a known gap
-  is more useful than a missing one.
+  this plainly in a `todo_comment` rather than omitting a cost line silently; a
+  known gap is more useful than a missing one.
 
-Record whatever was actually captured — exact or proxy — in `STATE.md` alongside the
-model/mechanism/justification already required there, so a long session accumulates a
-readable cost trail instead of requiring a transcript dig to reconstruct later.
+Record whatever was actually captured — exact or proxy — in a `todo_comment` on the
+plan issue alongside the model/mechanism/justification already required there, so a
+long session accumulates a readable cost trail instead of requiring a transcript dig
+to reconstruct later.
 
 ---
 
@@ -628,21 +606,28 @@ Workers must **not** guess when they encounter:
 
 Instead:
 
-1. Mark the current task `blocked` or `needs_review` in `PLAN.md`.
-2. Write the question to this plan's `QUESTIONS.md`: what was discovered, why the plan
-   can't safely continue, exactly what decision/information is needed, options if
-   useful, a recommendation if there is one.
+1. `todo_comment` the task issue with the question: what was discovered, why the
+   plan can't safely continue, exactly what decision/information is needed, options
+   if useful, a recommendation if there is one. Leave the task issue open (don't
+   `todo_complete` it) — an unclaimed or released task with an unanswered question
+   comment on it *is* the "blocked" state; there's no separate status field to set.
+2. `todo_release` the claim if one is held, so the task isn't left claimed while
+   waiting on a decision nobody's actively working toward.
 3. Leave the working tree in a coherent state.
 4. Stop and return control to the orchestrator.
 
+This is distinct from `todo_report_bug` — a question needs a **human/orchestrator
+decision** about the plan; `todo_report_bug` is for when the Dibs tooling itself is
+broken or confusing, independent of any plan decision.
+
 ## Blocker Resolution Loop
 
-1. The orchestrator reads the question, investigates if necessary, and makes the
-   decision.
-2. Records the answer in `QUESTIONS.md`.
-3. Updates `PLAN.md` if the plan changes, and `STATE.md`.
+1. The orchestrator reads the question (`todo_show` the task issue's comments),
+   investigates if necessary, and makes the decision.
+2. `todo_comment`s the answer onto the same task issue.
+3. `todo_revise`s the plan issue's body if the plan changes.
 4. Launches a worker again (fresh — it has no memory of the earlier attempt beyond
-   what's in the files), telling it to continue from the blocked task.
+   what's in Dibs), telling it to `todo_claim` and continue from the blocked task.
 
 Do not restart the whole project over one blocker. A task cycling through
 `worker -> blocked -> orchestrator decision -> worker -> done` is normal, not a
@@ -699,7 +684,7 @@ constraints) — not by default "to be safe," and not just because it's the mode
 already running. Whichever model gets picked, state *why* — "cheapest capable option
 available" is a real justification, but it has to have actually been checked against
 the alternatives, not assumed. Record the exact worker model, which tool it ran in,
-and that justification in `STATE.md`. Don't assume a model's cost or availability
+and that justification as a `todo_comment` on the plan issue. Don't assume a model's cost or availability
 from its name; verify with the tool's own model listing before launching
 (`opencode models`, `codex debug` / `-c model=...` docs, `agy models`, etc.).
 
@@ -753,9 +738,10 @@ can be identified and, by default, hidden:
 **Put this as the literal first line of every worker's prompt** (before the actual
 task text), regardless of tool:
 
-    [WORKER session=<plan-slug>/<task-id> parent=<parent-session-id>]
+    [WORKER session=<plan-issue-id>/<task-issue-id> parent=<parent-session-id>]
 
-- `<plan-slug>`/`<task-id>` — from [Project State](#project-state)/`PLAN.md`.
+- `<plan-issue-id>`/`<task-issue-id>` — the plan and task issue numbers in Dibs, per
+  [Project State](#project-state).
 - `<parent-session-id>` — the orchestrator's own session identity, if it's knowable.
   On this machine, an orchestrator running inside a claude-session-manager-spawned
   tmux pane already has this in its own environment as `$CSM_SESSION_NAME`
@@ -780,11 +766,17 @@ rather than assuming it works.
 
 A real orchestration run hit a genuine race: two `codex exec` workers were launched,
 the launching harness reported both complete, but both were still writing output
-minutes later — a concurrent write corrupted `PLAN.md`'s status section until the
-stray processes were killed and the files manually reconciled. Investigated in two
-passes: a live test of a single, properly-waited `codex exec` call (2026-08-30), then
-later a direct read of the actual incident transcript (2026-08-30), which found the
-exact cause.
+minutes later — a concurrent write corrupted `PLAN.md`'s status section (the plan was
+still file-based at the time) until the stray processes were killed and the files
+manually reconciled. Investigated in two passes: a live test of a single,
+properly-waited `codex exec` call (2026-08-30), then later a direct read of the
+actual incident transcript (2026-08-30), which found the exact cause. That specific
+corruption vector — two writers racing on the same shared file — is now structurally
+impossible: each task is its own Dibs issue, and `todo_claim`'s hardened,
+capability-token-bound claim already prevents two workers from touching the same
+task concurrently. The underlying lesson still applies fully, though: **a background
+launch reporting "done" is not the same as the worker actually being done**,
+regardless of what the worker is racing over.
 
 **Confirmed root cause**: the real launch used
 `nohup codex exec ... & ; echo "PID: $!"` — backgrounded with no `wait` and no poll.
@@ -824,18 +816,19 @@ for any cross-tool worker running in the background:
    which already defaults to sequential). codex specifically had a confirmed
    concurrent-write race, so treat sequential as firmer still for codex until it's
    been re-tested clean under real parallel load.
-2. **Require a completion sentinel, not just a process-exit signal**, whenever a
-   worker does run in the background. Have the worker's prompt end with an explicit
-   instruction to write a fixed final line to its own `RESULT.md` as its last action
-   (e.g. `WORKER_DONE <task-id>`). The orchestrator treats the worker as finished only
-   once that sentinel is actually present on disk — not merely because the launching
-   call returned or a background-task notification fired. This restates
-   [Worker Completion Protocol](#worker-completion-protocol)'s existing file-based
-   verification, called out explicitly here because this exact gap has already caused
-   real file corruption once.
-3. **Poll for the sentinel** (a short loop checking `RESULT.md` for the marker)
-   rather than relying on a single "done" event — see the Monitor tool's guidance on
-   polling loops if launching from Claude Code.
+2. **Require a real completion sentinel, not just a process-exit signal**, whenever a
+   worker does run in the background. `todo_complete` on the task issue *is* the
+   sentinel — it's a single durable, structured signal (the issue closes, the claim
+   releases) rather than an artificial marker string, and it's exactly the worker's
+   own last action per [Worker Completion Protocol](#worker-completion-protocol).
+   The orchestrator treats the worker as finished only once `todo_claim_status` (or
+   `todo_show`) actually confirms the task closed and the claim released — not
+   merely because the launching call returned or a background-task notification
+   fired. Called out explicitly here because this exact gap has already caused real
+   corruption once, under the old file-based sentinel.
+3. **Poll for the sentinel** (a short loop calling `todo_claim_status`/`todo_show` on
+   the task issue) rather than relying on a single "done" event — see the Monitor
+   tool's guidance on polling loops if launching from Claude Code.
 4. **If a stray process is still visible after the sentinel appears**, don't assume
    it's hung — disk writes can trail the sentinel by a few seconds. Recheck after a
    short pause before concluding it's actually stuck. Only kill a process that's
@@ -866,13 +859,25 @@ own orphaned children.
 
 ### In-Process vs Cross-Tool
 
-Communication is entirely file-based, so it doesn't matter to the protocol whether a
-worker runs in-process (the orchestrator's own `Agent`/subagent mechanism) or as a
-separate cross-tool subprocess (`opencode run`, `codex exec`, `agy -p`) — either way
-the worker reads `PLAN.md`/`STATE.md`/`QUESTIONS.md` from its plan's folder and
-reports back through the same files. The orchestrator never needs tool-specific
-handling once a worker is launched; it just watches for file updates and the return
-value like any other worker.
+Communication goes through Dibs (the `dibs` MCP server, or its `todo:agent:*` CLI
+fallback), so it doesn't matter to the protocol whether a worker runs in-process
+(the orchestrator's own `Agent`/subagent mechanism) or as a separate cross-tool
+subprocess (`opencode run`, `codex exec`, `agy -p`) — either way the worker reads
+its plan and task issues and reports back through the same claim/comment calls. The
+orchestrator never needs tool-specific handling once a worker is launched; it just
+watches for `todo_claim_status`/`todo_show` updates and the return value like any
+other worker.
+
+**One real prerequisite, unlike the old file-based version**: reaching Dibs at all
+requires either the `dibs` MCP server registered in that specific tool's own config
+(each tool has its own separate MCP registration — Claude Code's is user-scoped as
+of 2026-09-13; opencode/codex/agy each need their own, done the same way, before a
+worker in that tool can call `todo_*` tools directly), or falling back to the
+`todo:agent:*` CLI via `docker compose -f /home/andres/www/dibs/docker-compose.yml
+exec`, which works from any tool regardless of its own MCP support. Confirm which
+path a given worker actually has before assuming MCP tool calls will just work —
+include the CLI fallback form in its prompt either way, since a cross-tool worker
+may not have MCP registered even if the orchestrator does.
 
 **Prioritize the cheapest capable model for every worker, in-process or not** — don't
 default to in-process just because it's already open. The in-process/cross-tool
@@ -909,7 +914,8 @@ cross-tool worker's result exactly like an in-process one (see
 not a protocol failure — decide whether to re-delegate on the same tool or fall back
 to in-process, the same way any blocked/incorrect task gets re-run.
 
-Record which mechanism was actually used, alongside the model, in `STATE.md`.
+Record which mechanism was actually used, alongside the model, in a `todo_comment`
+on the plan issue.
 
 ### Worker Launch Reporting
 
@@ -935,20 +941,24 @@ asking.
 ### Parallel vs Sequential Workers
 
 Sequential is the default: one task's result often changes what the next task should
-be, and it keeps the plan's files a single source of truth with no concurrent
-writers.
+be, not because the old file-based version needed it to avoid concurrent writers —
+Dibs's per-issue claims already make that concern structurally moot (see
+[Task Claims](#task-claims)).
 
 Launch workers in parallel only when:
 
-- the tasks are genuinely independent — no shared files, no dependency listed in
-  `PLAN.md`;
+- the tasks are genuinely independent — no shared project files, no dependency
+  listed in the plan issue's body;
 - each worker has a distinct, bounded slice of work with no overlapping writes;
 - the orchestrator will review each result independently before marking it done.
 
-When running parallel workers, give each a distinct task ID and instruct it to touch
-only files within its own task's scope. Only the orchestrator writes `STATE.md`;
-parallel workers append to `QUESTIONS.md`/`RESULT.md` and update only their own task's
-status line in `PLAN.md`, to avoid clobbering each other's writes.
+When running parallel workers, give each its own distinct task issue and instruct it
+to touch only files within its own task's scope, and to `todo_claim` only that task.
+Each worker's claim, heartbeat, and comments are already scoped to its own task
+issue — there's no shared status file for parallel workers to clobber the way
+`PLAN.md`/`STATE.md` required careful "only touch your own line" discipline before.
+Only the orchestrator revises the plan issue's body; workers each comment on their
+own task issue.
 
 ---
 
@@ -964,22 +974,22 @@ differently organized:
   changed, not `cat` of the full file.
 - **Prefer targeted search over full reads.** `grep`/glob for a symbol or pattern
   before reading a whole file just to check whether something exists in it.
-- **Run checks with quiet/concise output**, and keep only pass/fail + errors in plan
-  files — never paste raw verbose CI-style output (full test-runner logs, progress
-  bars, full lint dumps) into `PLAN.md`/`STATE.md`/`RESULT.md`. If a tool has a
+- **Run checks with quiet/concise output**, and keep only pass/fail + errors in
+  `todo_comment` checkpoints — never paste raw verbose CI-style output (full
+  test-runner logs, progress bars, full lint dumps) into one. If a tool has a
   terser mode (compact test output, a trimmed static-analysis formatter), use it;
-  either way, summarize before writing to a plan file.
+  either way, summarize before posting a checkpoint.
 - **Batch independent steps.** Tool calls whose inputs don't depend on each other's
   output belong in the same turn, not sequential round trips — this applies inside
   plan work exactly as it does everywhere else.
 - **`/clear` (or a fresh session) between unrelated phases is safe and encouraged**
-  once the current phase's state is actually persisted to the plan folder — that's
-  the entire point of resuming cold from files. Don't carry a large, no-longer-needed
+  once the current phase's state is actually persisted to Dibs — that's the entire
+  point of resuming cold from there. Don't carry a large, no-longer-needed
   exploration context into an unrelated next phase just because the session happens
   to still be open.
 - **Push deterministic checks to scripts/tools that return pass/fail + errors**, not
-  narrated tool output — a lint/type-check/test run belongs in `RESULT.md` as "passed"
-  or "3 failures: <what>", not as a transcript of the run.
+  narrated tool output — a lint/type-check/test run belongs in a `todo_comment` as
+  "passed" or "3 failures: <what>", not as a transcript of the run.
 
 ---
 
@@ -998,7 +1008,8 @@ The orchestrator independently reviews every worker result for: correctness,
 requirements compliance, security, privacy, error handling, edge cases,
 maintainability, performance, portability, test coverage, and accidental unrelated
 changes — pay particular attention to assumptions about external data. If the
-implementation is incorrect: document the issue, create/update a task in `PLAN.md`,
+implementation is incorrect: document the issue as a `todo_comment` on the task
+issue (or `todo_create` a new task under the plan if it's genuinely separate work),
 launch the worker again with that context. Don't just say "fix it" without defining
 what's wrong.
 
@@ -1036,9 +1047,10 @@ A plan is complete only when:
 5. No known critical blockers remain.
 6. The working tree contains only intentional changes.
 7. Important limitations are documented.
-8. This plan's line in `.ai/plans/INDEX.md` is marked `done`, and — once the user
-   confirms it's genuinely finished — the folder is moved per
-   [Archiving](#archiving).
+8. The plan issue itself is closed (`todo_complete`/`todo_revise` to final state)
+   once the user confirms it's genuinely finished — not just paused. No separate
+   archiving step: a closed issue already reads as done, per
+   [Completion](#completion).
 
 The final report summarizes what was built, important architectural decisions, how
 it was verified, known limitations, and relevant future improvements. Don't claim

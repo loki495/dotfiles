@@ -138,6 +138,6 @@ Only runs if the user confirmed at the step 11 checkpoint, or `audit` was passed
   "this changed since last run" / "previously X, now Y" narrative into them (the mapper's own report
   to you is the one place commit-range/staleness facts belong, and even that's just to decide what
   to rescan). If a refresh surfaces something durable and worth remembering beyond current state — a
-  real gotcha, a reason behind a non-obvious design choice — route it to `.ai/lessons/` or
-  `.ai/research/` per the orchestrator-worker skill; if it's not worth that, drop it rather than
+  real gotcha, a reason behind a non-obvious design choice — route it to a `lesson`- or
+  `research`-labeled Dibs issue per the orchestrator-worker skill; if it's not worth that, drop it rather than
   leaving it as commentary in the atlas.

@@ -203,48 +203,84 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
   of finished work.
 - When a message is phrased as "Todo: ...", "next: ...", or "after [current thing],
   do ...", treat it as a backlog note, not a request to context-switch immediately —
-  add it to the project's `todo` file and keep working the current item(s). Only
-  implement it right away if explicitly told to do so now ("do this now", "right
-  now", "go ahead and do it", etc.). Plain direct statements without that deferral
-  framing ("X should show Y", "the page doesn't have Z") are normal requests, not
-  backlog notes — implement those as usual.
+  keep working the current item(s), and file the mentioned item as a task in Dibs
+  (the `dibs` MCP server, or the `todo:agent:*` CLI/direct Action call if MCP isn't
+  reachable from this session — see the `orchestrator-worker` skill's Project State
+  section) rather than a local `todo` file. Figure out the best-fitting Project area
+  (Work for the current job, Personal Projects for personal sites/software/homelab,
+  Learning & Self-Improvement, or Random Tasks), Group (website/topic — check
+  `todo_context`; create one by name if none matches), and parent issue if one
+  obviously fits, the same judgment a human would apply, not a default/catch-all
+  bucket. **Ask if genuinely unsure about any of these** — area, Group, or parent —
+  rather than guessing. Only implement it right away if explicitly told to do so now
+  ("do this now", "right now", "go ahead and do it", etc.). Plain direct statements
+  without that deferral framing ("X should show Y", "the page doesn't have Z") are
+  normal requests, not backlog notes — implement those as usual.
 
 ## Multi-step work: plans, research, lessons (default workflow)
 
 For any multi-step coding work — refactors, audits, multi-file features, anything
-likely to span more than one sitting — the `orchestrator-worker` skill's file-based
-protocol is the **default**, not something to invoke on request. Read that skill for
-full mechanics; summary of what it means day to day:
+likely to span more than one sitting — the `orchestrator-worker` skill's protocol is
+the **default**, not something to invoke on request. It's Dibs-backed as of
+2026-09-13 (no more local plan files — see the skill's Project State section for
+full mechanics); summary of what it means day to day:
 
-- **When a plan folder gets created:** automatically, without being asked, once a
+- **When a plan gets created:** automatically, without being asked, once a
   task is explicitly multi-phase/an audit, expected to span sessions, or is
   `TodoWrite`-worthy work that needs to survive a session boundary. Small
   single-turn/single-file work stays inline or as a plain `TodoWrite` list — no
-  folder needed, and creating one for a three-line fix is overhead, not diligence.
-- **Where it lives:** `.ai/plans/<plan-slug>/` at the project root — one folder per
-  initiative, agent-agnostic (readable/writable by Claude Code, opencode, Codex, or
-  agy, not Claude-specific), with `.ai/plans/INDEX.md` as the registry of
-  active/paused/done work.
-- **Resuming cold:** at the start of work in a project that has `.ai/plans/`, check
-  `INDEX.md` for in-progress plans before starting new multi-step work, and ask which
-  to resume (or confirm starting fresh) rather than assuming.
+  plan needed, and scaffolding one for a three-line fix is overhead, not diligence.
+- **Where it lives:** a `plan`-labeled issue in Dibs (the personal MCP-backed task
+  tracker), reached via the `dibs` MCP server where registered, or the
+  `todo:agent:*` CLI/direct Action calls otherwise — filed under the Project area
+  and Group matching the current work, asking if it's unclear which area. Agnostic
+  across tools the same way the old files were: Claude Code, opencode, Codex, and
+  agy can each reach Dibs, via MCP where registered or the CLI fallback otherwise.
+- **Resuming cold:** at the start of multi-step work, `todo_list`/`todo_context`
+  (filter `label=plan`) for an in-progress plan on this objective before starting
+  new work, and ask which to resume (or confirm starting fresh) rather than
+  assuming.
 - **Escalating to full delegation** (spawning workers, model tiering, parallel
   execution): automatic once it's clearly warranted, or a quick check-in when it's
   ambiguous — never silently. This satisfies the "work one item at a time, get a
   decision before the next" rule in "Working style" above for the *delegation*
   decision specifically; it doesn't replace that rule for the substance of the work.
-- **Shared, cross-plan knowledge:** `.ai/research/` (checksum-versioned investigative
-  findings, code-specific or general — reused until the files they're based on
-  change) and `.ai/lessons/` (durable non-code-specific gotchas — platform quirks,
-  library fine print, logic traps) live outside any single plan folder. Check both
-  before researching anything; update both after finding something durable, by
-  whoever did the step, not just delegated workers.
+- **Default to a cheap fresh worker over forking for bounded, self-contained
+  mechanical work** (e.g. drafting/editing content across many files or issues,
+  running a fixed checklist) once the delegation prompt can fully specify the task
+  without relying on inherited conversation context. A fork always runs on the
+  orchestrator's own model — it only pays off when avoiding context re-derivation
+  matters more than per-token price. See the `orchestrator-worker` skill's Model
+  Tiering section before defaulting to a fork out of habit.
+- **Shared, cross-plan knowledge:** `research`-labeled Dibs issues (checksum-versioned
+  investigative findings, code-specific or general — reused until the files they're
+  based on change) and `lesson`-labeled ones (durable non-code-specific gotchas —
+  platform quirks, library fine print, logic traps), filed under Personal Projects →
+  AI workflows unless project-specific. Check both before researching anything;
+  update both after finding something durable, by whoever did the step, not just
+  delegated workers. Being centrally in Dibs, these are already cross-project — no
+  separate "is this general enough" judgment call needed the way project-scoped
+  files required.
+- **Reporting a tooling problem, not a plan question:** if the Dibs MCP/CLI tooling
+  itself misbehaves mid-plan — not a decision needing a human call — self-report it
+  via `todo_report_bug` rather than working around it silently.
+- **Noting a follow-up you noticed yourself, decided 2026-09-13:** when you (not
+  Andres) spot something worth checking or doing later while heads-down on
+  something else — an unconfirmed edge case, a gap you're consciously deferring, a
+  "this should really also..." — file it as a Dibs task right then via `todo_create`
+  (same area/Group/parent judgment as the `Todo:` convention, asking if genuinely
+  unsure), rather than only mentioning it in your response text. A note that lives
+  only in chat is invisible to the next session and to other agents; one in Dibs is
+  resumable and claimable like any other task. Only surface it to Andres as a
+  decision if it's actually one (see "Working style" above) — otherwise just file it
+  and keep going.
 - **Token efficiency is part of the default, not an afterthought:** verify via
   diffs/status instead of re-reading full files, prefer targeted grep/glob over full
   reads, run lint/test/static-analysis tools with quiet flags and keep only
-  pass/fail + errors in plan files (never raw verbose output), batch independent
-  steps, and treat `/clear` between unrelated phases as safe and encouraged once a
-  phase's state is persisted to the plan folder.
+  pass/fail + errors in checkpoint comments (never raw verbose output), batch
+  independent steps, and treat `/clear` between unrelated phases as safe and
+  encouraged once a
+  phase's state is persisted to Dibs.
 
 ## Memory scope discipline
 
@@ -320,27 +356,53 @@ When context is getting close to full, warn Andres proactively rather than letti
 it auto-compress silently. Offer to write a hand-off prompt file capturing the
 info/decisions agreed on so far in the session, ready to paste into a fresh session.
 
-## Backlog files (todo / bugs.md)
+## Project backlog and bugs (Dibs, not local files) (updated 2026-09-13)
 
-- Most projects should keep an up-to-date `todo` file (and optionally a `bugs.md`) at
-  the repo root for open and in-progress work. This is a different tool from
-  `.ai/plans/` (see "Multi-step work" above): `todo`/`bugs.md` is a flat, repo-wide
-  backlog of what's not started yet; `.ai/plans/<slug>/` is per-initiative, in-flight
-  session state for something already underway. An item graduates from `todo` to its
-  own plan folder once work actually begins on it, not before.
-- These files track what's **left to do**, not a history log. When an item is
-  completed, remove it rather than marking it done/fixed in place — don't leave a
-  growing record of finished work in these files.
+- Local `todo`/`bugs.md` files are **retired** — don't create or maintain them in
+  any project, including new ones `/project-bootstrap` scaffolds. Project
+  implementation backlog and bug reports live in Dibs instead, the same tracker
+  personal tasks and multi-step plans already use, via the `dibs` MCP server or
+  `todo:agent:*`/a direct Action call when MCP isn't reachable from this session
+  (see the `orchestrator-worker` skill's Project State section). An existing
+  project's current `todo`/`bugs.md` doesn't need an urgent mass-migration — read
+  and respect it until its items are naturally worked through or moved, but don't
+  add new items to it.
+- **Every project gets its own Dibs Group** — under whichever Project area fits
+  (Work for the current job, Personal Projects for personal sites/software/homelab,
+  Learning & Self-Improvement, or Random Tasks). Check `todo_context`/`todo_list`
+  for an existing Group matching the project first; create one by name if none
+  exists yet. **Ask if genuinely unsure which area a new project's Group belongs
+  under.**
+- **Give a project a parent/context issue if it doesn't have one yet** once you're
+  about to file its first task or backlog item in Dibs — a lightweight issue (repo
+  path, stack, purpose) that backlog items and bugs can nest under, the same anchor
+  role `#36` (`Todo application`) plays for Dibs's own project. Don't invent one
+  speculatively for a project nothing has been filed for yet.
+- A **backlog item or bug** is an ordinary Dibs task (`todo_create`) under that
+  project's Group/parent — no `plan` label needed unless it's genuinely multi-step
+  work per [Multi-step work](#multi-step-work-plans-research-lessons-default-workflow).
+  Figure out the best-fitting Group and parent the same judgment a human would
+  apply; ask if genuinely unsure.
+- **This is what makes cross-agent coordination on ordinary backlog work possible**,
+  not just formal plans: two agents (or two sessions) touching the same project can
+  `todo_claim` a backlog task before working it, exactly as they would a plan's
+  task, instead of silently duplicating effort the way two agents editing the same
+  flat file could.
+- These items track what's **left to do**, not a history log. When one is
+  completed, close it (`todo_complete`) rather than leaving it open with a note —
+  don't leave a growing pile of done-but-open issues.
 - If a completed item taught a real lesson (a gotcha, a wrong assumption worth
-  remembering), capture that in the relevant place instead — a concise code comment
-  only if the WHY is non-obvious, project docs, or CLAUDE.md/project.md — not as a
-  "done" note left behind in the todo/bugs file.
-- **Global `Todo:` handling (Andres 2026-08-25):** when Andres says `Todo:` or
-  `add to Todo:` (or similar), read the local `todo` file first to see its
-  format, append the mentioned item wherever is most appropriate in that file's
-  existing structure, then continue with whatever was being done — don't treat
-  it as a context-switch request. Plain direct statements without `Todo:` deferral
-  framing remain normal requests to implement immediately.
+  remembering), capture that as a `lesson`- or `research`-labeled Dibs issue instead
+  (see [Multi-step work](#multi-step-work-plans-research-lessons-default-workflow)),
+  or a concise code comment only if the WHY is non-obvious to a future reader —
+  not as a "done" note left on the closed task.
+- **Global `Todo:` handling (Andres 2026-08-25; updated 2026-09-13 to use Dibs):**
+  when Andres says `Todo:` or `add to Todo:` (or similar), file it as a task in
+  Dibs the same way — figuring out the best-fitting Project area, Group, and parent
+  issue if one obviously fits, asking if genuinely unsure about any of them — then
+  continue with whatever was being done, don't treat it as a context-switch
+  request. Plain direct statements without `Todo:` deferral framing remain normal
+  requests to implement immediately.
 
 ## Hooks summary (see hooks config for full detail)
 
