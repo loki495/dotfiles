@@ -51,9 +51,16 @@ if docker exec "$CONTAINER" test -f ./vendor/bin/pint 2>/dev/null; then
 fi
 
 # --- 2. PHPStan (blocks commit on failure) ---
+# Runs the project's full configured scan (phpstan.neon's own `paths:`), not the staged
+# file list as explicit CLI arguments. Passing an isolated file list bypasses that config
+# and loses project-wide stub/reflection context -- confirmed to produce false positives
+# for dynamically-mixed-in test helpers (e.g. Pest's `$this->artisan()`, from Laravel's
+# TestCase), which only resolve when analysed as part of the whole project. Same reasoning
+# as excluding Blade files above: isolated analysis outside full project context is
+# unreliable, not just for Blade-embedded PHP but for framework-magic test helpers too.
 if [[ ${#STAGED_PURE_PHP_FILES[@]} -gt 0 ]] && docker exec "$CONTAINER" test -f ./vendor/bin/phpstan 2>/dev/null; then
-    echo "--- PHPStan ---"
-    if ! printf '%s\0' "${STAGED_PURE_PHP_FILES[@]}" | xargs -0 docker exec "$CONTAINER" ./vendor/bin/phpstan analyse --no-progress; then
+    echo "--- PHPStan (full project scan) ---"
+    if ! docker exec "$CONTAINER" ./vendor/bin/phpstan analyse --no-progress; then
         echo ""
         echo "PHPStan errors found. Fix them before committing."
         exit 1
