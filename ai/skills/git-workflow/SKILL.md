@@ -66,6 +66,41 @@ anything else.
   work (debug code, personal config, experiments)? If yes to `master`/`main`/`stable`,
   call it out and stop.
 
+## Required status check blocks a direct push (GH006)
+
+Several ac495 repos (homie, insights, dibs) use a lightweight branch-protection
+pattern on `main`: a required status check (their CI's quality job) plus
+`enforce_admins`, but no required PR review — direct pushes to `main` are meant
+to stay allowed. GitHub still enforces the status check even for a direct push,
+though: it checks whether that exact commit SHA *already* has a successful
+check run recorded against it, which a brand-new local commit never does yet.
+The push is rejected with:
+
+```
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: - Required status check "..." is expected.
+```
+
+This is not the same as the ordinary non-fast-forward rejection above — don't
+investigate it as a diverged-history problem, and don't reach for `--force` or
+`enforce_admins`-disabling. Fix: get that same commit SHA a green check, then
+land it unchanged.
+
+1. Push the commit to a throwaway branch: `git push origin HEAD:refs/heads/<name>`
+   (CI on these repos triggers on `pull_request`, not arbitrary branch pushes,
+   so a bare branch push alone won't run it).
+2. Open a PR against `main` from that branch (`gh pr create --head <name> --base
+   main ...`) — this triggers the check.
+3. Poll `gh pr checks <number>` until it passes.
+4. Merge via `gh pr merge <number> --rebase --delete-branch` — this is the
+   sanctioned path. Do **not** try to land it with a raw
+   `git push origin <name>:main`: that skips GitHub's merge API entirely and
+   reads as a CI-bypass attempt (Claude Code's own auto-mode classifier will
+   refuse it for exactly this reason).
+5. `--rebase` may give the merged commit a new SHA even with no content change
+   (committer date shifts). Sync local `main`: `git fetch origin main`, confirm
+   `git diff <old-sha> origin/main` is empty, then `git reset --hard origin/main`.
+
 ## Verifying commit surgery (splits, amends, reorders)
 
 Whenever reshaping history — splitting a commit, amending one, pulling stray files
