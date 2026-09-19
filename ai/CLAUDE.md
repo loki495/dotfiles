@@ -315,6 +315,15 @@ constraint, a workaround for a specific bug), keep it concise and only about why
 code is the way it is — never a changelog of what was tried before, why it's no
 longer relevant, who wrote it, or a reference to the task/fix that produced it.
 
+## Label and tag names
+
+Name labels, tags, categories and similar free-text identifiers with spaces, not hyphens
+(`needs research`, not `needs-research`). GitHub labels, Dibs and most trackers accept spaces
+fine, and a hyphen-versus-space mismatch makes exact-name filters silently return nothing.
+Keep a hyphen only in a word that is genuinely hyphenated. Applies to any new label, including
+ones code or docs create or refer to. Decided 2026-09-19 in the Dibs repo: the docs told agents
+to filter by `agent-task` while the real label was `agent task`, so the filter matched nothing.
+
 ## Avoid hardcoding
 
 Prefer settings/config, environment variables, or language/translation files over
