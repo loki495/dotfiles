@@ -244,7 +244,7 @@ behavior, or unexpected error *in the Dibs MCP/CLI tooling itself* — not a pla
 decision needing a human call — self-report it via `todo_report_bug` (`summary`,
 `details`, optionally `toolOrCommand`/`arguments`) rather than working around it
 silently or leaving it as an offhand comment. This lands in Dibs's own backlog
-(labeled `agent-report`) for later fixing, without blocking the plan on it unless it
+(labeled `agent report`) for later fixing, without blocking the plan on it unless it
 actually does.
 
 ### Task claims
