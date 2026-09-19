@@ -28,3 +28,11 @@ backup-tools/backup-tools.conf
 /bin/phpbrew
 /bin/phpcs
 /bin/phpcbf
+
+# Compiled binaries (should be built/downloaded, not versioned)
+bin/todo-tray
+bin/*.o
+bin/*.so
+
+# Auto-generated completions (regenerate with make/build)
+git/.git-completion.bash
