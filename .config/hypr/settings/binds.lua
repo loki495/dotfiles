@@ -153,4 +153,24 @@ hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.group.move_window({ forward =
 hl.bind(mainMod .. " + SHIFT + z",         hl.dsp.group.move_window({ forward = false }))
 hl.bind(mainMod .. " + SHIFT + semicolon", hl.dsp.group.move_window({ forward = false }))
 
+-- Merge the focused window into the group in a direction (creates a group with
+-- the neighbour if there isn't one), eject it back out into its own split, or
+-- create/dissolve a group on the focused window.
+local dirs = {
+    { "left", "H", "l" },
+    { "right", "L", "r" },
+    { "up", "K", "u" },
+    { "down", "J", "d" },
+}
+for _, d in ipairs(dirs) do
+    hl.bind(mainMod .. " + CTRL + " .. d[1], hl.dsp.window.move({ into_or_create_group = d[3] }))
+    hl.bind(mainMod .. " + CTRL + " .. d[2], hl.dsp.window.move({ into_or_create_group = d[3] }))
+end
+hl.bind(mainMod .. " + CTRL + E", hl.dsp.window.move({ out_of_group = true }))
+hl.bind(mainMod .. " + T", hl.dsp.group.toggle())
+
+-- Dwindle split orientation
+hl.bind(mainMod .. " + B", hl.dsp.layout("togglesplit"))
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.layout("swapsplit"))
+
 hl.bind(mainMod .. " + n", hl.dsp.workspace.toggle_special("scratchpad"))
