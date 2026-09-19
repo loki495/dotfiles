@@ -15,16 +15,16 @@ fi
 
 if [ "$nvim_choice" == "1" ]; then
     echo_info "Proceeding with user-local Neovim application installation."
-    "$SCRIPTPATH/install_neovim.sh" --user
+    "$SCRIPTPATH/scripts/install/install_neovim.sh" --user
 elif [ "$nvim_choice" == "2" ]; then
     echo_info "Proceeding with global Neovim application installation (will prompt for sudo password)."
-    sudo "$SCRIPTPATH/install_neovim.sh" --global
+    sudo "$SCRIPTPATH/scripts/install/install_neovim.sh" --global
 else
     echo_info "Invalid choice or no choice made. Skipping Neovim application installation."
-    echo_info "You can run '$SCRIPTPATH/install_neovim.sh --user' or 'sudo $SCRIPTPATH/install_neovim.sh --global' manually later."
+    echo_info "You can run '$SCRIPTPATH/scripts/install/install_neovim.sh --user' or 'sudo $SCRIPTPATH/scripts/install/install_neovim.sh --global' manually later."
 fi
 
 section_header "Neovim Configuration Link"
-rm -rf ~/.config/nvim || true
-ln -s "$SCRIPTPATH/nvim" ~/.config/nvim
-echo_success "Neovim configuration linked to ~/.config/nvim."
+# Use backup_and_link instead of destructive rm -rf
+backup_and_link ~/.config/nvim "$SCRIPTPATH/.config/nvim"
+echo_success "Neovim configuration linked to ~/.config/nvim (any existing config backed up to ~/.config/nvim.old)."
