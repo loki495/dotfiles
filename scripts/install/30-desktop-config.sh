@@ -2,6 +2,9 @@
 set -e
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
+section_header "Ensuring ~/bin exists (on PATH via bashrc/fish)..."
+mkdir -p ~/bin
+
 section_header "Desktop Environment Configuration Link"
 # Ensure .config directory exists before creating symlinks
 mkdir -p ~/.config

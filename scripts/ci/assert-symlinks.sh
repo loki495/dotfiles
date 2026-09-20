@@ -122,7 +122,16 @@ echo "=== 60-neovim.sh ==="
 check_symlink ~/.config/nvim "$SCRIPTPATH/nvim" "~/.config/nvim -> nvim"
 
 echo "=== 70-traefik.sh ==="
-check_symlink ~/www/traefik "$SCRIPTPATH/traefik" "~/www/traefik -> traefik"
+# dotfiles/traefik is itself a symlink into the private dotfiles-private repo (see
+# INFRASTRUCTURE_SETUP.md) - a fresh clone/CI environment legitimately doesn't have
+# that private repo, so dotfiles/traefik dangles and ~/www/traefik (which points at
+# it) necessarily dangles too. That's expected, not a bug - same "not installed in
+# this environment" shape as the opencode/codex/agy skips above.
+if [ -e "$SCRIPTPATH/traefik" ]; then
+  check_symlink ~/www/traefik "$SCRIPTPATH/traefik" "~/www/traefik -> traefik"
+else
+  echo "SKIP: ~/www/traefik symlink - dotfiles-private repo not present in this environment"
+fi
 
 echo "=== ~/.bashrc sourcing ==="
 if bash -c "source ~/.bashrc" >/dev/null 2>&1; then
