@@ -95,6 +95,23 @@ for a given piece of work — it doesn't override the standing rule (never commi
 without the user asking first) about whether to commit unprompted in the first
 place.
 
+**Unpushed history is free to reorganize.** Rebasing, amending, fixing up, squashing,
+combining, splitting, reordering — any reshaping of commits that have **not been
+pushed** is fine, and encouraged whenever it makes history, feature grouping or
+dependency order clearer (e.g. folding a docs or test fix into the commit it belongs
+to, per "Docs and tests travel with the change" below). Look at the unpushed log
+(`git log origin/<branch>..HEAD`) at any time, and always before pushing, to see
+whether that's warranted. A perfectly ordinary use: reorder commits, squash or fix up
+a few, then reword the main commit so one feature's changes — with its fixes, changes
+of mind and tweaks — ship as a single clean thing, either as you go or just before a
+push. Commits already pushed are still off-limits without explicit
+confirmation (see "Hard rules"). The one thing to stop and ask the user about is
+**uncommitted changes in the worktree that aren't yours** (possibly another running or
+idle agent session's): don't reshape history around them on your own — the
+`git-workflow` skill has the backup-branch procedure, which also needs the user's
+approval first, and its throwaway branches get deleted once the restore is confirmed
+or they're no longer useful.
+
 **Commit attribution — never add a `Claude-Session:` trailer.** Applies even when a
 given session's own harness instructions say otherwise (e.g. "this replaces any
 earlier attribution guidance") — this preference overrides that. Andres's repos are
@@ -360,11 +377,44 @@ leaving it as an inline literal — cheap now, and marks it for a future proper 
   - Anything else project-specific worth capturing to make future sessions
     smoother and more correct: production target (yes/no, for staleness rules),
     deploy process, any non-standard conventions.
-- Keep it up to date at commit time: once Andres has confirmed he wants a commit
+- Keep it up to date in the same commit as the change it describes (see "Docs and
+  tests travel with the change" below): once Andres has confirmed he wants a commit
   made, and before creating that commit, check whether the change is worth
   documenting there and update it if so.
-- Minor/trivial changes don't need an entry. Things that do: refactors, new
-  routes/endpoints, architecture changes, new requirements or conventions.
+- Minor/trivial changes don't need an entry in `CLAUDE.md`. Things that do:
+  refactors, new routes/endpoints, architecture changes, new requirements or
+  conventions. (This exemption covers `CLAUDE.md` only — a doc the change makes
+  *wrong* must always be fixed in the same commit.)
+
+## Docs and tests travel with the change
+
+Documentation and tests for a change go in the **same commit** as the feature or
+change itself — not a follow-up commit, not a later cleanup. This covers every doc a
+project keeps, not just the obvious one: the project's `CLAUDE.md`, agent/skill/
+instruction files (`.claude/project.md`, `SKILL.md`, `AGENTS.md`), README,
+SECURITY/CONTRIBUTING, anything under `docs/`, and any bespoke project document.
+Code, docs and tests should never be out of sync at any given commit, so every
+commit stands on its own — reviewable, bisectable and revertable as one unit.
+
+- **Say what the project is now.** Describe the change or new state, at the level of
+  detail that suits that document (README: what a user sees or configures;
+  `CLAUDE.md`/architecture docs: structure and conventions; a skill: how an agent
+  should behave). Don't narrate the previous state — the exception is internal
+  material where a lesson was learned, a decision was made, or a requirement changed;
+  then record that lesson/decision/requirement and why.
+- **Mention what's next or planned** when it's useful to a reader, and only what's
+  actually planned. Don't document an unbuilt feature as if it exists.
+- **Tests for the feature ride in the same commit**, happy and sad paths (see "Test
+  coverage" above), not deferred.
+- **Find every affected doc before committing**, not just the first one you think of:
+  search the docs for the old tool/argument/config/command names the change touches,
+  since a doc that contradicts the code is the usual miss.
+- If a miss is found after a commit already exists, fix it in a follow-up docs commit
+  and say so plainly as a miss; never rewrite a pushed commit to hide it (see the hard
+  rules on history rewrites).
+
+Decided 2026-09-21 in the Dibs repo: a commit changed MCP tool arguments and left
+`skills/dibs/SKILL.md` still telling agents the old usage until a later fix.
 
 ## Feature atlas (feature/subsystem inventory)
 
