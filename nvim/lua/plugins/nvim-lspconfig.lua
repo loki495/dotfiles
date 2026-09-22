@@ -30,6 +30,7 @@ return {
 
         -- Configure phpactor specifically for auto-imports
         require('lspconfig').phpactor.setup({
+            cmd = { require('andres.phpactor').bin(), 'language-server' },
             capabilities = capabilities,
             init_options = {
                 ["language_server_phpstan.enabled"] = false,
