@@ -116,6 +116,8 @@ timeout 180 nvim --headless "+Lazy! sync" +qa || fail "Lazy! sync (plugin bootst
 
 DOTFILES_ROOT="$REPO_ROOT" nvim --headless -u NONE -l "$REPO_ROOT/scripts/ci/test-native-highlighting.lua" || fail "native highlighting captures"
 
+DOTFILES_ROOT="$REPO_ROOT" nvim --headless -u NONE -l "$REPO_ROOT/scripts/ci/test-phpactor.lua" || fail "PHPActor installation detection"
+
 echo "=== [7/7] nvim highlighting check (tmux-based, all languages) ==="
 "$REPO_ROOT/scripts/ci/test-nvim-highlighting.sh" || fail "test-nvim-highlighting.sh"
 

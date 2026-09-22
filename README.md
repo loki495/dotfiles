@@ -236,6 +236,10 @@ setup has been removed (see "Removed" below).
 - `alacritty/` — terminal emulator config.
 - `wireplumber/` — PipeWire/WirePlumber audio routing rules.
 - `phpactor/` — PHP language server config (used by both editor configs below).
+  Neovim shares one executable selection for PHPActor commands and its LSP:
+  `~/.local/bin/phpactor`, Mason, PATH, then phpactor.nvim's own install under
+  Neovim's data directory. If none exists, the plugin offers to install into its
+  own directory. Update externally installed copies through their original installer.
 - `systemd/user/` — user units: clipboard sync, a Unison dev-sync job, the Claude
   Session Manager host agent (socket-activated) + its push-check timer, and a
   `cloudcli` (Claude Code UI) unit.
