@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-set -e
-# Thin entrypoint for the dotfiles install. Runs every section in
+set -eo pipefail
+# Thin entrypoint for the dotfiles install. Runs default sections in
 # scripts/install/ in order, or just the sections named on the command line.
 #
 # Usage:
-#   ./install.sh                       # run everything
+#   ./install.sh                       # default sections (no systemd)
 #   ./install.sh bash git              # run only these sections
 #   ./install.sh --list                # list available sections
 #
@@ -32,18 +32,18 @@ usage () {
   list_sections | sed 's/^/  /'
 }
 
-if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+if [ "${1:-}" == "-h" ] || [ "${1:-}" == "--help" ]; then
   usage
   exit 0
 fi
 
-if [ "$1" == "--list" ]; then
+if [ "${1:-}" == "--list" ]; then
   list_sections
   exit 0
 fi
 
 echo_info "Checking for required commands..."
-REQUIRED_COMMANDS=("readlink" "dirname" "mv" "ln" "curl" "wget" "tar" "mkdir" "rm")
+REQUIRED_COMMANDS=("readlink" "dirname" "mv" "ln" "mkdir")
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
   if ! command_exists "$cmd"; then
     echo_error "Error: Required command '$cmd' is not installed. Please install it and try again."
@@ -57,7 +57,7 @@ REQUESTED=("$@")
 if [ ${#REQUESTED[@]} -gt 0 ]; then
   AVAILABLE=$(list_sections)
   for want in "${REQUESTED[@]}"; do
-    if ! grep -qx "$want" <<< "$AVAILABLE"; then
+    if ! grep -Fxq -- "$want" <<< "$AVAILABLE"; then
       echo_error "Unknown section: $want"
       usage
       exit 1
@@ -78,7 +78,11 @@ for script in "$INSTALL_DIR"/[0-9][0-9]-*.sh; do
     [ "$skip" -eq 1 ] && continue
   fi
 
-  source "$script"
+  if [ "$name" = systemd ] && [ ${#REQUESTED[@]} -eq 0 ]; then
+    echo_info "Skipping systemd (opt in with ./install.sh systemd)."
+    continue
+  fi
+  bash "$script"
 done
 
 echo

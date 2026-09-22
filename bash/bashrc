@@ -253,3 +253,8 @@ syncclone() {
 
 # opencode
 export PATH=$HOME/.opencode/bin:$PATH
+
+# Load the selected editor after older aliases in local customizations.
+if [ -f "$HOME/.local/share/dotfiles/neovim.bash" ]; then
+    source "$HOME/.local/share/dotfiles/neovim.bash"
+fi

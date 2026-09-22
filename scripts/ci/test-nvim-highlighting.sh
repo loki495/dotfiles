@@ -47,6 +47,8 @@ declare -A FT_LANG=(
     [vue]=vue
     [json]=json
     [php]=php
+    [blade]=blade
+    [markdown]=markdown
     [rust]=rust
     [toml]=toml
 )
@@ -61,6 +63,8 @@ declare -A FT_FIXTURE=(
     [vue]=test.vue
     [json]=test.json
     [php]=test.php
+    [blade]=test.blade.php
+    [markdown]=test.md
     [rust]=test.rs
     [toml]=test.toml
 )

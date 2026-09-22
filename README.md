@@ -10,7 +10,12 @@ place by `install.sh`.
 
 ### Prerequisites
 
-`git`, `curl`, `wget`, `tar`.
+Bash and standard Linux file utilities. Neovim downloads also need `curl` and
+`tar`; parser installation needs `git`, Node/npm, a C/C++ compiler, and tree-sitter-cli.
+The complete desktop setup targets Arch/Garuda. On other Linux distributions or
+shared hosting, select the sections you need, for example `./install.sh bash git neovim`.
+`bin-tools` can reuse installed ripgrep and Composer on any distribution; automatic
+package installation for missing copies uses Arch's `pacman`.
 
 ### Steps
 
@@ -25,14 +30,14 @@ place by `install.sh`.
 
 2. **Run the installer:**
    ```bash
-   ./install.sh              # run every section
+   ./install.sh              # default sections; systemd is skipped
    ./install.sh --list       # list available sections
    ./install.sh bash git     # run only the named sections
    ```
 
-`install.sh` is a thin entrypoint: it checks the commands it needs, then sources
-each numbered section in `scripts/install/` in order. Each section is also a
-standalone script (`./scripts/install/10-bash.sh`), so re-running just the one
+`install.sh` is a thin entrypoint: it checks the commands it needs, then runs
+each numbered section in `scripts/install/` in order, using a separate Bash
+process for each. Each section is also a standalone script (`./scripts/install/10-bash.sh`), so re-running just the one
 you touched is the normal way to work here.
 
 | Section | Links / does |
@@ -40,31 +45,128 @@ you touched is the normal way to work here.
 | `bash` | `~/.bashrc`, `~/.dircolors` |
 | `git` | `~/.gitconfig` |
 | `desktop-config` | `~/bin`, and `~/.config/{hypr,waybar,fish,wireplumber}` |
-| `systemd` | `~/.config/systemd`, then `systemctl --user daemon-reload` |
+| `systemd` (opt-in) | `~/.config/systemd`, then reloads an available systemd user session |
 | `ai-tools` | `~/AGENTS.md` and `~/.claude/*`; also opencode, Codex and Antigravity config, each skipped unless that tool is on `PATH` |
-| `neovim` | `~/.config/nvim`, then installs Neovim itself (below) |
+| `neovim` | Installs/verifies Neovim, then links `~/.config/nvim` |
 | `traefik` | `~/www/traefik` |
+| `bin-tools` | Checks ripgrep/Composer and downloads PHP tools into `~/.local/bin` |
 
-Most sections move an existing target aside to `<target>.old` before linking
-(`backup_and_link` in `scripts/install/lib.sh`) and are safe to re-run. Three do
-not: `desktop-config`, the `~/.claude/` links in `ai-tools`, and `neovim`
-(`rm -rf ~/.config/nvim`) remove their targets outright, so a real directory
-sitting at one of those paths is lost rather than backed up.
+Existing files, directories, and custom symlinks are preserved as `<target>.old`,
+then `<target>.old.1`, `<target>.old.2`, and so on. Re-running an unchanged link is
+a no-op. Parent directories such as `~/.config` are created when needed, including
+when you run a section on its own. The installer does not source your new `.bashrc`;
+open a new shell after installation.
 
 The `neovim` section prompts for how to install Neovim itself:
 
-- **User-local:** installs to `$HOME/.local/share/nvim`, symlinked to
+- **User-local:** installs versioned releases under `$HOME/.local/opt/neovim`, symlinked to
   `$HOME/.local/bin/nvim`. Make sure `$HOME/.local/bin` is on `PATH`.
-- **Global (needs `sudo`):** installs to `/opt/nvim`, symlinked to
+- **Global (needs `sudo`):** installs versioned releases under `/opt/neovim`, symlinked to
   `/usr/local/bin/nvim`.
 
 Set `NVIM_INSTALL_CHOICE=1` (user-local) or `2` (global) to answer that prompt
 non-interactively. To install or reinstall Neovim on its own later:
 `./install_neovim.sh --user` or `sudo ./install_neovim.sh --global`.
 
+An existing `nvim` is kept only if `nvim --version` succeeds. Use `--force` to
+install a new release anyway. Linux x86-64 and ARM64 release assets are selected
+automatically; other operating systems/architectures get an explicit error.
+Downloads must succeed and the new binary must run before the executable link is
+changed. Earlier installations and `~/.local/share/nvim` plugin/parser data are
+preserved. The installer writes managed `nvim` and `vim` definitions into
+`~/.local/share/dotfiles/neovim.bash` and `neovim.fish`. The repository's Bash and
+Fish configs load these after local customizations, overriding stale editor aliases
+without editing those customizations. Open a new shell after installation. With
+other shell configs, source the matching file at the end of your own local config.
+Standalone global installs write aliases for the installing account (root under
+sudo); use a user-local install for a shared host. Failed symlink creation restores
+the previous target automatically.
+
+**Older glibc / shared hosting:** when a binary cannot run because of glibc,
+the installer offers either Neovim's [legacy builds](https://github.com/neovim/neovim-releases)
+or a build from source on that host. Upstream labels the legacy builds unsupported.
+Both paths check the resulting binary and clean headless startup before changing
+the executable link. System glibc is never replaced. Without an interactive
+terminal the installer stops with explicit retry instructions:
+
+```bash
+./install_neovim.sh --user --legacy
+./install_neovim.sh --user --source
+# Or through the section installer (choose one):
+NVIM_INSTALL_CHOICE=1 NVIM_LEGACY=1 ./install.sh neovim
+NVIM_INSTALL_CHOICE=1 NVIM_SOURCE=1 ./install.sh neovim
+```
+
+Source builds need working Git, Make, CMake, and C/C++ compilers; Ninja and gettext
+are recommended by [upstream's build instructions](https://github.com/neovim/neovim/blob/master/BUILD.md).
+The build downloads its dependencies and uses two jobs by default; set
+`NVIM_BUILD_JOBS` to adjust this for a shared host. A user-local build does not need
+sudo, but the host must provide compatible build tools. It builds the current
+stable release into a separate directory and preserves previous installs on failure.
+
+Application installs do not install plugins or treesitter parsers. Parser/query
+commands now exit nonzero if any requested language fails, while keeping successful
+installs. On a non-Arch host, install the required build tools with your package
+manager first.
+
+### Rerunning the installer
+
+Matching config symlinks are left alone. Replaced configs remain in numbered
+`.old` backups; they are not merged into the new active configuration. A working
+Neovim binary is skipped unless `--force` is specified. Forced binary installs
+keep older versions and executable backups.
+
+Parsers, queries, generated aliases and downloaded tools use atomic replacement.
+Identical files are skipped; changed files are preserved under a sibling
+`.dotfiles-backups/` directory, with numbered backups. Keep personal query overrides
+in `nvim/after/queries/` rather than editing generated query files. Parser builds
+still run on repeat, so rerunnable does not mean no network or build work.
+`--node-provider` is an npm-managed dependency update and can change its package
+files; it is not a general-purpose backup of that directory.
+
+The default installer changes desktop, Git and AI configuration as well as Neovim.
+To update only highlighting, use `--parsers` and `--queries`. Preserving old files
+does not mean all custom settings stay active after a config is replaced.
+
+### Native syntax highlighting
+
+Neovim 0.12+ runs highlighting through `vim.treesitter`, without the
+nvim-treesitter plugin. Install the external grammars and their queries together:
+
+```bash
+./install_neovim.sh --parsers
+./install_neovim.sh --queries
+```
+
+This covers Bash, Markdown, PHP, JavaScript/JSX and Blade, alongside the existing
+HTML, CSS, YAML, TypeScript/TSX, Vue, JSON, Rust and TOML setup. Markdown uses
+Neovim's bundled parsers and queries. Blade keeps the `php` filetype for PHP tools,
+but uses its own grammar for highlighting. Embedded PHP, HTML, JavaScript and CSS,
+Bash heredocs and Markdown code fences are checked with representative fixtures.
+
+External grammars and query assets are pinned together in
+`scripts/install/treesitter-versions.sh`. Most queries are data from a compatible
+archived nvim-treesitter snapshot; Blade uses matching upstream grammar/query
+revisions. The archived plugin's Lua code is never loaded. Inherited query files
+such as `php_only`, `ecma`, `jsx` and `html_tags` are installed automatically.
+Two small native query directives handle heredoc language names and script MIME
+types. Update pins together and run the capture tests when upgrading these assets.
+
+Missing or incompatible parsers/queries produce a warning and fall back to regular
+syntax highlighting. Restart Neovim after replacing parsers. Use `:Inspect` to
+check token captures and `:InspectTree` to inspect embedded-language parsing.
+Indentation and textobjects are outside this highlighting setup.
+
 ### Post-install
 
-- **Neovim:** plugins install automatically on first run via lazy.nvim.
+- **Neovim:** plugins install automatically on first run via lazy.nvim. The Wilder
+  plugin also needs Python 3 and its `pynvim` provider (`python-pynvim` on Arch).
+  Tailwind Tools also uses the Node provider. With working Node.js and npm, run
+  `./install_neovim.sh --node-provider` to install it under your home directory
+  without sudo or a global npm install. Neovim loads this host before plugins.
+  This separate step keeps binary-only installation usable on hosts without Node.
+  Existing plugin installations should run `:UpdateRemotePlugins` afterwards.
+  For a fresh setup, run `nvim --headless "+Lazy! sync" +qa` to finish plugin builds.
 - **Claude Code:** `ai/settings.json`'s hook commands use `$HOME`, portable to any
   username. Personal hooks (referencing a separate, private `sessioneer` checkout)
   live in your own **global** `~/.claude/settings.local.json` instead — not this
@@ -72,14 +174,34 @@ non-interactively. To install or reinstall Neovim on its own later:
   Claude Code also merges in, but only for sessions run inside this repo. Copy
   `ai/settings.local.json.example`'s `hooks` block into the global one if you use
   `sessioneer` too; nothing here assumes it exists.
-- **opencode:** if `opencode` is on `PATH`, `50-ai-tools.sh` also enables and
-  starts `opencode-serve.service` — a background systemd user service that
-  keeps running after the installer exits. Binds `127.0.0.1:4096` by default
-  (localhost-only); see the comment in
-  `.config/systemd/user/opencode-serve.service` for how to override that with
-  a systemd drop-in if you want it reachable from elsewhere on your LAN.
+- **Systemd and OpenCode:** default installation never reloads systemd or starts
+  services. AI-tool configuration links can be installed on shared hosts without
+  systemd. To opt in on a desktop with a running user session:
+  ```bash
+  ./install.sh systemd
+  # Review your units first; starting OpenCode is a separate explicit action:
+  systemctl --user enable --now opencode-serve.service
+  ```
+  Explicit systemd setup checks the user session before modifying configuration.
+  Hosts without one get a clear error. This does not disable any services you
+  previously enabled.
 
 ## Tests
+
+Fast offline regression tests cover broken binaries, old-glibc errors, rejected
+downloads, preserved data/backups, missing directories, argument handling, and
+parser/query failures. They refuse to run outside a disposable Docker container:
+
+```bash
+docker build -t dotfiles-installer-tests - <<'EOF'
+FROM node:22
+RUN apt-get update -qq && apt-get install -y -qq fish
+EOF
+docker run --rm --network none -e DOTFILES_TEST_CONTAINER=1 \
+  -v "$PWD:/repo:ro" dotfiles-installer-tests python3 /repo/tests/test_installers.py
+```
+
+The full install/highlighting suite below also requires a throwaway container:
 
 ```bash
 export PATH="$PWD/scripts/ci/stubs:$PATH"
@@ -122,7 +244,7 @@ setup has been removed (see "Removed" below).
 
 - `nvim/` — Neovim config (Lua), the only editor config in the repo. `lua/andres/`
   is the main tree: `lazy.lua` (plugin manager bootstrap + spec list), `remap.lua`,
-  `autocmds.lua`, `functions.lua` (custom user commands), `php_dev.lua` (helpers
+  `autocmds.lua`, `highlighting.lua` (native Tree-sitter), `functions.lua` (custom user commands), `php_dev.lua` (helpers
   for building/testing a local `php-src` checkout). `after/plugin/*.lua` holds
   per-plugin config (fugitive, harpoon, telescope, treesitter, undotree, oil,
   lsp, etc.).
@@ -141,8 +263,8 @@ setup has been removed (see "Removed" below).
 
 ### Install & CI (`scripts/`, `.github/`)
 
-- `scripts/install/` — the numbered sections `install.sh` sources
-  (`10-bash.sh` … `70-traefik.sh`), plus `lib.sh` with the shared
+- `scripts/install/` — the numbered sections `install.sh` runs
+  (`10-bash.sh` … `80-bin-tools.sh`), plus `lib.sh` with the shared
   `backup_and_link`/`section_header`/`command_exists` helpers. Adding a section
   means dropping in a new `NN-name.sh`; `install.sh` discovers it by filename,
   and `--list` picks it up with no registration step.
@@ -154,9 +276,12 @@ setup has been removed (see "Removed" below).
 - `scripts/ci/assert-symlinks.sh` — asserts every symlink each install section
   is supposed to create actually resolves back to this repo. Runnable on its own
   against a throwaway `$HOME`.
+- `scripts/ci/test-native-highlighting.lua` — checks actual token captures and
+  language injections for the five common file types, plus diagnostic fallback
+  when parsers or queries fail. Runs without the plugin manager.
 - `scripts/ci/test-nvim-highlighting.sh` — opens each fixture in
   `scripts/ci/fixtures/` (PHP, TS, TSX, Vue, Rust, JSON, YAML, TOML, HTML, JS,
-  shell) in a real tmux + Neovim session and asserts genuine per-token
+  shell, Markdown, Blade) in a real tmux + Neovim session and asserts genuine per-token
   treesitter highlighting, rather than Neovim's legacy regex fallback silently
   standing in for it.
 - `scripts/ci/stubs/{sudo,systemctl}` — put on `PATH` for the CI run so the

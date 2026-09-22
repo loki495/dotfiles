@@ -1,3 +1,4 @@
+require("andres.providers")
 require("andres.init")
 require("andres.php_dev")
 require("andres.functions")

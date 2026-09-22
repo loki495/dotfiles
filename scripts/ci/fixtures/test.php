@@ -7,3 +7,7 @@ class Foo
         return 42;
     }
 }
+?>
+<section class="card"><?= $name ?></section>
+<script>const count = 42;</script>
+<script type="application/ld+json">{"title": "Native highlighting"}</script>
