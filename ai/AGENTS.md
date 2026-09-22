@@ -17,4 +17,4 @@ The following safety rules are duplicated here because they are non-negotiable:
 - Never perform a real-world-visible action such as sending email/SMS, charging a card, calling a third-party write endpoint, or triggering a user-visible notification without confirmation.
 - Detect the project type and inspect its actual branch/worktree/container layout before applying project-family conventions.
 - Preserve project notes under `.claude/`; they remain durable project context even though the directory name originated with Claude.
-
+- When a discovered bug, improvement, or investigation would distract from the current task or take substantial time, search Dibs and create or update a follow-up task with evidence and a next step before continuing. Keep unconfirmed findings explicit; do not silently expand the current task.

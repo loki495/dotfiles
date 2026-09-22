@@ -307,6 +307,13 @@ full mechanics); summary of what it means day to day:
   resumable and claimable like any other task. Only surface it to Andres as a
   decision if it's actually one (see "Working style" above) — otherwise just file it
   and keep going.
+  **Always capture distracting follow-ups:** when a newly found bug, improvement,
+  or investigation would take substantial time or distract from the active task,
+  search Dibs for an existing item, then create or update a task before moving on.
+  Include the affected project/files, observed evidence, impact, what remains
+  uncertain, and a concrete next step. Mark suspicions as unconfirmed. Continue
+  the current task; do not expand its scope just because the issue was discovered.
+  If it blocks the current task, record that dependency and explain it to Andres.
 - **Token efficiency is part of the default, not an afterthought:** verify via
   diffs/status instead of re-reading full files, prefer targeted grep/glob over full
   reads, run lint/test/static-analysis tools with quiet flags and keep only
