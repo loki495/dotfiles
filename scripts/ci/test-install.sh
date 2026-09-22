@@ -51,6 +51,9 @@ fail() {
 
 echo "=== [1/7] install.sh (all sections, non-interactive nvim choice) ==="
 NVIM_INSTALL_CHOICE=1 "$REPO_ROOT/install.sh" || fail "install.sh"
+"$REPO_ROOT/install_neovim.sh" --node-provider || fail "Node provider"
+# Systemd is deliberately opt-in; exercise it explicitly with the container stub.
+"$REPO_ROOT/install.sh" systemd || fail "explicit systemd setup"
 
 # install_neovim.sh --user puts the nvim binary at $HOME/.local/bin/nvim but
 # never modifies PATH itself (it just prints a reminder) - export it now so
@@ -110,6 +113,8 @@ echo "=== [6/7] bootstrap lazy.nvim plugins (fresh nvim data dir needs this once
 # autocmds.lua's FileType autocmd got registered for some filetypes, depending
 # on plugin load order. Adding this step alone took the failures to 0/11.
 timeout 180 nvim --headless "+Lazy! sync" +qa || fail "Lazy! sync (plugin bootstrap)"
+
+DOTFILES_ROOT="$REPO_ROOT" nvim --headless -u NONE -l "$REPO_ROOT/scripts/ci/test-native-highlighting.lua" || fail "native highlighting captures"
 
 echo "=== [7/7] nvim highlighting check (tmux-based, all languages) ==="
 "$REPO_ROOT/scripts/ci/test-nvim-highlighting.sh" || fail "test-nvim-highlighting.sh"

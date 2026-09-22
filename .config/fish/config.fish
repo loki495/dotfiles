@@ -325,3 +325,8 @@ end
 
 # opencode
 fish_add_path $HOME/.opencode/bin
+
+# Load the selected editor after older aliases in local customizations.
+if test -f "$HOME/.local/share/dotfiles/neovim.fish"
+    source "$HOME/.local/share/dotfiles/neovim.fish"
+end

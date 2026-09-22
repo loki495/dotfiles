@@ -5,6 +5,18 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  installer-regressions:
+    runs-on: ubuntu-latest
+    container: node:22
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test shells
+        run: apt-get update -qq && apt-get install -y -qq fish
+      - name: Test installer failures and data preservation offline
+        env:
+          DOTFILES_TEST_CONTAINER: "1"
+        run: python3 tests/test_installers.py
+
   test-install:
     runs-on: ubuntu-latest
     container:
@@ -30,7 +42,7 @@ jobs:
         # to actually be runnable in the verification step below.
         run: |
           pacman -Sy --noconfirm --needed \
-            git curl wget tar tmux base-devel nodejs npm tree-sitter-cli php
+            git curl wget tar tmux base-devel nodejs npm tree-sitter-cli php python-pynvim
           # Arch's php package ships iconv.so but doesn't enable it by
           # default - phpactor's own Box requirements checker refuses to run
           # without it (symfony/polyfill-mbstring depends on the extension).

@@ -8,5 +8,5 @@ section_header "Setting up Traefik config..."
 # (or this repo's own CI, which install.sh runs against a clean container)
 # has no reason to already have.
 mkdir -p ~/www
-backup_and_link ~/www/traefik "$SCRIPTPATH/traefik"
+backup_and_link ~/www/traefik "$DOTFILES_ROOT/traefik"
 echo_success "Traefik config done."

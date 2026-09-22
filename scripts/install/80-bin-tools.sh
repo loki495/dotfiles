@@ -13,22 +13,35 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 #
 # Idempotent: skips anything already on PATH unless BIN_TOOLS_FORCE=1.
 
-section_header "Installing rg and composer via pacman..."
-sudo pacman -S --needed --noconfirm ripgrep composer
-echo_success "ripgrep and composer installed."
+section_header "Checking ripgrep and Composer..."
+packages=()
+command_exists rg || packages+=(ripgrep)
+command_exists composer || packages+=(composer)
+if [ "${#packages[@]}" -gt 0 ]; then
+  if ! command_exists pacman; then
+    echo_error "Install ${packages[*]} with your system package manager, then rerun bin-tools."
+    exit 1
+  fi
+  if [ "$(id -u)" -eq 0 ]; then
+    pacman -S --needed --noconfirm "${packages[@]}"
+  else
+    require_commands sudo
+    sudo pacman -S --needed --noconfirm "${packages[@]}"
+  fi
+fi
+require_commands php curl
 
 mkdir -p "$HOME/.local/bin"
 
 fetch_phar () {
   local name="$1" url="$2"
   local target="$HOME/.local/bin/$name"
-  if command_exists "$name" && [ -z "${BIN_TOOLS_FORCE:-}" ]; then
+  if command_exists "$name" && [ "${BIN_TOOLS_FORCE:-0}" != "1" ]; then
     echo_info "$name already on PATH ($(command -v "$name")), skipping. Set BIN_TOOLS_FORCE=1 to reinstall."
     return
   fi
   echo_info "Fetching $name..."
-  curl -Ls -o "$target" "$url"
-  chmod +x "$target"
+  download_executable "$url" "$target"
   echo_success "$name installed to $target."
 }
 
