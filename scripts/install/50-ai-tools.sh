@@ -15,9 +15,10 @@ for d in skills commands agents hooks lessons; do
   backup_and_link ~/.claude/"$d" "$DOTFILES_ROOT/ai/$d"
 done
 echo_success "Claude Code config linked to ~/.claude."
-echo_info "  - settings.json's hook commands use \$HOME, portable to any username. Personal"
-echo_info "    hooks (referencing a separate sessioneer checkout) live in"
-echo_info "    ~/.claude/settings.local.json instead — not linked from this repo."
+echo_info "  - settings.json's own hook commands use \$HOME, portable to any username. Sessioneer's"
+echo_info "    hooks (added by its Install hooks, with that checkout's absolute path) are specific to"
+echo_info "    one machine: delete them where Sessioneer is not installed. Claude Code reads no"
+echo_info "    user-level settings.local.json; see ai/settings.local.json.example."
 
 section_header "Setting up opencode config..."
 if command_exists opencode; then
