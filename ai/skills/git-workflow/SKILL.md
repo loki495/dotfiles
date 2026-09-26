@@ -173,22 +173,42 @@ not a mess to clean up.
 (another agent session, running or idle, or the user's own work in progress): ask the
 user what to do first, and only proceed with their approval. The safe procedure is:
 
-1. Make a backup commit of the *entire* current state, including the other changes,
-   on a throwaway branch (e.g. `git switch -c backup/<topic>`, `git add -A`,
-   `git commit`), so nothing can be lost. Keep that branch until the user confirms
-   everything is intact.
+1. Make a backup commit of the *entire* current state, including the other changes
+   (`git switch -c tmp-backup`, `git add -A`, `git commit`), tag it
+   (`git tag backup/<topic>-<date>`), then switch back to the real branch and delete
+   the temporary branch (`git branch -D tmp-backup`): the tag is the backup, so
+   nothing can be lost and no extra branch is left around. Keep the tag until the user
+   confirms everything is intact. Never push it (see "Backup tags" below).
 2. On the real branch, commit **only your own** changes, and do the reorganization.
 3. Restore whatever wasn't yours to the worktree as uncommitted changes (e.g.
-   `git checkout backup/<topic> -- <their files>`, then unstage), and confirm with
-   `git diff backup/<topic>` that the worktree matches what it was, other than your
-   own now-committed work.
+   `git checkout backup/<topic>-<date> -- <their files>`, then unstage), and confirm
+   with `git diff backup/<topic>-<date>` that the worktree matches what it was, other
+   than your own now-committed work.
 4. Tell the user what was restored. Once the restore is confirmed (or the backup is no
-   longer useful), delete the throwaway branch (`git branch -D backup/<topic>`) —
-   don't leave throwaway branches accumulating, and ask the user before deleting one
-   they haven't confirmed.
+   longer useful), delete the tag (`git tag -d backup/<topic>-<date>`) — don't leave
+   backup tags accumulating, and ask the user before deleting one they haven't
+   confirmed.
 
 Never discard, stash away for good, or commit someone else's uncommitted work as if it
 were yours.
+
+## Backup tags
+
+A backup is a **local tag**, not a branch: `git tag backup/<topic>-<date> [<commit>]`.
+A tag only names a commit, so it can't be checked out into or collect new commits by
+accident, doesn't show up in `git branch` output or `git push --all`, and is removed
+with one command. Use one before any history surgery worth undoing (rebase, squash,
+reset, force-anything), pointing at the current tip; for uncommitted work, make the
+snapshot commit first (see above), tag it, and drop the temporary branch.
+
+- **Never push a backup tag.** `git push --tags`, `--follow-tags` and `--mirror` would,
+  and it may hold local-only or uncommitted content (a secret, a private path, someone
+  else's work in progress). Push branches by name only, and check `git tag -l 'backup/*'`
+  is not part of what a push sends.
+- Delete it when the work is confirmed intact or it is no longer useful
+  (`git tag -d backup/<topic>-<date>`), asking first if it isn't yours.
+- Rebase's own `ORIG_HEAD` and the reflog are not a substitute: the first is overwritten
+  by the next operation and the reflog expires; a tag stays until you remove it.
 
 ## Discovering an unfamiliar project's layout
 

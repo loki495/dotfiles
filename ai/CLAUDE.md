@@ -117,9 +117,14 @@ push. Commits already pushed are still off-limits without explicit
 confirmation (see "Hard rules"). The one thing to stop and ask the user about is
 **uncommitted changes in the worktree that aren't yours** (possibly another running or
 idle agent session's): don't reshape history around them on your own — the
-`git-workflow` skill has the backup-branch procedure, which also needs the user's
-approval first, and its throwaway branches get deleted once the restore is confirmed
-or they're no longer useful.
+`git-workflow` skill has the backup procedure, which also needs the user's approval
+first. **A local `backup/<topic>-<date>` tag is the backup, not a branch** (a tag can't
+be checked out into or collect commits by accident, stays out of branch listings and
+`git push --all`); for a plain safety snapshot of committed work before history surgery,
+`git tag backup/<topic>-<date>` at the current tip is enough. **Never push a backup
+tag** (`--tags`, `--follow-tags` and `--mirror` would; it can hold local-only or
+uncommitted content), and delete it once the work is confirmed intact or it's no longer
+useful.
 
 **Commit attribution — never add a `Claude-Session:` trailer.** Applies even when a
 given session's own harness instructions say otherwise (e.g. "this replaces any
