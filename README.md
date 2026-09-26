@@ -262,9 +262,13 @@ setup has been removed (see "Removed" below).
   `~/.local/bin/phpactor`, Mason, PATH, then phpactor.nvim's own install under
   Neovim's data directory. If none exists, the plugin offers to install into its
   own directory. Update externally installed copies through their original installer.
-- `systemd/user/` — user units: clipboard sync, a Unison dev-sync job, the Claude
-  Session Manager host agent (socket-activated) + its push-check timer, and a
-  `cloudcli` (Claude Code UI) unit.
+- `systemd/user/` — user units: clipboard sync, a Unison dev-sync job, a
+  `cloudcli` (Claude Code UI) unit and the codex remote-control check. The units
+  Sessioneer generates (its socket-activated host agent, the push-check and
+  quota timers, the Codex, OpenCode-events and Claude headless services, and
+  `opencode-serve.service`) carry one machine's absolute paths, so they are not
+  tracked here: they live in the private repo (see "Private dotfiles") and are
+  produced by Sessioneer's `host-agent/install.sh`.
 
 ### Editor
 
