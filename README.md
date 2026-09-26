@@ -168,13 +168,15 @@ Indentation and textobjects are outside this highlighting setup.
   This separate step keeps binary-only installation usable on hosts without Node.
   Existing plugin installations should run `:UpdateRemotePlugins` afterwards.
   For a fresh setup, run `nvim --headless "+Lazy! sync" +qa` to finish plugin builds.
-- **Claude Code:** `ai/settings.json`'s hook commands use `$HOME`, portable to any
-  username. Personal hooks (referencing a separate, private `sessioneer` checkout)
-  live in your own **global** `~/.claude/settings.local.json` instead — not this
-  repo's project-scoped `.claude/settings.local.json` (see below), a different file
-  Claude Code also merges in, but only for sessions run inside this repo. Copy
-  `ai/settings.local.json.example`'s `hooks` block into the global one if you use
-  `sessioneer` too; nothing here assumes it exists.
+- **Claude Code:** `ai/settings.json` is your user-level Claude Code settings file
+  (`~/.claude/settings.json` links to it), and its own hook commands use `$HOME`.
+  Sessioneer's five hooks are added to it by Sessioneer's **Install hooks**, with the
+  absolute path of that checkout, so those entries belong to one machine; on a machine
+  without Sessioneer, delete them. Claude Code reads no user-level `settings.local.json`
+  (`settings.local.json` exists only per project, as `.claude/settings.local.json`), so
+  there is no separate user-wide place for such hooks. `ai/settings.local.json.example`
+  is a template for personal hooks you merge by hand into `settings.json` or copy into
+  one project's own `.claude/settings.local.json`; nothing here assumes Sessioneer exists.
 - **Systemd and OpenCode:** default installation never reloads systemd or starts
   services. AI-tool configuration links can be installed on shared hosts without
   systemd. To opt in on a desktop with a running user session:
@@ -389,9 +391,9 @@ than per tool.
 - `lessons/` — an accumulated store of findings carried between sessions.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout).
-  `settings.local.json.example` is a copyable template for personal hooks
-  (referencing a separate `sessioneer` checkout) that intentionally live outside
-  this repo, in your global `~/.claude/settings.local.json`; see Post-install.
+  `settings.local.json.example` is a copyable template for personal hooks (it assumes
+  a Sessioneer checkout at `~/www/personal/sessioneer`); see Post-install. Sessioneer's
+  own hook entries in `settings.json` carry that checkout's absolute path.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at
@@ -399,8 +401,7 @@ than per tool.
 
 This repo's own root-level `.claude/settings.local.json` is separate again from both
 of the above — Claude Code's project-scoped local permission allowlist, applying only
-to sessions run inside this checkout, not part of the linked `ai/` tree, and unrelated
-to your global `~/.claude/settings.local.json`.
+to sessions run inside this checkout, not part of the linked `ai/` tree.
 
 `.ai/` (distinct from `ai/`) holds this repo's own working notes — `plans/` for
 multi-session initiatives and `lessons/` for what they turned up.

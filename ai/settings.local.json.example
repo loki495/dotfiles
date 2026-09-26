@@ -1,5 +1,5 @@
 {
-  "_comment": "Personal Claude Code settings that don't belong in the tracked ai/settings.json - copy the pieces you want into your own ~/.claude/settings.local.json (Claude Code merges it with settings.json automatically; this file is never linked from install.sh). The hooks below assume a separate `sessioneer` checkout at $HOME/www/sessioneer (github.com/loki495/sessioneer) and a personal $HOME/.claude/scripts/track-activity.sh script - adapt or drop what you don't use.",
+  "_comment": "Personal Claude Code settings that don't belong in the tracked ai/settings.json. Claude Code reads no user-level settings.local.json (that file exists only per project, as .claude/settings.local.json), so merge the pieces you want by hand into ~/.claude/settings.json (this repo's ai/settings.json) or copy them into one project's own .claude/settings.local.json; this file is never linked from install.sh. The hooks below assume a Sessioneer checkout at $HOME/www/personal/sessioneer (github.com/loki495/sessioneer) and a personal $HOME/.claude/scripts/track-activity.sh script - adapt or drop what you don't use.",
   "hooks": {
     "Stop": [
       {
@@ -11,7 +11,7 @@
           },
           {
             "type": "command",
-            "command": "php $HOME/www/sessioneer/host-agent/hooks/stop.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/stop.php"
           }
         ]
       }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php $HOME/www/sessioneer/host-agent/hooks/user_prompt_submit.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/user_prompt_submit.php"
           }
         ]
       }
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php $HOME/www/sessioneer/host-agent/hooks/pre_tool_use.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/pre_tool_use.php"
           },
           {
             "type": "command",
@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php $HOME/www/sessioneer/host-agent/hooks/session_start.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/session_start.php"
           }
         ]
       }
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php $HOME/www/sessioneer/host-agent/hooks/permission_request.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/permission_request.php"
           }
         ]
       }
