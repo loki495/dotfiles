@@ -197,7 +197,7 @@ symlinks these into this checkout, all of them gitignored here:
 
 | Private repo path | Linked to | What it is |
 | --- | --- | --- |
-| `ai/CLAUDE.private.md` | `ai/CLAUDE.private.md` | Home-network notes (hosts, DNS, tunnel). `ai/CLAUDE.md` imports it with `@CLAUDE.private.md`; Claude Code skips a missing import silently and loads the rest |
+| `ai/CLAUDE.private.md` | `ai/CLAUDE.private.md` and `~/.claude/CLAUDE.private.md` | Home-network notes (hosts, DNS, tunnel). `ai/CLAUDE.md` imports it with `@CLAUDE.private.md`. `~/.claude/CLAUDE.md` is a symlink to that file, so the notes are linked beside both (the way `RTK.md` is). A missing import is skipped silently and the rest loads |
 | `ai/skills/*`, `ai/codex-skills/*` | the same names under `ai/` | Skills that name real hosts and IPs |
 | `systemd/user/*` | `.config/systemd/user/*` | Units Sessioneer's `host-agent/install.sh` renders for one machine (absolute paths). `install.sh` rewrites them in place through the links |
 
