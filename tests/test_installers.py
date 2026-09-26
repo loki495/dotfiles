@@ -469,6 +469,90 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         self.shell('download_executable https://example.invalid/tool "$HOME/tool"', success=False)
         self.assertFalse((self.home / 'tool').exists())
 
+    def private_checkout(self):
+        """A minimal checkout with just the installer, its helpers and the private section."""
+        checkout = self.root / 'checkout'
+        (checkout / 'scripts/install').mkdir(parents=True)
+        shutil.copy(REPO / 'install.sh', checkout)
+        shutil.copy(REPO / 'scripts/install/lib.sh', checkout / 'scripts/install')
+        shutil.copy(REPO / 'scripts/install/90-private.sh', checkout / 'scripts/install')
+        shutil.copytree(REPO / 'bash/lib', checkout / 'bash/lib')
+        return checkout
+
+    def private_repo(self, files, root=None):
+        root = root or self.home / '.dotfiles-private'
+        root.mkdir(parents=True, exist_ok=True)
+        for name, content in files.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+        return root
+
+    def install_sections(self, checkout, *sections, **env):
+        result = subprocess.run(['bash', str(checkout / 'install.sh'), *sections],
+                                env=self.env | env, text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result
+
+    def test_private_section_is_a_noop_without_the_private_repo(self):
+        checkout = self.private_checkout()
+        result = self.install_sections(checkout, 'private', SILENT_ECHOS='0')
+        self.assertIn('skipping', result.stdout + result.stderr)
+        self.assertEqual(sorted(p.name for p in checkout.iterdir()), ['bash', 'install.sh', 'scripts'])
+
+    def test_private_section_links_private_files_into_the_checkout(self):
+        checkout = self.private_checkout()
+        root = self.private_repo({'ai/skills/infra/SKILL.md': 'topology',
+                                  'ai/codex-skills/infra-codex/SKILL.md': 'codex',
+                                  'systemd/user/lab.service': '[Unit]\n',
+                                  'ai/CLAUDE.private.md': 'notes'})
+        self.install_sections(checkout, 'private')
+        self.assertEqual(os.readlink(checkout / 'ai/CLAUDE.private.md'), str(root / 'ai/CLAUDE.private.md'))
+        self.assertEqual((checkout / 'ai/CLAUDE.private.md').read_text(), 'notes')
+        self.assertEqual(os.readlink(checkout / 'ai/skills/infra'), str(root / 'ai/skills/infra'))
+        self.assertEqual((checkout / 'ai/skills/infra/SKILL.md').read_text(), 'topology')
+        self.assertEqual(os.readlink(checkout / 'ai/codex-skills/infra-codex'), str(root / 'ai/codex-skills/infra-codex'))
+        self.assertEqual(os.readlink(checkout / '.config/systemd/user/lab.service'), str(root / 'systemd/user/lab.service'))
+
+    def test_private_section_keeps_existing_files_and_is_idempotent(self):
+        checkout = self.private_checkout()
+        self.private_repo({'systemd/user/lab.service': 'private version'})
+        target = checkout / '.config/systemd/user/lab.service'
+        target.parent.mkdir(parents=True)
+        target.write_text('rendered by an installer')
+        self.install_sections(checkout, 'private')
+        self.install_sections(checkout, 'private')
+        self.assertEqual((target.parent / 'lab.service.old').read_text(), 'rendered by an installer')
+        self.assertFalse((target.parent / 'lab.service.old.1').exists())
+        self.assertEqual(target.read_text(), 'private version')
+
+    def test_private_section_honours_a_custom_private_root(self):
+        checkout = self.private_checkout()
+        root = self.private_repo({'ai/CLAUDE.private.md': 'custom'}, self.root / 'elsewhere')
+        self.install_sections(checkout, 'private', DOTFILES_PRIVATE_ROOT=str(root))
+        self.assertEqual(os.readlink(checkout / 'ai/CLAUDE.private.md'), str(root / 'ai/CLAUDE.private.md'))
+
+    def test_private_section_tolerates_a_partial_private_repo(self):
+        checkout = self.private_checkout()
+        self.private_repo({'ai/CLAUDE.private.md': 'only this'})
+        self.install_sections(checkout, 'private')
+        self.assertTrue((checkout / 'ai/CLAUDE.private.md').is_symlink())
+        self.assertFalse((checkout / '.config').exists())
+        self.assertFalse((checkout / 'ai/skills').exists())
+
+    def test_private_section_does_not_link_from_an_empty_private_repo(self):
+        checkout = self.private_checkout()
+        self.private_repo({})
+        self.install_sections(checkout, 'private')
+        self.assertEqual(sorted(p.name for p in checkout.iterdir()), ['bash', 'install.sh', 'scripts'])
+
+    def test_default_install_includes_the_private_section(self):
+        checkout = self.private_checkout()
+        (checkout / 'scripts/install/10-noop.sh').write_text('true\n')
+        self.private_repo({'ai/CLAUDE.private.md': 'via the default run'})
+        self.install_sections(checkout)
+        self.assertEqual((checkout / 'ai/CLAUDE.private.md').read_text(), 'via the default run')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
