@@ -36,3 +36,7 @@ bin/*.so
 
 # Auto-generated completions (regenerate with make/build)
 git/.git-completion.bash
+
+# Linked in from the private repo by `./install.sh private` - see README's
+# "Private dotfiles" section.
+/ai/CLAUDE.private.md

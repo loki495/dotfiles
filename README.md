@@ -50,6 +50,7 @@ you touched is the normal way to work here.
 | `neovim` | Installs/verifies Neovim, then links `~/.config/nvim` |
 | `traefik` | `~/www/traefik` |
 | `bin-tools` | Checks ripgrep/Composer and downloads PHP tools into `~/.local/bin` |
+| `private` | Links your private dotfiles repo in (see [Private dotfiles](#private-dotfiles)); does nothing when `~/.dotfiles-private` does not exist |
 
 Existing files, directories, and custom symlinks are preserved as `<target>.old`,
 then `<target>.old.1`, `<target>.old.2`, and so on. Re-running an unchanged link is
@@ -185,6 +186,27 @@ Indentation and textobjects are outside this highlighting setup.
   Explicit systemd setup checks the user session before modifying configuration.
   Hosts without one get a clear error. This does not disable any services you
   previously enabled.
+
+### Private dotfiles
+
+This repo is public, so anything sensitive or specific to one machine lives in a
+separate private repo cloned to `~/.dotfiles-private` (override with
+`DOTFILES_PRIVATE_ROOT`). Nothing here depends on it: the `private` section is a
+no-op without it, and CI runs without it. When it exists, `./install.sh private`
+symlinks these into this checkout, all of them gitignored here:
+
+| Private repo path | Linked to | What it is |
+| --- | --- | --- |
+| `ai/CLAUDE.private.md` | `ai/CLAUDE.private.md` | Home-network notes (hosts, DNS, tunnel). `ai/CLAUDE.md` imports it with `@CLAUDE.private.md`; Claude Code skips a missing import silently and loads the rest |
+| `ai/skills/*`, `ai/codex-skills/*` | the same names under `ai/` | Skills that name real hosts and IPs |
+| `systemd/user/*` | `.config/systemd/user/*` | Units Sessioneer's `host-agent/install.sh` renders for one machine (absolute paths). `install.sh` rewrites them in place through the links |
+
+An existing real file at a target is kept as `<name>.old`. `traefik/` is linked the
+same way through its own tracked symlink and the `traefik` section.
+
+Not versioned anywhere: `ai/skills/synced/`, which Claude Code fills with the
+skills your claude.ai account syncs (proprietary, named after your account ids,
+rewritten every few minutes through the `~/.claude/skills` link).
 
 ## Tests
 
