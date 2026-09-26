@@ -479,6 +479,11 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
   `todo_claim` a backlog task before working it, exactly as they would a plan's
   task, instead of silently duplicating effort the way two agents editing the same
   flat file could.
+- **Claim first, then work, then complete.** Claim a Dibs task (`todo_claim`) *before* starting
+  on it, heartbeat if it runs long, and close it with `todo_complete` when done. Never do the
+  work first and claim only to close it afterward: the claim exists to tell other agents and
+  sessions the task is taken while the work happens. If work was done without a claim, say so in
+  the closing note. (Also in `skills/dibs/SKILL.md` in the Dibs repo.)
 - These items track what's **left to do**, not a history log. When one is
   completed, close it (`todo_complete`) rather than leaving it open with a note —
   don't leave a growing pile of done-but-open issues.
