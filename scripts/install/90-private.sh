@@ -31,8 +31,14 @@ link_entries "$PRIVATE_ROOT/ai/codex-skills" "$DOTFILES_ROOT/ai/codex-skills"
 link_entries "$PRIVATE_ROOT/systemd/user" "$DOTFILES_ROOT/.config/systemd/user"
 
 # Imported by ai/CLAUDE.md as @CLAUDE.private.md; a missing file is skipped silently.
+# ~/.claude/CLAUDE.md is a symlink to ai/CLAUDE.md and the import is a relative path,
+# so link the file in both places (next to the symlink too, the way RTK.md is)
+# rather than depend on whether Claude Code resolves it from the link's directory
+# or from its target's. Checked end to end: a fresh session loads the notes.
 if [ -f "$PRIVATE_ROOT/ai/CLAUDE.private.md" ]; then
   backup_and_link "$DOTFILES_ROOT/ai/CLAUDE.private.md" "$PRIVATE_ROOT/ai/CLAUDE.private.md"
+  mkdir -p "$HOME/.claude"
+  backup_and_link "$HOME/.claude/CLAUDE.private.md" "$DOTFILES_ROOT/ai/CLAUDE.private.md"
 fi
 
 echo_success "Private dotfiles linked from $PRIVATE_ROOT."

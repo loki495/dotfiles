@@ -509,6 +509,8 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         self.install_sections(checkout, 'private')
         self.assertEqual(os.readlink(checkout / 'ai/CLAUDE.private.md'), str(root / 'ai/CLAUDE.private.md'))
         self.assertEqual((checkout / 'ai/CLAUDE.private.md').read_text(), 'notes')
+        self.assertEqual(os.readlink(self.home / '.claude/CLAUDE.private.md'), str(checkout / 'ai/CLAUDE.private.md'))
+        self.assertEqual((self.home / '.claude/CLAUDE.private.md').read_text(), 'notes')
         self.assertEqual(os.readlink(checkout / 'ai/skills/infra'), str(root / 'ai/skills/infra'))
         self.assertEqual((checkout / 'ai/skills/infra/SKILL.md').read_text(), 'topology')
         self.assertEqual(os.readlink(checkout / 'ai/codex-skills/infra-codex'), str(root / 'ai/codex-skills/infra-codex'))
@@ -531,6 +533,21 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         root = self.private_repo({'ai/CLAUDE.private.md': 'custom'}, self.root / 'elsewhere')
         self.install_sections(checkout, 'private', DOTFILES_PRIVATE_ROOT=str(root))
         self.assertEqual(os.readlink(checkout / 'ai/CLAUDE.private.md'), str(root / 'ai/CLAUDE.private.md'))
+
+    def test_private_section_does_not_touch_home_claude_without_the_notes_file(self):
+        checkout = self.private_checkout()
+        self.private_repo({'ai/skills/infra/SKILL.md': 'topology'})
+        self.install_sections(checkout, 'private')
+        self.assertFalse((self.home / '.claude').exists())
+
+    def test_private_section_keeps_an_existing_home_claude_file(self):
+        checkout = self.private_checkout()
+        self.private_repo({'ai/CLAUDE.private.md': 'notes'})
+        (self.home / '.claude').mkdir()
+        (self.home / '.claude/CLAUDE.private.md').write_text('mine')
+        self.install_sections(checkout, 'private')
+        self.assertEqual((self.home / '.claude/CLAUDE.private.md.old').read_text(), 'mine')
+        self.assertEqual((self.home / '.claude/CLAUDE.private.md').read_text(), 'notes')
 
     def test_private_section_tolerates_a_partial_private_repo(self):
         checkout = self.private_checkout()
