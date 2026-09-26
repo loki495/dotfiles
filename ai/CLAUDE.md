@@ -49,6 +49,15 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
 - Traefik is used for local routing across dev containers. Each project may have its own
   `docker-compose.yml` with Traefik labels and an optional `setup.sh` build step.
 
+## Home network
+
+How the home network is laid out (hosts, DNS, Traefik, the Cloudflare tunnel) and the
+mistakes that bite most are kept in the private dotfiles repo; they load through the
+import below when it is installed. Read the `ac495-infrastructure` skill before touching
+DNS, Traefik, tunnel or "why do I get a Cloudflare login / Forbidden" questions.
+
+@CLAUDE.private.md
+
 ## Project types
 
 Two project families exist, never mixed in the same repo:
