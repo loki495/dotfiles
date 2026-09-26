@@ -48,3 +48,8 @@ git/.git-completion.bash
 /.config/systemd/user/sessioneer-*
 /.config/systemd/user/*.wants/opencode-serve.service
 /.config/systemd/user/*.wants/sessioneer-*
+
+# Claude Code writes the skills your claude.ai account syncs into ~/.claude/skills
+# (a link into this repo): proprietary content in directories named after your
+# account ids, rewritten every few minutes. Never versioned.
+/ai/skills/synced/
