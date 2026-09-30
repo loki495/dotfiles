@@ -11,7 +11,7 @@
 
     "modules-left": ["custom/lock", "custom/ws-1", "custom/ws-2", "custom/ws-3", "custom/ws-4", "custom/ws-5", "custom/ws-6", "custom/ws-7", "custom/ws-8", "custom/ws-9", "custom/ws-10", "hyprland/window", "custom/window_status"],
     "modules-center": ["clock", "custom/weather"],
-    "modules-right": ["custom/focused_monitor", "custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["custom/focused_monitor", "custom/todo", "custom/brightness", "custom/keyboard_state", "custom/updates", "custom/sysinfo", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "custom/power"],
 
     // Modules configuration
 
@@ -41,15 +41,6 @@
         "format": "{}",
         "icon":true,
         "icon-size" : 20
-    },
-    "idle_inhibitor": {
-        "format": "{icon}",
-        "format-icons": {
-            "activated": "",
-            "deactivated": "",
-        },
-        "on-click":"exec ~/.config/hypr/scripts/idle_inhibitor.sh",
-
     },
     "tray": {
         "icon-size": 20,
