@@ -19,6 +19,10 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
   third-party write endpoint, a user-visible notification) without confirming first —
   applies even inside test code or a one-off script. When in doubt whether something
   counts, ask.
+- **NEVER** let a test suite touch a real or production database, in any stack. Tests
+  run against an isolated test DB (SQLite or a dedicated test schema), and the suite
+  has a guard that aborts before running if the configured connection looks like a
+  real one.
 - **ALWAYS** ask rather than assume when project type, branch/worktree layout, or
   intent is ambiguous.
 - **ALWAYS** work one item at a time on multi-issue/audit work — explain, present
@@ -48,6 +52,10 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
   `docker-compose.yml` if unknown.
 - Traefik is used for local routing across dev containers. Each project may have its own
   `docker-compose.yml` with Traefik labels and an optional `setup.sh` build step.
+- Machine config (Hyprland, Waybar, nvim, fish, Claude/AI config, etc.) lives in a
+  dotfiles repo and is symlinked into place — never edit only the live copy. Public
+  config goes in `~/dotfiles`; anything that exposes Andres's own infrastructure (hosts,
+  IPs, domains, network layout) or holds tokens/secrets goes in `~/.dotfiles-private`.
 
 ## Home network
 
@@ -238,6 +246,22 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
   cherry-pick, push, rebase" after a fix is approved) don't need a fresh confirmation
   each time — the checkpoint is for decisions, not for re-approving mechanics already
   agreed to.
+- Read-only phrasing means no edits: "don't make changes yet", "just suggest",
+  "analyze", "brainstorm", or a research/explain question never edits files or runs
+  mutating commands. End with findings and options, not an implementation.
+- When Andres asks to "see" a file, list, or todo, print its contents in the message,
+  not just a path — he often reads from his phone. For review-heavy output (many
+  candidate edits, e.g. résumé wording), write every option into one standing review
+  file he can approve from later, instead of making him choose item by item in chat.
+- When Andres says to drop a line of investigation ("don't pursue that unless I bring
+  it up"), don't revisit or re-suggest it later in the session. If it seems worth
+  tracking, file it in Dibs and move on.
+- When spawning any subagent or worker, say which agent type and model it runs on and
+  why that model, before launching — prefer the cheapest capable one. Format and
+  details: the `orchestrator-worker` skill's Worker Launch Reporting section.
+- If an MCP tool exists for a job (e.g. Dibs), use it. If it's unreachable, say so and
+  use the documented fallback or ask — never silently go around it with direct
+  DB/ORM writes.
 - For multi-session/phased work (a plan doc, a numbered set of phases, a long todo
   list tackled incrementally), proactively offer a ready-to-paste hand-off prompt
   for the next session — but only when it's actually warranted: context is getting
@@ -507,6 +531,7 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 
 ## Hooks summary (see hooks config for full detail)
 
+
 **Laravel projects:**
 - On PHP file write: Pint (auto-fix) → PHPStan level 6 (report only, must address before commit)
 - Pre-commit: Pint (auto-fix, re-stage) → PHPStan level 6 (blocks on failure) → Rector
@@ -551,6 +576,26 @@ the whole codebase.
 
 `/feature-atlas-report` — re-validates and re-ranks findings from existing subsystem audits into
 `REPORT.md`, without rescanning any code.
+
+## Shared config across agents
+
+Everything under `~/dotfiles/ai/` is shared, not Claude-only. opencode links `commands/` and
+`skills/` directly and has its own agent copies in `agents-opencode/`. Codex reads
+`AGENTS.md` (which points back here) plus one wrapper skill per item in
+`codex-skills/claude-import-<name>/`. Antigravity's `agy` discovers `skills/` through
+`gemini-config-skills.json`. When adding or changing a skill, command, or agent:
+
+- Keep it portable: plain Markdown, `SKILL.md` frontmatter limited to `name` and
+  `description`, and `$ARGUMENTS` for command input. Describe actions in tool-neutral
+  terms (e.g. "ask the user"), or name a fallback when a step depends on a Claude Code-only
+  tool, hook, or slash command.
+- Add or update the matching `codex-skills/claude-import-<name>/SKILL.md` wrapper (it points
+  at the shared file and repeats any safety rule, like push confirmation). The install
+  script's Codex section links every wrapper in that directory.
+- For a new agent, add the opencode copy in `agents-opencode/` too.
+- Claude-only pieces (hooks, `settings.json`, plugins) don't exist for the other agents.
+  When a rule is enforced by a hook, keep the rule written here as well, so agents without
+  the hook still follow it.
 
 ## opencode restart requirement
 
