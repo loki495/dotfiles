@@ -197,6 +197,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/push-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
             "command": "rtk hook claude"
           }
         ]

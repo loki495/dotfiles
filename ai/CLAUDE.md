@@ -531,6 +531,10 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 
 ## Hooks summary (see hooks config for full detail)
 
+**All projects:**
+- Push guard (`hooks/push-guard.sh`, PreToolUse on Bash): any command containing
+  `git push` (including `rtk git push` and chained commands) forces a permission prompt
+  showing the exact command, whatever the permission mode or allow rules.
 
 **Laravel projects:**
 - On PHP file write: Pint (auto-fix) → PHPStan level 6 (report only, must address before commit)
@@ -576,6 +580,16 @@ the whole codebase.
 
 `/feature-atlas-report` — re-validates and re-ranks findings from existing subsystem audits into
 `REPORT.md`, without rescanning any code.
+
+`/ship` — commits finished work and ships it using the repo's own flow (cherry-pick to
+production, propagate from a common root, branch + PR, direct push, or custom). It reads
+the flow from a `## Shipping` section in the project's `CLAUDE.md`, or works it out, asks,
+and records it there. It confirms the exact branches and remotes once before anything leaves
+the machine.
+
+`/handoff` — writes a current-state hand-off (goal, state, decisions, verified lessons,
+next steps, open questions, ruled-out paths) to the Dibs plan or a `.claude/handoff-*.md`
+file, plus a paste-ready prompt for a fresh session.
 
 ## Shared config across agents
 
