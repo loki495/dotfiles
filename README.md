@@ -381,13 +381,16 @@ than per tool.
 - `skills/` — Laravel, Livewire, Pest, OpenCart, Rector, DB, frontend and git
   conventions, plus infrastructure/backup runbooks and an orchestrator-worker
   pattern for multi-agent runs.
-- `commands/` — `cherry-pick-to`, `commits`, `project-bootstrap`, and the
-  three-command `feature-atlas` toolchain (full scan, single subsystem, report).
+- `commands/` — `cherry-pick-to`, `commits`, `project-bootstrap`, `ship`
+  (commit and ship using each repo's own flow), `handoff` (current-state hand-off
+  for a fresh session), and the three-command `feature-atlas` toolchain (full
+  scan, single subsystem, report).
 - `agents/` — `code-reviewer`, `git-helper`, `legacy-auditor`, `test-writer`,
   and the four `feature-atlas-*` roles (scout, mapper, auditor, synthesizer)
   those commands drive.
 - `hooks/` — Pint/PHPStan/Rector/Pest automation on write
-  (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`).
+  (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`), plus
+  `push-guard.sh`, which forces a permission prompt for every `git push`.
 - `ponytail/` — ponytail plugin config (default `lite` mode), linked to
   `~/.config/ponytail/`.
 - `lessons/` — an accumulated store of findings carried between sessions.
