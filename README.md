@@ -388,6 +388,8 @@ than per tool.
   those commands drive.
 - `hooks/` — Pint/PHPStan/Rector/Pest automation on write
   (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`).
+- `ponytail/` — ponytail plugin config (default `lite` mode), linked to
+  `~/.config/ponytail/`.
 - `lessons/` — an accumulated store of findings carried between sessions.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout).
