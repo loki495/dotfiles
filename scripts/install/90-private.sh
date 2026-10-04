@@ -15,7 +15,7 @@ if [ ! -d "$PRIVATE_ROOT" ]; then
 fi
 
 # Symlink every entry of $1 into directory $2. backup_and_link keeps any real
-# file already at a target as <name>.old and leaves a correct link alone.
+# file already at a target in ~/.dotfiles-backups and leaves a correct link alone.
 link_entries () {
   local source_dir="$1" target_dir="$2" entry
   [ -d "$source_dir" ] || return 0

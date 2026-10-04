@@ -52,8 +52,14 @@ you touched is the normal way to work here.
 | `bin-tools` | Checks ripgrep/Composer and downloads PHP tools into `~/.local/bin` |
 | `private` | Links your private dotfiles repo in (see [Private dotfiles](#private-dotfiles)); does nothing when `~/.dotfiles-private` does not exist |
 
-Existing files, directories, and custom symlinks are preserved as `<target>.old`,
-then `<target>.old.1`, `<target>.old.2`, and so on. Re-running an unchanged link is
+Existing files, directories, and custom symlinks that a link replaces are moved to
+`~/.dotfiles-backups/<run timestamp>/<path relative to $HOME>` (for example
+`~/.dotfiles-backups/20261003-193612/.config/hypr`). One install run shares a single
+timestamp, so each run's backups sit together; a second backup of the same path in
+one run gets `.1`, `.2`. Nothing is backed up when its exact content is already
+kept, either because it matches the repo version or an earlier backup, so reruns
+don't pile up duplicates. Targets outside `$HOME` go under `_absolute/<full path>`.
+Set `DOTFILES_BACKUP_ROOT` to keep backups elsewhere. Re-running an unchanged link is
 a no-op. Parent directories such as `~/.config` are created when needed, including
 when you run a section on its own. The installer does not source your new `.bashrc`;
 open a new shell after installation.
@@ -112,14 +118,15 @@ manager first.
 
 ### Rerunning the installer
 
-Matching config symlinks are left alone. Replaced configs remain in numbered
-`.old` backups; they are not merged into the new active configuration. A working
+Matching config symlinks are left alone. Replaced configs remain in
+`~/.dotfiles-backups/`; they are not merged into the new active configuration. A working
 Neovim binary is skipped unless `--force` is specified. Forced binary installs
 keep older versions and executable backups.
 
 Parsers, queries, generated aliases and downloaded tools use atomic replacement.
-Identical files are skipped; changed files are preserved under a sibling
-`.dotfiles-backups/` directory, with numbered backups. Keep personal query overrides
+Identical files are skipped; the previous version of a changed file is copied to
+the same `~/.dotfiles-backups/<run timestamp>/` tree, again only when that exact
+content isn't already kept. Keep personal query overrides
 in `nvim/after/queries/` rather than editing generated query files. Parser builds
 still run on repeat, so rerunnable does not mean no network or build work.
 `--node-provider` is an npm-managed dependency update and can change its package
@@ -203,7 +210,7 @@ symlinks these into this checkout, all of them gitignored here:
 | `ai/skills/*`, `ai/codex-skills/*` | the same names under `ai/` | Skills that name real hosts and IPs |
 | `systemd/user/*` | `.config/systemd/user/*` | Units Sessioneer's `host-agent/install.sh` renders for one machine (absolute paths). `install.sh` rewrites them in place through the links |
 
-An existing real file at a target is kept as `<name>.old`. `traefik/` is linked the
+An existing real file at a target is kept in `~/.dotfiles-backups/` (see above). `traefik/` is linked the
 same way through its own tracked symlink and the `traefik` section.
 
 Not versioned anywhere: `ai/skills/synced/`, which Claude Code fills with the
