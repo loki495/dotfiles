@@ -38,8 +38,22 @@ Applies across both Laravel and OpenCart projects, with some split by project ty
   popups, forms, cards) — don't wait to be told. This has been the single most
   common thing missed across projects: squished inputs, off-screen fields,
   horizontal-scroll overflow, buttons too small for touch.
-- If the project has a dev browser available (Playwright, etc.), verify at a real
-  small viewport (e.g. ~390px wide), not just by shrinking a desktop browser window.
+- Verify UI-touching changes in a real browser before calling them done: a Playwright
+  (or other dev browser) screenshot at a real phone viewport (~390px wide) first, then
+  desktop — not just by shrinking a desktop browser window, and not just by reading
+  the code. Look at the screenshot yourself rather than asking Andres to check.
+- Andres often uses web apps from iOS, including as home-screen PWAs (no browser
+  chrome). Behavior there differs from Safari and from Playwright, so keep in mind:
+  - Aggressive caching of JS/CSS — use cache-busting (versioned asset URLs) so a
+    change doesn't require re-adding the home-screen icon.
+  - Safe-area insets and the on-screen keyboard: fixed footers/composers must stay
+    pinned to the bottom with no blank area below, and focusing a textarea must not
+    scroll the page past the viewport.
+  - Enter in a textarea on mobile inserts a newline; it must never submit.
+  - Web push/notifications only work from the home-screen app and need an explicit
+    user-gesture permission prompt.
+  When a bug only reproduces in the PWA, say so rather than concluding from a
+  Playwright run that it works.
 - If the project supports both light and dark mode, verify both — don't assume
   whichever theme happens to be active during development is the only one that
   matters.
