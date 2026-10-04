@@ -20,6 +20,11 @@ echo_info "    hooks (added by its Install hooks, with that checkout's absolute 
 echo_info "    one machine: delete them where Sessioneer is not installed. Claude Code reads no"
 echo_info "    user-level settings.local.json; see ai/settings.local.json.example."
 
+section_header "Setting up ponytail config..."
+mkdir -p ~/.config/ponytail
+backup_and_link ~/.config/ponytail/config.json "$DOTFILES_ROOT/ai/ponytail/config.json"
+echo_success "ponytail defaults to lite mode."
+
 section_header "Setting up opencode config..."
 if command_exists opencode; then
   mkdir -p ~/.config/opencode

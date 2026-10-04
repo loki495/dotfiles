@@ -189,6 +189,19 @@ chmod +x "$prefix/bin/nvim"
         self.assertTrue((self.home / '.config/opencode/agent').is_symlink())
         self.assertFalse((self.home / 'systemd-touched').exists())
 
+    def test_ai_configuration_links_ponytail_config(self):
+        self.run_script('install.sh', 'ai-tools')
+        link = self.home / '.config/ponytail/config.json'
+        self.assertEqual(link.resolve(), REPO / 'ai/ponytail/config.json')
+
+    def test_ai_configuration_preserves_existing_ponytail_config(self):
+        existing = self.home / '.config/ponytail/config.json'
+        existing.parent.mkdir(parents=True)
+        existing.write_text('{ "defaultMode": "ultra" }\n')
+        self.run_script('install.sh', 'ai-tools')
+        self.assertTrue(existing.is_symlink())
+        self.assertEqual(existing.with_name('config.json.old').read_text(), '{ "defaultMode": "ultra" }\n')
+
     def test_existing_healthy_editor_is_not_shadowed(self):
         self.stub('nvim', '#!/bin/sh\necho "NVIM existing"\n')
         result = self.run_script('install_neovim.sh', '--user')
