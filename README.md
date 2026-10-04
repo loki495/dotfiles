@@ -193,9 +193,10 @@ Indentation and textobjects are outside this highlighting setup.
     `clangd` from the system package manager.
   - `github` reads `GITHUB_PERSONAL_ACCESS_TOKEN` from the environment. Set it in the
     untracked `~/.config/fish/config.local.fish` (`chmod 600` it), never in a tracked file.
-  - `laravel-boost` starts `php artisan boost:mcp` with the host PHP, so it only works
-    inside a Laravel project that has `laravel/boost` installed, and it doesn't run
-    inside the project's container.
+  - `laravel-boost` is disabled globally: Boost is per project. A Laravel project that
+    requires `laravel/boost` gets its own `.mcp.json` from `php artisan boost:install`.
+    That file runs `php artisan boost:mcp` with the host PHP, so for a containerized
+    project change it to `docker exec -i <container> php artisan boost:mcp`.
 - **Systemd and OpenCode:** default installation never reloads systemd or starts
   services. AI-tool configuration links can be installed on shared hosts without
   systemd. To opt in on a desktop with a running user session:
