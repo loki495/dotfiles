@@ -184,6 +184,18 @@ Indentation and textobjects are outside this highlighting setup.
   there is no separate user-wide place for such hooks. `ai/settings.local.json.example`
   is a template for personal hooks you merge by hand into `settings.json` or copy into
   one project's own `.claude/settings.local.json`; nothing here assumes Sessioneer exists.
+- **Claude Code plugins:** `enabledPlugins` in `ai/settings.json` lists the plugins in
+  use; install any missing on a new machine with `claude plugin install
+  <name>@claude-plugins-official`. Some need extra setup:
+  - The LSP plugins call language servers from `PATH`:
+    `npm i -g intelephense typescript-language-server typescript pyright` (npm's global
+    prefix is `~/.npm-global`, which `config.fish` and `bashrc` add to `PATH`), plus
+    `clangd` from the system package manager.
+  - `github` reads `GITHUB_PERSONAL_ACCESS_TOKEN` from the environment. Set it in the
+    untracked `~/.config/fish/config.local.fish` (`chmod 600` it), never in a tracked file.
+  - `laravel-boost` starts `php artisan boost:mcp` with the host PHP, so it only works
+    inside a Laravel project that has `laravel/boost` installed, and it doesn't run
+    inside the project's container.
 - **Systemd and OpenCode:** default installation never reloads systemd or starts
   services. AI-tool configuration links can be installed on shared hosts without
   systemd. To opt in on a desktop with a running user session:
