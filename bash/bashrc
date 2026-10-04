@@ -253,6 +253,8 @@ syncclone() {
 
 # opencode
 export PATH=$HOME/.opencode/bin:$PATH
+# npm global installs (npm config prefix = ~/.npm-global), e.g. the LSP servers
+export PATH=$HOME/.npm-global/bin:$PATH
 
 # Load the selected editor after older aliases in local customizations.
 if [ -f "$HOME/.local/share/dotfiles/neovim.bash" ]; then

@@ -201,6 +201,8 @@ set -x PATH $HOME/.cargo/bin $HOME/bin $HOME/.config/composer/vendor/bin $HOME/d
 # here so it's real, portable, human-authored config instead.
 set -gx PYENV_ROOT $HOME/.pyenv
 fish_add_path $HOME/.pyenv/bin
+# npm global installs (npm config prefix = ~/.npm-global), e.g. the LSP servers
+fish_add_path $HOME/.npm-global/bin
 
 # PHP server helper
 functions -e phpserver
