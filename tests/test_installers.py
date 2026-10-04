@@ -27,7 +27,7 @@ class InstallerTests(unittest.TestCase):
         self.env = dict(os.environ, HOME=str(self.home), PATH=f'{self.bin}:/usr/bin:/bin',
                         TEST_ROOT=str(self.root), DOWNLOAD_LOG=str(self.download_log),
                         NVIM_INSTALL_CHOICE='1', NVIM_LEGACY='0', SILENT_ECHOS='1')
-        for key in ('SUDO_USER', 'BASH_ENV', 'ENV'):
+        for key in ('SUDO_USER', 'BASH_ENV', 'ENV', 'DOTFILES_BACKUP_ROOT', 'DOTFILES_BACKUP_RUN'):
             self.env.pop(key, None)
         self.archive('good', '#!/bin/sh\necho "NVIM v0.12.5"\n')
         self.archive('bad', '#!/bin/sh\necho "GLIBC_2.34 not found" >&2\nexit 1\n')
@@ -51,6 +51,19 @@ else:
         kind = 'bad' if (os.environ.get('BAD_SUPPORTED') == '1' and '/neovim/neovim/' in args[-1]) or os.environ.get('BAD_LEGACY') == '1' else 'good'
         shutil.copyfile(os.environ['TEST_ROOT'] + '/' + kind + '.tar.gz', output)
 ''')
+
+    def backups(self, name):
+        """Backups of entries called `name`, oldest first: <run>/<path>/name, then name.1, name.2."""
+        found, root = [], self.home / '.dotfiles-backups'
+        for directory, subdirs, files in os.walk(root):
+            for entry in subdirs + files:
+                base, _, index = entry.partition(name)
+                if base == '' and (index == '' or (index[0] == '.' and index[1:].isdigit())):
+                    path = Path(directory) / entry
+                    found.append((path.relative_to(root).parts[0], int(index[1:] or 0), path))
+            subdirs[:] = [d for d in subdirs if not (Path(directory) / d).is_symlink()
+                          and Path(directory, d) not in [f[2] for f in found]]
+        return [path for _, _, path in sorted(found)]
 
     def stub(self, name, content):
         target = self.bin / name
@@ -200,7 +213,7 @@ chmod +x "$prefix/bin/nvim"
         existing.write_text('{ "defaultMode": "ultra" }\n')
         self.run_script('install.sh', 'ai-tools')
         self.assertTrue(existing.is_symlink())
-        self.assertEqual(existing.with_name('config.json.old').read_text(), '{ "defaultMode": "ultra" }\n')
+        self.assertEqual([b.read_text() for b in self.backups('config.json')], ['{ "defaultMode": "ultra" }\n'])
 
     def test_existing_healthy_editor_is_not_shadowed(self):
         self.stub('nvim', '#!/bin/sh\necho "NVIM existing"\n')
@@ -274,7 +287,7 @@ chmod +x "$prefix/bin/nvim"
         self.run_script('install_neovim.sh', '--user', '--force')
         self.assertNotEqual(binary.resolve(), previous)
         self.assertTrue(previous.exists())
-        self.assertEqual(binary.with_name('nvim.old').resolve(), previous)
+        self.assertEqual([b.resolve() for b in self.backups('nvim')], [previous])
 
     def test_missing_config_directory_is_created_for_neovim_only(self):
         self.stub('nvim', '#!/bin/sh\necho "NVIM existing"\n')
@@ -306,20 +319,41 @@ chmod +x "$prefix/bin/nvim"
 
     def test_backups_are_unique_and_links_are_idempotent(self):
         target = self.home / '.config/nvim'
-        target.mkdir(parents=True)
-        (target / 'keep').write_text('first')
-        target.with_name('nvim.old').mkdir()
-        target.with_name('nvim.old').joinpath('keep').write_text('earlier')
-        self.shell('backup_and_link "$HOME/.config/nvim" "$DOTFILES_ROOT/nvim"')
-        self.shell('backup_and_link "$HOME/.config/nvim" "$DOTFILES_ROOT/nvim"')
-        self.assertEqual((target.parent / 'nvim.old/keep').read_text(), 'earlier')
-        self.assertEqual((target.parent / 'nvim.old.1/keep').read_text(), 'first')
-        self.assertFalse((target.parent / 'nvim.old.2').exists())
+        for text in ['first', 'second', 'first']:
+            if target.is_symlink():
+                target.unlink()
+            target.mkdir(parents=True)
+            (target / 'keep').write_text(text)
+            self.shell('backup_and_link "$HOME/.config/nvim" "$DOTFILES_ROOT/nvim"')
+            self.shell('backup_and_link "$HOME/.config/nvim" "$DOTFILES_ROOT/nvim"')
+            self.assertEqual(target.resolve(), REPO / 'nvim')
+        backups = self.backups('nvim')
+        self.assertEqual([(b / 'keep').read_text() for b in backups], ['first', 'second'])
+        self.assertTrue(all(b.relative_to(self.home / '.dotfiles-backups').parts[1:] in
+                            [('.config', 'nvim'), ('.config', 'nvim.1')] for b in backups))
+        self.assertEqual(list(target.parent.iterdir()), [target])
+
+    def test_content_identical_to_the_source_is_not_backed_up(self):
+        target = self.home / '.dircolors'
+        shutil.copy(REPO / 'bash/dircolors', target)
+        self.shell('backup_and_link "$HOME/.dircolors" "$DOTFILES_ROOT/bash/dircolors"')
+        self.assertEqual(os.readlink(target), str(REPO / 'bash/dircolors'))
+        self.assertEqual(self.backups('.dircolors'), [])
+        self.assertEqual(sorted(p.name for p in self.home.iterdir()), ['.dircolors'])
+
+    def test_failed_link_restores_content_identical_to_the_source(self):
+        self.stub('ln', '#!/bin/sh\necho "simulated link failure" >&2\nexit 1\n')
+        target = self.home / '.dircolors'
+        shutil.copy(REPO / 'bash/dircolors', target)
+        self.shell('backup_and_link "$HOME/.dircolors" "$DOTFILES_ROOT/bash/dircolors"', success=False)
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(target.read_bytes(), (REPO / 'bash/dircolors').read_bytes())
+        self.assertEqual(sorted(p.name for p in self.home.iterdir()), ['.dircolors'])
 
     def test_custom_dangling_link_is_preserved(self):
         (self.home / 'target').symlink_to('/missing/custom-target')
         self.shell('backup_and_link "$HOME/target" "$DOTFILES_ROOT/nvim"')
-        self.assertEqual(os.readlink(self.home / 'target.old'), '/missing/custom-target')
+        self.assertEqual([os.readlink(b) for b in self.backups('target')], ['/missing/custom-target'])
 
     def test_failed_link_restores_files_directories_and_dangling_links(self):
         self.stub('ln', '#!/bin/sh\necho "simulated link failure" >&2\nexit 1\n')
@@ -337,7 +371,7 @@ chmod +x "$prefix/bin/nvim"
                 self.assertEqual(os.readlink(target), '/missing/custom')
             else:
                 self.assertEqual((target / 'keep' if kind == 'directory' else target).read_text(), 'keep')
-            self.assertFalse(target.with_name(kind + '.old').exists())
+            self.assertEqual(self.backups(kind), [])
 
     def test_failed_neovim_link_restores_editor_and_removes_candidate(self):
         binary = self.home / '.local/bin/nvim'
@@ -357,12 +391,11 @@ chmod +x "$prefix/bin/nvim"
         self.shell('install_managed_file "$HOME/source" "$HOME/parser.so"')
         self.assertEqual(target.stat().st_ino, inode)
         self.assertFalse((self.home / '.dotfiles-backups').exists())
-        for text in ['second', 'third']:
+        for text in ['second', 'third', 'second', 'third']:
             source.write_text(text)
             self.shell('install_managed_file "$HOME/source" "$HOME/parser.so"')
         self.assertEqual(target.read_text(), 'third')
-        self.assertEqual((self.home / '.dotfiles-backups/parser.so.old').read_text(), 'first')
-        self.assertEqual((self.home / '.dotfiles-backups/parser.so.old.1').read_text(), 'second')
+        self.assertEqual([b.read_text() for b in self.backups('parser.so')], ['first', 'second', 'third'])
 
     def test_failed_managed_file_publication_preserves_previous_file(self):
         (self.home / 'source').write_text('new')
@@ -537,8 +570,7 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         target.write_text('rendered by an installer')
         self.install_sections(checkout, 'private')
         self.install_sections(checkout, 'private')
-        self.assertEqual((target.parent / 'lab.service.old').read_text(), 'rendered by an installer')
-        self.assertFalse((target.parent / 'lab.service.old.1').exists())
+        self.assertEqual([b.read_text() for b in self.backups('lab.service')], ['rendered by an installer'])
         self.assertEqual(target.read_text(), 'private version')
 
     def test_private_section_honours_a_custom_private_root(self):
@@ -559,7 +591,7 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         (self.home / '.claude').mkdir()
         (self.home / '.claude/CLAUDE.private.md').write_text('mine')
         self.install_sections(checkout, 'private')
-        self.assertEqual((self.home / '.claude/CLAUDE.private.md.old').read_text(), 'mine')
+        self.assertEqual([b.read_text() for b in self.backups('CLAUDE.private.md')], ['mine'])
         self.assertEqual((self.home / '.claude/CLAUDE.private.md').read_text(), 'notes')
 
     def test_private_section_tolerates_a_partial_private_repo(self):
