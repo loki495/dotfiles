@@ -386,6 +386,16 @@ Keep a hyphen only in a word that is genuinely hyphenated. Applies to any new la
 ones code or docs create or refer to. Decided 2026-09-19 in the Dibs repo: the docs told agents
 to filter by `agent-task` while the real label was `agent task`, so the filter matched nothing.
 
+## Avoid over-engineering
+
+Prefer the simplest design that addresses the real risk or requirement. When a fix starts
+growing extra moving parts (new services, permission schemes, abstractions), stop and check
+its value against the actual threat model or use case before building it, and say so if the
+simpler option is good enough. Decided 2026-10-05 in Dibs: a dedicated container UID with ACLs
+and an extra service was built to block same-UID `/proc` reads, but the read-write source bind
+mount already gave a compromised web tier a path to the host user, so a configurable UID plus
+a documented trust model was the right size.
+
 ## Avoid hardcoding
 
 Prefer settings/config, environment variables, or language/translation files over
