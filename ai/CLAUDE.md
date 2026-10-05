@@ -482,9 +482,15 @@ re-running it if it looks stale relative to recent commits.
 
 ## Context window management
 
-When context is getting close to full, warn Andres proactively rather than letting
-it auto-compress silently. Offer to write a hand-off prompt file capturing the
-info/decisions agreed on so far in the session, ready to paste into a fresh session.
+Every call re-reads the whole context, so a session's size matters well before the
+window is full: cache reads were ~95% of all tokens in a week-long audit (2026-10-05),
+with sessions running to ~950k. Budget: once context passes **~250k tokens**, tell
+Andres and offer `/handoff` then `/clear` before starting new work (finish the current
+step first). Same when coming back to a session idle longer than the prompt-cache TTL
+(~1h) with a large context: the next prompt rewrites the whole context at cache-write
+price, so a fresh session from a hand-off is usually cheaper. Avoid `/model` switches
+and plugin reloads mid-way through a big session for the same reason (each forces a
+full cache rewrite).
 
 ## Project backlog and bugs (Dibs, not local files) (updated 2026-09-13)
 
@@ -545,6 +551,11 @@ info/decisions agreed on so far in the session, ready to paste into a fresh sess
 - Push guard (`hooks/push-guard.sh`, PreToolUse on Bash): any command containing
   `git push` (including `rtk git push` and chained commands) forces a permission prompt
   showing the exact command, whatever the permission mode or allow rules.
+- Context budget (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default
+  250k, `CLAUDE_CTX_BUDGET`) it shows a warning and tells Claude to offer `/handoff` +
+  `/clear`; after an idle gap (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over
+  `CLAUDE_CTX_IDLE_FLOOR` (default 100k) it blocks the prompt once — re-send to continue
+  anyway. Slash commands always pass through.
 
 **Laravel projects:**
 - On PHP file write: Pint (auto-fix) → PHPStan level 6 (report only, must address before commit)

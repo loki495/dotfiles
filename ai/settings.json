@@ -251,6 +251,15 @@
             "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/user_prompt_submit.php"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/context-budget.sh"
+          }
+        ]
       }
     ]
   },
