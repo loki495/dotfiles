@@ -184,9 +184,14 @@ Indentation and textobjects are outside this highlighting setup.
   there is no separate user-wide place for such hooks. `ai/settings.local.json.example`
   is a template for personal hooks you merge by hand into `settings.json` or copy into
   one project's own `.claude/settings.local.json`; nothing here assumes Sessioneer exists.
-- **Claude Code plugins:** `enabledPlugins` in `ai/settings.json` lists the plugins in
-  use; install any missing on a new machine with `claude plugin install
-  <name>@claude-plugins-official`. Some need extra setup:
+- **Claude Code plugins:** `enabledPlugins` in `ai/settings.json` lists the plugins:
+  `true` ones are in use, `false` ones are installed but kept off because every enabled
+  plugin's skills and agents are listed in each session's context (turn one on in a
+  project's own `.claude/settings.json` when it's needed there). claude.ai connectors
+  (Claude Docs, Drive, ...) are kept out of local sessions the same way with
+  `disableClaudeAiConnectors`. Install any missing on
+  a new machine with `claude plugin install <name>@claude-plugins-official`. Some need
+  extra setup:
   - The LSP plugins call language servers from `PATH`:
     `npm i -g intelephense typescript-language-server typescript pyright` (npm's global
     prefix is `~/.npm-global`, which `config.fish` and `bashrc` add to `PATH`), plus

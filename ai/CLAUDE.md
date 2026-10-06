@@ -193,25 +193,6 @@ already in history are being stripped as part of that same cleanup).
   `composer pint`, `composer phpstan`, `composer rector`) that internally call
   `docker exec` so commands work consistently regardless of container name.
 
-## C/C++ development
-
-- Andres knows both C and C++, but his background is pre-2000s style. Expect
-  him to ask about modern idioms/standards (C99/C11/C17, C++11 and later —
-  RAII, smart pointers, `<functional>`/lambdas, move semantics, etc.) rather
-  than assume familiarity — explain briefly when introducing them instead of
-  using them silently.
-- For a project targeting embedded/SBC hardware (e.g. Raspberry Pi GPIO
-  work) where code must actually build and run on the target device: prefer
-  two independent **non-bare** git repos (dev machine + device), synced by
-  direct `git push` to the device with `receive.denyCurrentBranch =
-  updateInstead` set on the device repo (push updates its working tree
-  directly, no separate pull step) — plus a small local wrapper script that
-  pushes, then builds and runs over ssh on the device, streaming output back.
-  Confirmed working well for `Ws2818` (Raspberry Pi + WS281x LED strip); no
-  GitHub/hosted remote or full local/feature branch model needed for this
-  kind of single-developer, single-target project — that heavier model is
-  for projects with a real shared/production remote.
-
 ## Test coverage — happy paths and sad paths
 
 This is a general rule, not scoped to Laravel or OpenCart. It applies to any kind of
@@ -268,97 +249,79 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
   full, or a fresh session is genuinely needed to avoid missing info/hallucination
   from an overloaded context. Don't offer this reflexively after every small chunk
   of finished work.
-- When a message is phrased as "Todo: ...", "next: ...", or "after [current thing],
-  do ...", treat it as a backlog note, not a request to context-switch immediately —
-  keep working the current item(s), and file the mentioned item as a task in Dibs
-  (the `dibs` MCP server, or the `todo:agent:*` CLI/direct Action call if MCP isn't
-  reachable from this session — see the `orchestrator-worker` skill's Project State
-  section) rather than a local `todo` file. Figure out the best-fitting Project area
-  (Work for the current job, Personal Projects for personal sites/software/homelab,
-  Learning & Self-Improvement, or Random Tasks), Group (website/topic — check
-  `todo_context`; create one by name if none matches), and parent issue if one
-  obviously fits, the same judgment a human would apply, not a default/catch-all
-  bucket. **Ask if genuinely unsure about any of these** — area, Group, or parent —
-  rather than guessing. Only implement it right away if explicitly told to do so now
-  ("do this now", "right now", "go ahead and do it", etc.). Plain direct statements
-  without that deferral framing ("X should show Y", "the page doesn't have Z") are
-  normal requests, not backlog notes — implement those as usual.
+- `Todo:` / `next:` / "after X, do Y" messages are backlog notes, not context
+  switches: see "Dibs" below.
 
-## Multi-step work: plans, research, lessons (default workflow)
+## Dibs: plans, backlog, bugs, knowledge
 
-For any multi-step coding work — refactors, audits, multi-file features, anything
-likely to span more than one sitting — the `orchestrator-worker` skill's protocol is
-the **default**, not something to invoke on request. It's Dibs-backed as of
-2026-09-13 (no more local plan files — see the skill's Project State section for
-full mechanics); summary of what it means day to day:
+Dibs is the one tracker for plans, project backlog, bugs and shared knowledge, for every
+tool (Claude Code, opencode, Codex, agy): the `dibs` MCP server, or the `todo:agent:*`
+CLI / a direct Action call where MCP isn't reachable (`orchestrator-worker` skill,
+Project State section). Local `todo`/`bugs.md` files are retired: never create one or
+add to one, including in `/project-bootstrap` scaffolds; an existing one is read and
+respected until its items are worked through or moved.
 
-- **When a plan gets created:** automatically, without being asked, once a
-  task is explicitly multi-phase/an audit, expected to span sessions, or is
-  `TodoWrite`-worthy work that needs to survive a session boundary. Small
-  single-turn/single-file work stays inline or as a plain `TodoWrite` list — no
-  plan needed, and scaffolding one for a three-line fix is overhead, not diligence.
-- **Where it lives:** a `plan`-labeled issue in Dibs (the personal MCP-backed task
-  tracker), reached via the `dibs` MCP server where registered, or the
-  `todo:agent:*` CLI/direct Action calls otherwise — filed under the Project area
-  and Group matching the current work, asking if it's unclear which area. Agnostic
-  across tools the same way the old files were: Claude Code, opencode, Codex, and
-  agy can each reach Dibs, via MCP where registered or the CLI fallback otherwise.
-- **Resuming cold:** at the start of multi-step work, `todo_list`/`todo_context`
-  (filter `label=plan`) for an in-progress plan on this objective before starting
-  new work, and ask which to resume (or confirm starting fresh) rather than
-  assuming. Before touching a task's files, check `todo_claim_status` — a live claim
-  (`isCurrentlyAlive: true`) means another process is genuinely working on it right
-  now; skip it for a different unclaimed task rather than editing alongside it or
-  asking to override, whether the work is delegated or solo (see the
-  `orchestrator-worker` skill's Task Claims section).
-- **Escalating to full delegation** (spawning workers, model tiering, parallel
-  execution): automatic once it's clearly warranted, or a quick check-in when it's
-  ambiguous — never silently. This satisfies the "work one item at a time, get a
-  decision before the next" rule in "Working style" above for the *delegation*
-  decision specifically; it doesn't replace that rule for the substance of the work.
-- **Default to a cheap fresh worker over forking for bounded, self-contained
-  mechanical work** (e.g. drafting/editing content across many files or issues,
-  running a fixed checklist) once the delegation prompt can fully specify the task
-  without relying on inherited conversation context. A fork always runs on the
-  orchestrator's own model — it only pays off when avoiding context re-derivation
-  matters more than per-token price. See the `orchestrator-worker` skill's Model
-  Tiering section before defaulting to a fork out of habit.
-- **Shared, cross-plan knowledge:** `research`-labeled Dibs issues (checksum-versioned
-  investigative findings, code-specific or general — reused until the files they're
-  based on change) and `lesson`-labeled ones (durable non-code-specific gotchas —
-  platform quirks, library fine print, logic traps), filed under Personal Projects →
-  AI workflows unless project-specific. Check both before researching anything;
-  update both after finding something durable, by whoever did the step, not just
-  delegated workers. Being centrally in Dibs, these are already cross-project — no
-  separate "is this general enough" judgment call needed the way project-scoped
-  files required.
-- **Reporting a tooling problem, not a plan question:** if the Dibs MCP/CLI tooling
-  itself misbehaves mid-plan — not a decision needing a human call — self-report it
-  via `todo_report_bug` rather than working around it silently.
-- **Noting a follow-up you noticed yourself, decided 2026-09-13:** when you (not
-  Andres) spot something worth checking or doing later while heads-down on
-  something else — an unconfirmed edge case, a gap you're consciously deferring, a
-  "this should really also..." — file it as a Dibs task right then via `todo_create`
-  (same area/Group/parent judgment as the `Todo:` convention, asking if genuinely
-  unsure), rather than only mentioning it in your response text. A note that lives
-  only in chat is invisible to the next session and to other agents; one in Dibs is
-  resumable and claimable like any other task. Only surface it to Andres as a
-  decision if it's actually one (see "Working style" above) — otherwise just file it
-  and keep going.
-  **Always capture distracting follow-ups:** when a newly found bug, improvement,
-  or investigation would take substantial time or distract from the active task,
-  search Dibs for an existing item, then create or update a task before moving on.
-  Include the affected project/files, observed evidence, impact, what remains
-  uncertain, and a concrete next step. Mark suspicions as unconfirmed. Continue
-  the current task; do not expand its scope just because the issue was discovered.
-  If it blocks the current task, record that dependency and explain it to Andres.
-- **Token efficiency is part of the default, not an afterthought:** verify via
-  diffs/status instead of re-reading full files, prefer targeted grep/glob over full
-  reads, run lint/test/static-analysis tools with quiet flags and keep only
-  pass/fail + errors in checkpoint comments (never raw verbose output), batch
-  independent steps, and treat `/clear` between unrelated phases as safe and
-  encouraged once a
-  phase's state is persisted to Dibs.
+**Filing anything** (task, bug, plan, `Todo:` note, follow-up): pick the best-fitting
+Project area (Work for the current job, Personal Projects for personal
+sites/software/homelab, Learning & Self-Improvement, Random Tasks), Group (one per
+project/website/topic; check `todo_context`, create one by name if none matches) and
+parent issue, the way a human would, never a catch-all bucket. **Ask if genuinely
+unsure about any of them.** A project gets a lightweight parent issue (repo path, stack,
+purpose) when its first item is filed, not speculatively. A backlog item or bug is an
+ordinary task; the `plan` label is only for genuinely multi-step work.
+
+**`Todo:` / `add to Todo:` / `next:` / "after X, do Y"** are backlog notes: file them
+and keep working the current item. Implement right away only when told to ("do this
+now", "go ahead and do it"). Plain statements ("X should show Y", "the page doesn't have
+Z") are normal requests to implement.
+
+**Follow-ups you notice yourself** (an unconfirmed edge case, a gap you're deferring, a
+bug or investigation that would take real time or distract from the active task): search
+Dibs for an existing item, then create or update one right then, with the project/files,
+evidence, impact, what's unconfirmed, and a concrete next step. A note that lives only in
+chat is invisible to the next session and to other agents. Don't expand the current
+task's scope; if it blocks the task, record the dependency and tell Andres. Raise it as a
+decision only if it actually is one.
+
+**Claim, work, complete.** Before touching a task's files, check `todo_claim_status`: a
+live claim (`isCurrentlyAlive: true`) means another process is working it, so take a
+different task instead of editing alongside it or asking to override. `todo_claim`
+*before* starting, heartbeat if it runs long, `todo_complete` when done; the claim is
+what tells other agents and sessions the task is taken while the work happens. If work
+was done unclaimed, say so in the closing note. Items track what's **left to do**: close
+finished ones rather than leaving them open with a note. A real lesson from one goes into
+a `lesson`/`research` issue (or a concise WHY code comment), not onto the closed task.
+
+**Plans.** The `orchestrator-worker` skill's protocol is the default for multi-step
+coding work (refactors, audits, multi-file features, anything likely to span sittings),
+not something to invoke on request:
+- Create a `plan`-labeled issue automatically once work is explicitly multi-phase or an
+  audit, expected to span sessions, or `TodoWrite`-worthy work that must survive a
+  session boundary. Small single-turn/single-file work stays inline or in `TodoWrite`;
+  a plan for a three-line fix is overhead, not diligence.
+- Resuming cold: look for an in-progress plan on this objective (`todo_list` /
+  `todo_context`, `label=plan`) and ask which to resume, or confirm starting fresh.
+- Escalating to delegation (workers, model tiering, parallel runs): automatic when
+  clearly warranted, a quick check-in when ambiguous, never silent. That settles the
+  delegation decision only; "Working style"'s one-item-at-a-time rule still governs the
+  substance of the work.
+- Prefer a cheap fresh worker over a fork for bounded mechanical work the prompt can
+  fully specify. A fork always runs on the orchestrator's model and only pays off when
+  re-deriving context costs more than the price difference (the skill's Model Tiering
+  section).
+- If Dibs tooling itself misbehaves, report it with `todo_report_bug` rather than
+  working around it silently.
+
+**Shared knowledge:** `research` issues (checksum-versioned findings, reused until the
+files they're based on change) and `lesson` issues (durable non-code gotchas: platform
+quirks, library fine print, logic traps), under Personal Projects → AI workflows unless
+project-specific. Check both before researching anything; whoever finds something
+durable updates them, not just delegated workers.
+
+**Token efficiency:** verify via diffs/status instead of re-reading files, grep/glob
+before full reads, run tools with quiet flags and keep only pass/fail + errors in
+checkpoint comments, batch independent steps, and `/clear` between unrelated phases once
+state is in Dibs.
 
 ## Memory scope discipline
 
@@ -492,59 +455,6 @@ price, so a fresh session from a hand-off is usually cheaper. Avoid `/model` swi
 and plugin reloads mid-way through a big session for the same reason (each forces a
 full cache rewrite).
 
-## Project backlog and bugs (Dibs, not local files) (updated 2026-09-13)
-
-- Local `todo`/`bugs.md` files are **retired** — don't create or maintain them in
-  any project, including new ones `/project-bootstrap` scaffolds. Project
-  implementation backlog and bug reports live in Dibs instead, the same tracker
-  personal tasks and multi-step plans already use, via the `dibs` MCP server or
-  `todo:agent:*`/a direct Action call when MCP isn't reachable from this session
-  (see the `orchestrator-worker` skill's Project State section). An existing
-  project's current `todo`/`bugs.md` doesn't need an urgent mass-migration — read
-  and respect it until its items are naturally worked through or moved, but don't
-  add new items to it.
-- **Every project gets its own Dibs Group** — under whichever Project area fits
-  (Work for the current job, Personal Projects for personal sites/software/homelab,
-  Learning & Self-Improvement, or Random Tasks). Check `todo_context`/`todo_list`
-  for an existing Group matching the project first; create one by name if none
-  exists yet. **Ask if genuinely unsure which area a new project's Group belongs
-  under.**
-- **Give a project a parent/context issue if it doesn't have one yet** once you're
-  about to file its first task or backlog item in Dibs — a lightweight issue (repo
-  path, stack, purpose) that backlog items and bugs can nest under, the same anchor
-  role `#36` (`Todo application`) plays for Dibs's own project. Don't invent one
-  speculatively for a project nothing has been filed for yet.
-- A **backlog item or bug** is an ordinary Dibs task (`todo_create`) under that
-  project's Group/parent — no `plan` label needed unless it's genuinely multi-step
-  work per [Multi-step work](#multi-step-work-plans-research-lessons-default-workflow).
-  Figure out the best-fitting Group and parent the same judgment a human would
-  apply; ask if genuinely unsure.
-- **This is what makes cross-agent coordination on ordinary backlog work possible**,
-  not just formal plans: two agents (or two sessions) touching the same project can
-  `todo_claim` a backlog task before working it, exactly as they would a plan's
-  task, instead of silently duplicating effort the way two agents editing the same
-  flat file could.
-- **Claim first, then work, then complete.** Claim a Dibs task (`todo_claim`) *before* starting
-  on it, heartbeat if it runs long, and close it with `todo_complete` when done. Never do the
-  work first and claim only to close it afterward: the claim exists to tell other agents and
-  sessions the task is taken while the work happens. If work was done without a claim, say so in
-  the closing note. (Also in `skills/dibs/SKILL.md` in the Dibs repo.)
-- These items track what's **left to do**, not a history log. When one is
-  completed, close it (`todo_complete`) rather than leaving it open with a note —
-  don't leave a growing pile of done-but-open issues.
-- If a completed item taught a real lesson (a gotcha, a wrong assumption worth
-  remembering), capture that as a `lesson`- or `research`-labeled Dibs issue instead
-  (see [Multi-step work](#multi-step-work-plans-research-lessons-default-workflow)),
-  or a concise code comment only if the WHY is non-obvious to a future reader —
-  not as a "done" note left on the closed task.
-- **Global `Todo:` handling (Andres 2026-08-25; updated 2026-09-13 to use Dibs):**
-  when Andres says `Todo:` or `add to Todo:` (or similar), file it as a task in
-  Dibs the same way — figuring out the best-fitting Project area, Group, and parent
-  issue if one obviously fits, asking if genuinely unsure about any of them — then
-  continue with whatever was being done, don't treat it as a context-switch
-  request. Plain direct statements without `Todo:` deferral framing remain normal
-  requests to implement immediately.
-
 ## Hooks summary (see hooks config for full detail)
 
 **All projects:**
@@ -566,84 +476,14 @@ full cache rewrite).
 **OpenCart projects:**
 - No automatic hooks. Opt-in only via project's own `.claude/project.md`.
 
-## Skills available
+## On-demand context
 
-`laravel-conventions`, `livewire-components`, `pest-testing`,
-`opencart-legacy`, `frontend-stack`, `db-context`, `git-workflow`, `rector`,
-`backup-setup`, `verifying-identity`, `resource-cleanup`, `orchestrator-worker`,
-`ac495-infrastructure`
+Kept out of this file so it isn't loaded into every session; read the skill when it applies:
 
-## Agents available
-
-- **Core:** `code-reviewer` (dual ruleset: Laravel strict / OpenCart safe), `git-helper`
-  (push-safety + branch model enforcement), `legacy-auditor` (OpenCart read-only scanner),
-  `test-writer` (Pest only, subagent)
-- **Feature atlas family:** `feature-atlas-mapper` (whole-repo subsystem-boundary
-  discovery), `feature-atlas-scout` (per-subsystem deep static analysis),
-  `feature-atlas-auditor` (per-subsystem maintainability audit),
-  `feature-atlas-synthesizer` (cross-subsystem validation + report)
-
-## Commands available
-
-`/project-bootstrap` — detects project type, checks/offers to install tooling, scans
-existing `~/www/` docker-compose patterns to generate new project docker-compose +
-Traefik config + setup.sh, adds composer script wrappers, writes `.claude/project.md`
-when worktree/branch structure is ambiguous.
-
-`/feature-atlas` — discovers and inventories every feature/subsystem in the current project
-(frontend + backend), writing `.ai/feature-atlas/` as the project's source of truth for its
-feature inventory (including each subsystem's purpose/intent), then offers — doesn't force — a
-maintainability audit pass on top once the inventory is done. Re-runnable; only refreshes what
-changed. See "Feature atlas" section above.
-
-`/feature-atlas-subsystem <name>` — refreshes one subsystem's entry cheaply, without rescanning
-the whole codebase.
-
-`/feature-atlas-report` — re-validates and re-ranks findings from existing subsystem audits into
-`REPORT.md`, without rescanning any code.
-
-`/ship` — commits finished work and ships it using the repo's own flow (cherry-pick to
-production, propagate from a common root, branch + PR, direct push, or custom). It reads
-the flow from a `## Shipping` section in the project's `CLAUDE.md`, or works it out, asks,
-and records it there. It confirms the exact branches and remotes once before anything leaves
-the machine.
-
-`/handoff` — writes a current-state hand-off (goal, state, decisions, verified lessons,
-next steps, open questions, ruled-out paths) to the Dibs plan or a `.claude/handoff-*.md`
-file, plus a paste-ready prompt for a fresh session.
-
-## Shared config across agents
-
-Everything under `~/dotfiles/ai/` is shared, not Claude-only. opencode links `commands/` and
-`skills/` directly and has its own agent copies in `agents-opencode/`. Codex reads
-`AGENTS.md` (which points back here) plus one wrapper skill per item in
-`codex-skills/claude-import-<name>/`. Antigravity's `agy` discovers `skills/` through
-`gemini-config-skills.json`. When adding or changing a skill, command, or agent:
-
-- Keep it portable: plain Markdown, `SKILL.md` frontmatter limited to `name` and
-  `description`, and `$ARGUMENTS` for command input. Describe actions in tool-neutral
-  terms (e.g. "ask the user"), or name a fallback when a step depends on a Claude Code-only
-  tool, hook, or slash command.
-- Add or update the matching `codex-skills/claude-import-<name>/SKILL.md` wrapper (it points
-  at the shared file and repeats any safety rule, like push confirmation). The install
-  script's Codex section links every wrapper in that directory.
-- For a new agent, add the opencode copy in `agents-opencode/` too.
-- Claude-only pieces (hooks, `settings.json`, plugins) don't exist for the other agents.
-  When a rule is enforced by a hook, keep the rule written here as well, so agents without
-  the hook still follow it.
-
-## opencode restart requirement
-
-opencode loads its config, agents, commands, skills, and plugins **once when it starts** — it is
-not hot-reloaded. After any of these change, the **opencode serve process must be restarted**
-(quit and relaunch opencode entirely; closing/reopening an individual session is NOT enough, the
-running server keeps the already-loaded config):
-
-- `opencode.json` / `opencode.jsonc` (any field)
-- `~/.config/opencode/agent(s)/` — agent files
-- `~/.config/opencode/command(s)/` — command files
-- `~/.config/opencode/skill(s)/<name>/SKILL.md` — skill definitions
-- `~/.config/opencode/plugin(s)/` or any `plugin:` listed JS/TS plugin
-- any file referenced by `instructions` (e.g. `~/.claude/CLAUDE.md`) that changes system context
+- C or C++ work, or code for embedded/SBC hardware (Raspberry Pi etc.) → `c-cpp` skill.
+- Adding or changing anything under `~/dotfiles/ai/` (skills, commands, agents, hooks,
+  settings) or opencode/Codex/agy config → `ai-config` skill.
+- Skills, agents and commands are listed by each tool's own discovery, so there's no
+  catalogue here.
 
 @RTK.md

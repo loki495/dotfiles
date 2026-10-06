@@ -267,24 +267,25 @@
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
+  "disableClaudeAiConnectors": true,
   "enabledPlugins": {
     "ponytail@ponytail": true,
-    "hookify@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
+    "hookify@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
     "laravel-boost@claude-plugins-official": false,
-    "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
+    "context7@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": false,
     "security-guidance@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "mcp-server-dev@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "mcp-server-dev@claude-plugins-official": false,
     "php-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
     "github@claude-plugins-official": true,
     "session-report@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true
+    "commit-commands@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "ponytail": {
