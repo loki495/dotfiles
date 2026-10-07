@@ -138,7 +138,16 @@
       "Bash(wc *)",
       "Bash(wc)",
       "Bash(which *)",
-      "Bash(which)"
+      "Bash(which)",
+      "mcp__dibs__todo_claim_status",
+      "mcp__dibs__todo_context",
+      "mcp__dibs__todo_list",
+      "mcp__dibs__todo_metadata",
+      "mcp__dibs__todo_peek",
+      "mcp__dibs__todo_queue_status",
+      "mcp__dibs__todo_search",
+      "mcp__dibs__todo_show",
+      "mcp__dibs__todo_status"
     ],
     "blockReadsOutsideWorkingDirectories": true,
     "additionalDirectories": [
