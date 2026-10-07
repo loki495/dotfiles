@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: code-reviewer
 description: Code review agent with dual ruleset — Laravel strict for modern PHP projects, OpenCart safe for legacy 1.5.6 projects. Detects project type first, then applies the appropriate ruleset. Use when reviewing diffs, PRs, or specific files for correctness, architecture, and compliance.
 tools: [Read, Bash, Grep]

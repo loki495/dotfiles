@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: feature-atlas-scout
 description: Per-subsystem static analysis for the feature-atlas skill family. Given one subsystem's id, boundary, and owned_paths, deeply documents its implementation files, public interfaces/contracts, call sites, tests, dependencies, and data model with exact file:line references, and writes its DETAILS.md. Never edits source code, never touches other subsystems' files.
 tools: [Read, Bash, Grep, Glob, Write]

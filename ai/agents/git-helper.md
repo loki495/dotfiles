@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: git-helper
 description: Push-safety checks and branch model enforcement. Use before any git push, cherry-pick to production, or rebase to verify the operation is safe and consistent with the project's branch model (master/local/feature). Blocks dangerous operations and explains why.
 tools: [Bash, Read]

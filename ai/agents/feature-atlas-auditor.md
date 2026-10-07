@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: feature-atlas-auditor
 description: Per-subsystem maintainability/readability/extensibility audit for the feature-atlas skill family. Given a subsystem's DETAILS.md, re-verifies it against current code and produces ranked, evidence-backed findings (DRY, bugs, schema issues, invalid-state-permitting booleans, duplicated branching, stale-state risks, etc.), writing AUDIT.md. Stays strictly within the subsystem's ownership boundary.
 tools: [Read, Bash, Grep, Glob, Write]

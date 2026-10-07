@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: test-writer
 description: Pest test writer for Laravel projects. Writes action-level unit tests and HTTP feature tests using Pest syntax only. Spawned as a subagent after implementation is complete. Never modifies, deletes, or weakens existing tests.
 tools: [Read, Write, Bash, Grep]

@@ -25,9 +25,10 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
   real one.
 - **ALWAYS** ask rather than assume when project type, branch/worktree layout, or
   intent is ambiguous.
-- **ALWAYS** work one item at a time on multi-issue/audit work — explain, present
-  options, get a decision — before implementing the next one. (Repetitive mechanical
-  steps within an already-agreed plan are exempt — see "Working style".)
+- **ALWAYS** get an explicit decision on multi-issue/audit work before implementing
+  it: explain each item, present options with a recommendation, and collect the
+  decisions in one batched round rather than a turn per item. (Mechanical steps within
+  an agreed plan are exempt — see "Working style".)
 - **ALWAYS** keep a live site loading. Some checkouts are the running deployment (a
   container bind-mounts the source, so a saved edit is live at once). Before editing
   one, order the changes so the site loads at every step: anything new the code needs
@@ -233,9 +234,13 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
 ## Working style
 
 - For multi-step or multi-issue work (todo lists, audit findings, phased plans),
-  work one item at a time. Explain the problem, present options with pros/cons when
-  more than one reasonable approach exists, and get an explicit decision before
-  implementing — don't chain into the next item without a checkpoint.
+  present the items together: for each, the problem, options with pros/cons when more
+  than one reasonable approach exists, and a recommendation. Write them to one review
+  file or one message the user can approve from (accept all / override some), and get
+  explicit decisions before implementing. Don't start an item that hasn't been decided.
+  Truly interdependent items (one answer changes the next question) are still taken
+  in order. Each turn re-reads the whole context, so a batched round is much cheaper
+  than a turn per item (see "Model choice, turns, and delegation cost").
 - Exception: repetitive/mechanical steps within an already-agreed plan (e.g. "commit,
   cherry-pick, push, rebase" after a fix is approved) don't need a fresh confirmation
   each time — the checkpoint is for decisions, not for re-approving mechanics already
@@ -316,8 +321,9 @@ not something to invoke on request:
   `todo_context`, `label=plan`) and ask which to resume, or confirm starting fresh.
 - Escalating to delegation (workers, model tiering, parallel runs): automatic when
   clearly warranted, a quick check-in when ambiguous, never silent. That settles the
-  delegation decision only; "Working style"'s one-item-at-a-time rule still governs the
-  substance of the work.
+  delegation decision only; "Working style"'s decide-before-implementing rule still
+  governs the substance of the work. Whether to delegate follows the cost gates in
+  "Model choice, turns, and delegation cost".
 - Prefer a cheap fresh worker over a fork for bounded mechanical work the prompt can
   fully specify. A fork always runs on the orchestrator's model and only pays off when
   re-deriving context costs more than the price difference (the skill's Model Tiering
@@ -437,6 +443,16 @@ commit stands on its own — reviewable, bisectable and revertable as one unit.
   actually planned. Don't document an unbuilt feature as if it exists.
 - **Tests for the feature ride in the same commit**, happy and sad paths (see "Test
   coverage" above), not deferred.
+- **Any new or changed feature, assumption, rule, requirement or convention goes in
+  every place it fits, and each is kept up to date.** Dibs is Andres's local state
+  (plans, decisions, backlog, knowledge, in the project's Group); the README and the
+  repo's `.md` files are for anyone who sees the repo. Depending on the change that is
+  one place or a combination: the README (user-visible behavior, setup), `CLAUDE.md` or
+  `.claude/project.md` (conventions, architecture, agent instructions), a specialized
+  `.md` elsewhere in the worktree (a subsystem or feature doc, `docs/`, an ADR), or
+  Dibs (a decision, an open follow-up, local state). Repo docs ride in the same commit as
+  the code; when that really isn't possible, in the same PR. Never leave the knowledge
+  only in a session.
 - **Find every affected doc before committing**, not just the first one you think of:
   search the docs for the old tool/argument/config/command names the change touches,
   since a doc that contradicts the code is the usual miss.
@@ -466,7 +482,55 @@ step first). Same when coming back to a session idle longer than the prompt-cach
 (~1h) with a large context: the next prompt rewrites the whole context at cache-write
 price, so a fresh session from a hand-off is usually cheaper. Avoid `/model` switches
 and plugin reloads mid-way through a big session for the same reason (each forces a
-full cache rewrite).
+full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine.
+
+## Model choice, turns, and delegation cost
+
+Measured 2026-10-07 over 7 days of transcripts: cache reads were ~98% of tokens; three
+2000-4000-turn sessions at 500k-1M context were ~77% of volume; 82% of subagent turns
+ran on Opus because the `Agent` tool inherits the parent's model unless `model` is set.
+Cost is roughly turns x context, so the levers are fewer turns, a smaller context, and
+a cheaper model for work that doesn't need the strong one.
+
+- **Model by phase.** Opus for planning, architecture, audit design and subtle
+  debugging. Sonnet for discussion, execution and diff review. Haiku only for
+  read/search-only workers. Planning ends when the plan is written down (Dibs plan
+  issue, or the review file) and a hand-off offered; execution runs in a fresh Sonnet
+  session or in workers, not in the Opus planning session. A long Opus session that
+  starts doing the work itself is the expensive pattern.
+- **Size the request first, and say the size in one line.** *Small* (a few turns, one
+  area, at most a couple of questions): do it in the current session, no Dibs plan, no
+  draft. *Medium* (several steps or files, some decisions, fits one sitting): Sonnet is
+  enough; one batched question round and a short draft kept in the conversation or
+  `TodoWrite`; Dibs only if it must outlive the session. *Large* (multi-phase, audit,
+  architecture, interacting constraints, or spans sittings): a Dibs plan with a running
+  draft, finalized on Opus in a fresh session. When unsure between two sizes, take the
+  smaller, say so, and escalate if it grows.
+- **Draft as you go (medium and large).** Keep one running draft, the plan issue's body
+  in Dibs (`todo_revise`, which replaces rather than appends) or a review file if no
+  Dibs item exists yet, and update it every turn. It holds the objective and intent in
+  Andres's own words, decisions made, open questions, his stated preferences and coding
+  style for this work, constraints, and the steps. The chat holds the discussion; the
+  draft holds the state, so finalizing reads only the draft: start a fresh Opus session
+  from it rather than switching a large one. A preference that applies beyond this plan
+  also goes through "Memory scope discipline".
+- **Say when the model doesn't fit.** At the start of a session, if the task suits the
+  other model (planning or audit design on Sonnet; mechanical execution on Opus),
+  recommend the switch in one line before working. Early in a session that is cheap.
+- **Turns.** Ask every question you can think of in one message, each with a
+  recommended default, and proceed on the defaults unless told otherwise. Put
+  independent tool calls in one response. No checkpoint between mechanical steps of an
+  agreed plan.
+- **Delegate by output volume, not task type.** Inline for 3 or fewer calls. Delegate
+  when the work would put more than ~10k tokens of tool output into context (broad
+  greps, test or lint runs, logs, multi-file exploration), with the worker returning
+  300 words or less. Every `Agent` call sets `model` explicitly (Sonnet for edits,
+  Haiku for read/search, Opus only where the task needs deep reasoning). Prefer a fresh
+  agent over a fork: each fork turn re-reads the parent's whole context.
+- **Lean workers.** A bounded worker gets a self-contained prompt (goal, files,
+  acceptance criteria, return format; about 400 words) and does not read the
+  orchestrator-worker skill or call Dibs. The orchestrator records a phase's results in
+  one batched Dibs update instead of claim/heartbeat/comment/complete per worker.
 
 ## Hooks summary (see hooks config for full detail)
 

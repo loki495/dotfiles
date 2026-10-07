@@ -711,6 +711,28 @@ and that justification as a `todo_comment` on the plan issue. Don't assume a mod
 from its name; verify with the tool's own model listing before launching
 (`opencode models`, `codex debug` / `-c model=...` docs, `agy models`, etc.).
 
+### Cost gates and lightweight workers
+
+Decided 2026-10-07 from a 7-day transcript audit (the full numbers and the model-by-phase
+rule are in `CLAUDE.md`, "Model choice, turns, and delegation cost"): a worker's cold
+start (this skill is ~15k tokens, plus the plan, task, and research/lesson lookups) and
+four-plus Dibs calls per task cost more than they save on a small task, and in-process
+workers were inheriting the orchestrator's Opus model.
+
+- Delegate when the work would put roughly 10k+ tokens of tool output in the orchestrator's
+  context, not because it is "multi-step". Do 3 or fewer calls inline.
+- Pass `model` explicitly on every `Agent` launch; never rely on inheritance.
+- **Lightweight worker** (the default for bounded in-process tasks): a self-contained
+  prompt of about 400 words (goal, absolute paths, acceptance criteria, what to return in
+  300 words or less). It skips this protocol, the claim/heartbeat/complete cycle, and
+  the research/lesson lookups. The orchestrator checks the research cache before
+  launching, reviews the result, and records the phase in one `todo_comment` and one
+  `todo_complete` per task. Use the full worker template below only for long-running,
+  cross-tool, or parallel workers where a live claim is what prevents a collision.
+- The orchestrator session is short-lived: plan and dispatch, then hand off. Review of
+  the result happens from the diff, in a fresh session if the orchestrator's context is
+  large.
+
 The orchestration protocol itself must not depend on a particular model's identity —
 the same project should be able to swap worker models later (a free tier, a stronger
 coding model, a different provider) without changing anything else.

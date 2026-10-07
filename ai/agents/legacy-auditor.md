@@ -1,4 +1,5 @@
 ---
+model: sonnet
 name: legacy-auditor
 description: Read-only OpenCart 1.5.6 scanner. Audits legacy code for security issues, PHP version risks, and vQmod problems. Never modifies any file — scan, identify, and report only. Use when reviewing OpenCart projects for security or before making changes to understand the existing state.
 tools: [Read, Bash, Grep]
