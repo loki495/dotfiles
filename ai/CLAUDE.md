@@ -487,11 +487,13 @@ full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine
 ## Model choice, turns, and delegation cost
 
 Measured 2026-10-07 over the sessions active that week (turns back to 2026-09-05): cache
-reads were ~98% of tokens; three 2000-4000-turn sessions at 500k-1M context were ~77%
-of volume, and they ran on Sonnet, so session length mattered more than model; ~64% of
-all turns ran over 250k context (down to ~10-20% after the context-budget hook landed
-2026-10-05); tool results were a negligible share; 82% of subagent turns ran on Opus
-because the `Agent` tool inherits the parent's model unless `model` is set.
+reads were ~98% of tokens; three very long sessions at 500k-1M context were ~77% of
+volume, and they ran on Sonnet, so session length mattered more than model; roughly
+60% of turns ran over 250k context (down to ~10-20% after the context-budget hook
+landed 2026-10-05); tool results were a negligible share; 82% of subagent turns ran on
+Opus because the `Agent` tool inherits the parent's model unless `model` is set. Shares
+are reliable; absolute token and turn counts from that pass were inflated about 2x
+(each streamed message was counted once per content block), so dedupe by message id.
 Cost is roughly turns x context, so the levers are fewer turns, a smaller context, and
 a cheaper model for work that doesn't need the strong one.
 
