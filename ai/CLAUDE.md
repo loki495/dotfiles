@@ -28,6 +28,14 @@ This file applies to all Claude Code sessions on this machine, regardless of pro
 - **ALWAYS** work one item at a time on multi-issue/audit work — explain, present
   options, get a decision — before implementing the next one. (Repetitive mechanical
   steps within an already-agreed plan are exempt — see "Working style".)
+- **ALWAYS** keep a live site loading. Some checkouts are the running deployment (a
+  container bind-mounts the source, so a saved edit is live at once). Before editing
+  one, order the changes so the site loads at every step: anything new the code needs
+  (an `.env` value, a compose setting, a container recreate) goes in first, then the
+  code, then check the real routes return 200. If no such order exists, do the work
+  in a separate git worktree. Decided 2026-10-06: a Host allowlist edited straight
+  into Sessioneer's live checkout went live before `.env` had `ALLOWED_HOSTS`, and the
+  site stopped loading until another agent fixed it.
 
 ## Machine layout
 
