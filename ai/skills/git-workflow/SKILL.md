@@ -104,6 +104,35 @@ land it unchanged.
    (committer date shifts). Sync local `main`: `git fetch origin main`, confirm
    `git diff <old-sha> origin/main` is empty, then `git reset --hard origin/main`.
 
+## Splitting `local` into PRs
+
+A PR is a reviewable unit of work: its title and description should let a reviewer
+understand "this PR does X, and these changes are necessary to accomplish X." When
+`local` holds commits for several concerns, group them by concern into separate PRs
+(cherry-picked onto branches off `main`), not one PR per commit and not one PR for
+everything. Example `local` stack:
+
+```
+A  Add GitHub Actions CI
+B  Fix CI PHP version matrix
+C  Add customer export
+D  Add tests for customer export
+E  Fix typo in README
+F  Refactor unrelated invoice calculation
+```
+
+- PR 1 — CI setup: A + B
+- PR 2 — Customer export: C + D
+- PR 3 — Invoice refactor: F
+- E (README typo) can go alone, ride along with a genuinely related PR, or wait for a
+  small housekeeping PR.
+
+A mixed PR ("customer export + invoice rounding + CI + README tweak") is harder to
+review and looks undisciplined, even though merging it is technically fine. Fixes,
+tests and docs for a change stay in that change's PR. Don't overcorrect: tiny
+tweaks don't each need their own PR. Propose the grouping to Andres before opening
+anything (opening PRs pushes branches; the push confirmation rule still applies).
+
 ## Reorganizing unpushed commits
 
 Any commit that has **not been pushed** may be rebased, amended, fixed up, squashed,

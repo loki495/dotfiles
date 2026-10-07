@@ -105,6 +105,11 @@ live in the `git-workflow` skill; read it before any non-trivial git operation. 
 `git-helper` agent enforces the same rules specifically for push-safety/cherry-pick
 checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
 
+**PRs are grouped by concern**, not one per commit and not one for all of `local`: each PR
+is one reviewable unit (e.g. CI commits together, a feature with its tests, an unrelated
+refactor alone; trivial fixes ride along or wait for a housekeeping PR). Details and
+example in the `git-workflow` skill, "Splitting `local` into PRs".
+
 Keep commits feature-scoped and use separate commits for distinct features or fixes.
 Closely related CSS changes and purely visual polish may be grouped into one UI commit.
 
