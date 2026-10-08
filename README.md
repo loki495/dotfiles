@@ -373,8 +373,8 @@ and mcphost's own upstream is now archived/dead anyway.
 
 Bespoke toolkit for pulling git repos + MySQL dumps from ~44 remote sites into
 `~/backups/<site>/`. See `backup-tools/README.md` for the full `backup.conf`
-schema and behavior notes (including that `pull` can auto-commit uncommitted
-changes on the **remote** site). Highlights: `mysqlbk` (per-table parallel dump),
+schema and behavior notes (including that `pull` and `push` only auto-commit uncommitted
+changes on the **remote** site when `AUTO_COMMIT_REMOTE="true"`). Highlights: `mysqlbk` (per-table parallel dump),
 `full-backup`/`check-backup` (orchestration/status), `clone-site` (clone a site
 into a fresh local/remote target), `push`/`pull` (git sync), `check-*` (health
 checks: disk space, stale backups, htaccess, etc.), OpenCart packaging
@@ -438,31 +438,12 @@ multi-session initiatives and `lessons/` for what they turned up.
 
 ### Traefik (`traefik/`)
 
-Symlinked to `~/www/traefik/` (the live reverse-proxy config for the whole
-home lab: routes both this machine's Docker-labeled containers and `media`'s
-own services — Sonarr, Radarr, etc. — via the file provider, and issues a
-wildcard cert for the home domain through Let's Encrypt DNS-01 against
-Cloudflare). `docker-compose.yml` runs Traefik itself; `dynamic/` holds the
-file-provider routes (`ac495-sites.yml`) — a former one-off self-signed TLS
-cert for sessioneer (`csm-tls.yml`, needed before the real wildcard cert
-existed) was removed once the wildcard cert made it redundant.
-`cloudflared-media-config.yml` is the Cloudflare Tunnel ingress config that
-actually runs on `media`; it holds real ingress/credential detail, so it is
-gitignored and only its `*.example` counterpart is checked in.
-
-`docker-compose.yml` and `dynamic/ac495-sites.yml` *are* committed, with the
-domain templated as `{{ env "TRAEFIK_DOMAIN" }}` rather than written out. The
-routes that shouldn't be public live in `dynamic/local-sites.yml`, which is
-gitignored. Traefik's file provider watches the whole `dynamic/` directory
-(`--providers.file.directory=/dynamic`, `--providers.file.watch=true`) and
-merges every `.yml` in it, so splitting the routes across two files costs
-nothing at runtime — the committed file carries the routes I don't mind
-publishing, the ignored one carries the rest.
-
-**`.env` (Cloudflare API token), `acme/` (the real Let's Encrypt account +
-wildcard private key), and `certs/` (a self-signed private key) are
-gitignored, not tracked** - they exist as real files at the symlinked
-location for Traefik to actually run, but must never end up in this repo.
+A symlink to `~/.dotfiles-private/traefik`, linked to `~/www/traefik/` by the
+`traefik` section. The reverse-proxy config for the dev containers lives in that
+private repo, so nothing under `traefik/` is tracked here. Without the private
+repo the link is dangling and the section does nothing useful; CI runs without
+it. Real hosts and routes are infrastructure detail and stay private, along with
+the Cloudflare token, the ACME account and the certificate keys.
 
 ### Other
 

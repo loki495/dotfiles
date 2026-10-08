@@ -11,10 +11,6 @@ nvim/lazy-lock.json
 /todo
 /nvim/TODO
 
-traefik/acme/
-traefik/certs/
-traefik/cloudflared-media-config.yml
-traefik/dynamic/local-sites.yml
 misc/docker/docker-compose.yml
 backup-tools/backup-tools.conf
 
