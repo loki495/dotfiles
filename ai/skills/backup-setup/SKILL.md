@@ -54,9 +54,10 @@ up a new site, this skill is the workflow, that file is the schema.
 
 ## The one non-obvious gotcha: `pull` can create a real commit on the LIVE site
 
-`pull` auto-commits any uncommitted changes it finds on the **remote**
-(live) site before pulling — `git add . && git commit -m "Auto-commit -
-MM/DD/YYYY"`, run over SSH on the site itself, not a local/backup-side
+`pull` and `push` stop when the **remote** (live) site has uncommitted
+changes, unless `AUTO_COMMIT_REMOTE="true"` is set in `backup-tools.conf`.
+Then they run `git add . && git commit -m "Auto-commit -
+MM/DD/YYYY"` over SSH on the site itself, not a local/backup-side
 operation. This is by design (it's how sites with no deploy discipline still
 get their live edits captured), but it means:
 

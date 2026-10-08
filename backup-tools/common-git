@@ -120,10 +120,15 @@ git_commit() {
     then
         echo "No changes"
         return
-    else
-        echo "There are changes... committing..."
-        echo "CHANGES: $CHANGES_PENDING"
     fi
+
+    echo "CHANGES: $CHANGES_PENDING"
+    if [ "$AUTO_COMMIT_REMOTE" != "true" ]
+    then
+        echo "The remote has uncommitted changes. Commit them there yourself, or set AUTO_COMMIT_REMOTE=true in backup-tools.conf to let this script commit them." >&2
+        exit 1
+    fi
+    echo "There are changes... committing..."
 
     #git commit
     ssh $SSH_KEY_OVERRIDE -t $PORT_OVERRIDE $SSH_USER@$SSH_HOST -t "

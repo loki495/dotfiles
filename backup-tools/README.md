@@ -57,25 +57,22 @@ files; not every variable is used by every site.
   the code dir).
 - `DRIVE`, `DRIVE_MIN` — disk-space check thresholds (used by `check-hd-space`).
 
-## `pull` auto-commits on the REMOTE before pulling — know this going in
+## Remote auto-commit is opt-in
 
-`pull` (via `common-git`'s `git_commit()`) checks the remote site for
-uncommitted changes and, if any exist, runs `git add . && git commit -m
-"Auto-commit - MM/DD/YYYY"` **on the remote** before pulling. This is by
-design — it's how a site with no deploy discipline (direct edits on the
-live box) still gets its work captured — but it means:
+`pull` and `push` (via `common-git`'s `git_commit()`) check the remote site for
+uncommitted changes. By default they print the pending changes and stop. With
+`AUTO_COMMIT_REMOTE="true"` in `backup-tools.conf` they run `git add . && git
+commit` **on the remote** instead (`Auto-commit - MM/DD/YYYY` for `pull`,
+`Pre-push on <date>` for `push`). That is how a site with no deploy discipline
+(direct edits on the live box) still gets its work captured, but it means:
 
-- A backup run can create a real commit on the site's own repo with a
-  generic message, bundling together whatever was uncommitted at that
-  moment, however unrelated. It is *not* a no-op/read-only operation.
-- If you want descriptive, reviewed commit messages for a site's live
-  edits, capture and commit them yourself *before* running a backup that
-  would otherwise catch them in a generic auto-commit.
-- This also means a site with `receive.denyCurrentBranch=updateInstead`
-  configured (so pushes deploy directly) is unaffected by this — auto-commit
-  and push are unrelated mechanisms — but it's still worth knowing a backup
-  run just changed the site's git history before assuming why a new commit
-  appeared there.
+- A backup run creates a real commit on the site's own repo with a generic
+  message, bundling whatever was uncommitted at that moment, however unrelated.
+  It is *not* a read-only operation.
+- If you want descriptive, reviewed commit messages for a site's live edits,
+  commit them yourself on the remote before running `pull` or `push`.
+- It is unrelated to `receive.denyCurrentBranch=updateInstead` (pushes that
+  deploy directly): auto-commit and push are separate mechanisms.
 
 ## `mysqlbk`: per-table parallel dump (current) vs. single-file (old)
 

@@ -32,3 +32,7 @@ GITIGNORE_TEMPLATE=""
 # Leave both empty to skip that step instead of setting something wrong.
 REMOTE_GIT_NAME=""
 REMOTE_GIT_EMAIL=""
+
+# `pull` and `push` stop when the remote site has uncommitted changes. Set to
+# "true" to let them run `git add . && git commit` on the remote instead.
+AUTO_COMMIT_REMOTE=""

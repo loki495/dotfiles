@@ -16,6 +16,8 @@ jobs:
         env:
           DOTFILES_TEST_CONTAINER: "1"
         run: python3 tests/test_installers.py
+      - name: Test backup-tools remote auto-commit gate
+        run: python3 tests/test_backup_tools.py
 
   test-install:
     runs-on: ubuntu-latest
