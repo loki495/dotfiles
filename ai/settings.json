@@ -283,14 +283,14 @@
       "mcp__dibs__todo_show",
       "mcp__dibs__todo_status"
     ],
-    "blockReadsOutsideWorkingDirectories": true,
     "additionalDirectories": [
       "~/www",
       "~/dotfiles",
       "~/.dotfiles-private"
     ]
   },
-  "model": "sonnet",
+  "model": "claude-sonnet-5-5",
+  "disableClaudeAiConnectors": true,
   "hooks": {
     "PostToolUse": [
       {
@@ -410,7 +410,6 @@
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
-  "disableClaudeAiConnectors": true,
   "enabledPlugins": {
     "ponytail@ponytail": true,
     "hookify@claude-plugins-official": false,
