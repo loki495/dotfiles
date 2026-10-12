@@ -104,6 +104,25 @@ land it unchanged.
    (committer date shifts). Sync local `main`: `git fetch origin main`, confirm
    `git diff <old-sha> origin/main` is empty, then `git reset --hard origin/main`.
 
+## After a PR merges: delete the branch, locally and on GitHub
+
+For any repo where work goes through a PR from a separate branch, once the PR has merged
+successfully the branch is finished: delete it in both places and sync the default branch.
+
+1. Merge with `gh pr merge <number> --rebase --delete-branch` (or the repo's usual merge style
+   with `--delete-branch`); that removes the remote branch. Where it was merged some other way,
+   `git push origin --delete <branch>`.
+2. Switch to the default branch, fetch, and move it to the merged state (`git fetch origin`,
+   then fast-forward, or `git reset --hard origin/<default>` only after confirming the local
+   default holds nothing unpushed). Rebase merges give the commit a new SHA, so compare content,
+   not hashes.
+3. Delete the local branch: `git branch -D <branch>` (a rebase merge leaves the original commits
+   unreachable from the default branch, so plain `-d` refuses) once the merge is confirmed, then
+   `git fetch --prune` to drop the stale remote-tracking ref.
+4. Never delete the default branch, a long-lived branch such as `local`, or a branch with an open
+   PR or unmerged commits. Do this only after the merge is confirmed, never on a failed or
+   unmerged PR. Dependabot branches go with their PRs.
+
 ## Splitting `local` into PRs
 
 A PR is a reviewable unit of work: its title and description should let a reviewer
