@@ -31,6 +31,23 @@ output is `AUDIT-<id>.md` per subsystem and `REPORT.md`.
 The atlas describes the default branch at its recorded SHA only; unmerged branches and PRs are
 never atlas content. It holds no findings: audit findings are ordinary Dibs tasks.
 
+## Models
+
+Every atlas agent defaults to Sonnet: reading every owned file and writing down what it does (the
+mapper, scouts and auditors) is detailed but not subtle. The synthesizer judges and rejects
+auditor findings, where a false bug filed in Dibs costs more than a missed one: launch it with
+`model: opus` the first time it runs on a repo, then Sonnet once its output has been spot-checked.
+Calibrate occasionally by running one subsystem's scout on both models and diffing the comments;
+keep the stronger model only where it finds real differences.
+
+To save Claude tokens, any step may instead run on Codex, Antigravity's `agy` or opencode, at the
+model and thinking/reasoning level that suits it, when calibration shows the result is good enough
+(inventory reading and scouts are the likeliest candidates; keep judgement steps such as the
+synthesizer on a strong model). Check what is installed and which models are offered rather than
+guessing names; the launch commands and flags are in the `orchestrator-worker` skill's cross-tool
+section. A worker that reads and writes its own comments must still read every owned file itself
+(the depth rule is unchanged), and whoever launches it verifies the comments it wrote.
+
 ---
 
 ## Phase A — Inventory
