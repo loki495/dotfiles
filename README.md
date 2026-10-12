@@ -409,7 +409,9 @@ than per tool.
 - `commands/` — `cherry-pick-to`, `commits`, `project-bootstrap`, `ship`
   (commit and ship using each repo's own flow), `handoff` (current-state hand-off
   for a fresh session), and the three-command `feature-atlas` toolchain (full
-  scan, single subsystem, report).
+  scan, single subsystem, audit report), which keeps each project's feature
+  inventory as a Dibs issue plus one comment per subsystem (`.ai/feature-atlas/`
+  files when Dibs is unreachable).
 - `agents/` — `code-reviewer`, `git-helper`, `legacy-auditor`, `test-writer`,
   and the four `feature-atlas-*` roles (scout, mapper, auditor, synthesizer)
   those commands drive.

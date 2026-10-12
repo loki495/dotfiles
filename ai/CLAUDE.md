@@ -441,6 +441,15 @@ commit stands on its own — reviewable, bisectable and revertable as one unit.
   then record that lesson/decision/requirement and why.
 - **Mention what's next or planned** when it's useful to a reader, and only what's
   actually planned. Don't document an unbuilt feature as if it exists.
+- **Knowledge stays current too.** Any change worth a commit (fix, feature, chore,
+  refactor, dependency or config change) also updates, in the same piece of work, the
+  docs it makes wrong, the project's feature atlas where one exists (the affected
+  subsystem comments and the parent's Verified at), and any Dibs knowledge (`research`,
+  `lesson`, `guide`, `decision`) that describes the changed behaviour.
+- **Public docs never reference Dibs items.** Dibs tasks may link to each other, but
+  anything that lives in a repo (README, `CLAUDE.md`, skills, commands, agents, code
+  comments, commit messages) must not cite a Dibs task, plan or issue number: Dibs is
+  local state, and the reader can't open it. Say what the thing is instead.
 - **Tests for the feature ride in the same commit**, happy and sad paths (see "Test
   coverage" above), not deferred.
 - **Any new or changed feature, assumption, rule, requirement or convention goes in
@@ -465,12 +474,17 @@ Decided 2026-09-21 in the Dibs repo: a commit changed MCP tool arguments and lef
 
 ## Feature atlas (feature/subsystem inventory)
 
-Any project can opt into a maintained `.ai/feature-atlas/` inventory of its own
-features/subsystems via `/feature-atlas` (see that command's own doc for the full
-mechanism). Where it exists, it's the source of truth for feature boundaries,
-interfaces, dependencies, and standing maintainability findings — read it before
-re-deriving that from scratch by rescanning the codebase, and proactively suggest
-re-running it if it looks stale relative to recent commits.
+Any project can opt into a maintained inventory of its own features/subsystems via
+`/feature-atlas` (see that command's own doc for the full mechanism). The atlas is a Dibs
+issue `Feature atlas: <Project>` (labels `research` and `feature atlas`, in the project's Group;
+find atlases with `todo_list` label `feature atlas`) with one comment per subsystem; when Dibs
+is unreachable it is `.ai/feature-atlas/` files with the same fields. Where it exists, it's
+the source of truth for feature boundaries, interfaces, dependencies and the SHA each fact
+was verified at, and it is updated along with any change that touches a subsystem
+(see "Docs and tests travel with the change") — read it before re-deriving that by rescanning the codebase, and proactively
+suggest re-running it if its Verified at SHA is behind the default branch. It holds no
+findings: audit results are ordinary Dibs tasks under a `Feature atlas audit: <Project>
+<date>` parent task.
 
 ## Context window management
 
