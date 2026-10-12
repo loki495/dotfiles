@@ -1,143 +1,128 @@
 Discover and inventory every feature/subsystem in the current project's codebase (frontend and
-backend), keeping `.ai/feature-atlas/` as the up-to-date source of truth for what exists — then,
-only once that inventory is done and confirmed, offer to also audit it for what's worth fixing.
-Designed to be re-run repeatedly as the project changes — it only refreshes what actually changed.
+backend) as a Format v2 atlas, then — only once that inventory is done and confirmed — offer to
+also audit it for what's worth fixing. Designed to be re-run repeatedly as the project changes: it
+only refreshes what actually changed.
 
 Split into two phases on purpose: **Phase A (Inventory)** always runs and just records what's
-there — this is enough on its own when you only want to know/record the feature/subsystem
-breakdown without committing to a full maintainability audit. **Phase B (Audit)** is offered, not
-automatic, after Phase A finishes.
+there. **Phase B (Audit)** is offered, not automatic, after Phase A finishes.
 
 **Arguments:** $ARGUMENTS
 
 - No argument: incremental update mode (default) — only new/changed/removed subsystems get
   refreshed.
-- `full`: force a full rescan of every subsystem regardless of staleness.
-- `audit`: skip the Phase A/B offer and run both phases straight through without stopping at the
-  checkpoint (for scripted/non-interactive re-runs where the audit is always wanted).
+- `full`: treat every subsystem as stale and re-read all of them.
+- `audit`: skip the Phase A/B offer and run both phases straight through.
+
+## Where the atlas lives
+
+**Dibs mode** (the `dibs` MCP, or the `todo:agent:*` CLI fallback, is reachable): the atlas is a
+Format v2 parent issue `Feature atlas: <Project>` — labels `research` and `feature atlas`, in the
+project's own Group, no parent issue — plus one comment per subsystem, edited in place with
+`todo_comment` `commentId` + `expectedRevision`. Find atlases with `todo_list` label `feature
+atlas`; when a parent lacks that label, add it with `todo_revise` `addLabels`. Revise the parent
+body WITHOUT `todo_revise`'s `note` (each note becomes a comment in the atlas thread; consumers use
+the comment ids from the index). The format and the Refresh procedure are
+defined in the mapper and scout agent docs.
+
+**File mode** (Dibs unreachable — say so to the user): `.ai/feature-atlas/INDEX.md` holds the
+parent body and `.ai/feature-atlas/<id>.md` each subsystem comment, with the same fields. Audit
+output is `AUDIT-<id>.md` per subsystem and `REPORT.md`.
+
+The atlas describes the default branch at its recorded SHA only; unmerged branches and PRs are
+never atlas content. It holds no findings: audit findings are ordinary Dibs tasks.
 
 ---
 
 ## Phase A — Inventory
 
-**Workflow steps:**
+1. **Confirm project root and mode** — verify there's a recognizable project here (git repo,
+   `composer.json`, `package.json`, etc.); ask if ambiguous. Pick Dibs or file mode as above and
+   find the project's Group (`todo_context`; ask before creating one).
 
-1. **Confirm project root** — verify there's a recognizable project here (git repo, `composer.json`,
-   `package.json`, etc.). If ambiguous, ask before proceeding.
+2. **Detect conventions** — project type (Laravel / OpenCart / other) and the root `CLAUDE.md`.
+   Pass these to every agent below.
 
-2. **Detect conventions** — determine project type (Laravel / OpenCart / other) and read the
-   project's root `CLAUDE.md` if present. This gets passed to every worker below so findings
-   respect the project's actual conventions instead of generic defaults.
+3. **Find the atlas** — Dibs: `todo_list` label `feature atlas`, match the project; none means a
+   first run. File mode: `.ai/feature-atlas/INDEX.md`.
 
-3. **Ensure the output folder exists** — `.ai/feature-atlas/`. If `SUMMARY.md` doesn't exist,
-   this is a first run.
+4. **Run discovery** — run the `feature-atlas-mapper` with the project root, conventions, and the
+   atlas location (or "none, first run"); with `full`, tell it to treat every subsystem as stale.
+   It runs its Refresh procedure and reports: tip SHA, new / stale / removed / unchanged
+   subsystems, v1 conversions (owned_paths rewritten as pathspecs), conflicts, and uncovered files.
 
-4. **Run discovery** — run the `feature-atlas-mapper` worker with the project root, detected
-   conventions, and the existing `SUMMARY.md` content (or "none, first run"). If `full` was passed,
-   tell it to treat every existing subsystem as stale regardless of its own diff check. It returns
-   a report: new / stale / removed / unchanged subsystems, any boundary conflicts, and any
-   **uncovered files** (real files not claimed by any subsystem's `owned_paths` — the mapper runs
-   this coverage check exhaustively every time, not just when an audit is planned).
+5. **Checkpoint** — on a first-ever run, or if new+stale is more than ~8, or if there are
+   conflicts, uncovered files or v1 conversions, show the plan to the user before proceeding:
+   counts, the lists, and anything needing a decision. A small routine incremental update with
+   none of those proceeds directly.
 
-5. **Checkpoint before fanning out** — on a first-ever run, or if new+stale count is large (more
-   than ~8), or if there are boundary conflicts or uncovered files, stop and show the plan to the
-   user before proceeding: counts, the list of new/stale/removed subsystems, and any
-   conflicts/uncovered-file findings needing a decision. For a small routine incremental update with
-   no conflicts and no uncovered files, proceed directly — running `/feature-atlas` was already the
-   user's decision, this is just executing it.
+6. **Resolve conflicts and uncovered files** — ask how to resolve each: fold into an existing
+   subsystem's `owned_paths`, mint a new subsystem, list it under Shared infrastructure or Not
+   read, or flag it as dead code for a separate look. Never silently redraw a subsystem's
+   boundary, reassign its files, or fold a file into a boundary it doesn't fit just to pass the
+   coverage check.
 
-6. **Resolve conflicts and uncovered files** — for any boundary conflict or ambiguity the mapper
-   flagged, ask the user how to resolve it (which id owns disputed paths, whether to split/merge a
-   boundary). For any uncovered files, ask the user how to handle each: fold into an existing
-   subsystem's `owned_paths`, mint it as its own new subsystem (goes through the normal new-subsystem
-   pipeline below), mark it as shared infra intentionally excluded from the atlas, or flag as
-   dead/orphaned code worth a separate look outside this command. Never silently redraw an existing
-   subsystem's boundary, reassign its files to a different id, or fold an uncovered file into a
-   boundary it doesn't actually fit just to make the coverage check pass.
+7. **Scout** — for each new or stale subsystem run `feature-atlas-scout`, in the foreground:
+   sequential, or at most a few in one message. Each scout reads every owned file and test body
+   itself and writes one v2 comment (Dibs: edit the existing comment in place, or add a new one;
+   file mode: `<id>.md`). Do not run the auditor in this phase.
 
-7. **Fan out discovery-only per-subsystem work** — for each new or stale subsystem id, run
-   `feature-atlas-scout` (writes `DETAILS.md`, including its purpose/intent section — see that
-   agent's own doc). Do **not** run `feature-atlas-auditor` yet in this phase — auditing is Phase B,
-   offered at the checkpoint below, not chained automatically. These are workers in the
-   `orchestrator-worker` sense — launch each per that skill's Launching Workers mechanics for
-   whichever tool is running this command (Claude Code's `Agent` tool in-process; an equivalent
-   cross-tool launch for opencode/codex/agy). Multiple subsystems' scout passes can run
-   concurrently — batch them (roughly 4-6 concurrent worker launches at a time, per
-   orchestrator-worker's Parallel vs Sequential Workers) rather than launching dozens at once.
+8. **Collect open questions** — gather the scouts' purpose/intent questions, untested behaviour and
+   doc/code drift. Don't resolve questions by guessing; hold them for the Phase A summary.
 
-8. **Collect open questions** — gather any purpose/intent open questions each scout flagged in its
-   final response (per subsystem id). Don't resolve these yourself by guessing — hold them for the
-   end-of-phase report to the user.
+9. **Handle removed subsystems** — edit the comment to say `removed at <sha>` and drop its index
+   line. In file mode keep the file.
 
-9. **Handle removed subsystems** — mark them `status: removed` in `SUMMARY.md`'s registry table.
-   Leave their folder in place as a historical record; only delete it if the user explicitly asks.
+10. **Update the parent** — Dibs: `todo_revise` the parent body (no `note`): Verified at (advances
+    to the tip only when nothing is pending), Latest release, the index with current comment ids
+    and ` (partial)` markers, Shared infrastructure, Not read. On a first run create the parent
+    first (labels `research` + `feature atlas`, project Group, no parent issue), then add the
+    comments, then fill the index. Before finishing: every `depends-on` id exists in the index, and
+    the coverage diff run from the empty tree (`4b825dc642cb6eb9a060e54bf8d69288fbee4904`) to the
+    tip returns nothing. File mode: write `INDEX.md`.
 
-10. **Update SUMMARY.md's registry table** — one row per subsystem: id, name, one-line boundary,
-    status, `owned_paths`, last updated, link to its `DETAILS.md` (no `AUDIT.md` link yet — that
-    only exists after Phase B). The descriptive digest section below the table is written by the
-    synthesizer in Phase B, so it stays as-is (or absent, on a first run) until then.
-
-11. **Phase A summary + ask about Phase B** — unless `audit` was passed as an argument (in which
-    case skip straight to Phase B below without asking), report to the user: subsystem counts
-    (new/stale/removed/unchanged), the list of subsystems with a one-line purpose each, any
-    scout-flagged open questions about purpose/intent (ask the user to resolve these now if
-    possible — the answer can be appended to the relevant subsystem's `DETAILS.md`), and then ask
-    explicitly whether to continue on to Phase B (audit) now, or stop here with the inventory
-    recorded. Stopping here is a fully valid, complete outcome of this command — don't treat it as
-    partial or unfinished.
+11. **Phase A summary + ask about Phase B** — report subsystem counts (new/stale/removed/unchanged),
+    a one-line purpose per subsystem, the open questions (the answers go into the relevant
+    comment), and ask whether to continue to Phase B. Stopping here is a complete outcome.
+    Test gaps and doc/code drift from step 8 become one task per run in the project's Group, filed
+    via the synthesizer's Dibs step (or `todo_create` directly when no audit follows); search
+    first for an existing one.
 
 ## Phase B — Audit (offered, not automatic)
 
-Only runs if the user confirmed at the step 11 checkpoint, or `audit` was passed as an argument.
+Only runs if the user confirmed at step 11, or `audit` was passed.
 
-12. **Fan out audits** — run `feature-atlas-auditor` (writes `AUDIT.md`, using the existing
-    `DETAILS.md`) for every subsystem touched in Phase A (new or stale) *plus* any subsystem that
-    already has a `DETAILS.md` but no `AUDIT.md` yet (i.e. was inventoried in a prior
-    inventory-only run and never audited). Same concurrency guidance as step 7.
+12. **Audit** — run `feature-atlas-auditor` in the foreground for every subsystem touched in Phase
+    A, plus any subsystem without a current audit if the user asks. Dibs mode: the auditors return
+    their findings in their responses; no `AUDIT.md`. File mode: `AUDIT-<id>.md`.
 
-13. **Update the registry's `AUDIT.md` links** — patch the rows updated in step 10 to also link
-    each subsystem's `AUDIT.md`.
+13. **Synthesize** — run `feature-atlas-synthesizer` with the findings. It re-verifies every
+    finding, runs the meta-passes, and (Dibs mode) files each verified finding as a task under one
+    `Feature atlas audit: <Project> <date>` parent task in the project's Group after `todo_search`
+    for duplicates; file mode: `REPORT.md`.
 
-14. **Synthesize** — run `feature-atlas-synthesizer` to independently verify every finding,
-    reject/narrow/demote weak ones, run the coverage/duplication/DRY/over-abstraction/schema/
-    dependency-ranking meta-passes, and write `REPORT.md` plus `SUMMARY.md`'s descriptive digest.
+14. **Handle newly-discovered subsystems** — for `NEW SUBSYSTEM REQUIRED` entries, resolve the
+    boundary as in step 6, scout and audit them, update the parent (step 10), then re-run the
+    synthesizer once. Never fold a real coverage gap into an existing boundary to avoid this.
 
-15. **Handle newly-discovered subsystems** — if the synthesizer reports any `NEW SUBSYSTEM
-    REQUIRED` entries, resolve their boundary with the mapper's conflict-resolution logic (step 6),
-    run scout → auditor for each (steps 7 and 12), update the registry (steps 10 and 13), then
-    re-run the synthesizer once more. Never fold a real coverage gap into an existing subsystem's
-    boundary just to avoid this loop.
+15. **Offer the project CLAUDE.md pointer** — if the project's root `CLAUDE.md` doesn't mention
+    the atlas, propose a short section: the atlas is the Dibs issue `Feature atlas: <Project>`
+    (found with `todo_list` label `feature atlas`; `.ai/feature-atlas/` in file mode), and
+    `/feature-atlas` should be run after adding/removing/substantially changing a feature, or
+    before a refactor spanning multiple subsystems. Show the exact diff and get explicit
+    confirmation before writing.
 
-16. **Offer the project CLAUDE.md pointer** — if the project's root `CLAUDE.md` doesn't already
-    reference `.ai/feature-atlas/`, propose adding a short section: that it's the source of
-    truth for the project's feature/subsystem inventory, and that future sessions should run
-    `/feature-atlas` after adding/removing/substantially changing a feature, or at minimum before a
-    refactor spanning multiple subsystems. Show the exact diff and get explicit confirmation before
-    writing — this follows the same file-edit-confirmation and per-project-CLAUDE.md-maintenance
-    conventions as everything else on this machine.
-
-17. **Final summary** — report to the user: subsystem counts (new/stale/removed/unchanged), a link
-    to `REPORT.md`, the top few priority items from it, and anything skipped or left needing a
-    manual decision.
+16. **Final summary** — subsystem counts, the audit parent task and its top few items, and anything
+    skipped or needing a manual decision.
 
 **Notes:**
-- This command never edits project source files — only files under `.ai/feature-atlas/` and,
-  with explicit confirmation, the project's root `CLAUDE.md`.
-- For a single subsystem you already know the id/name of, prefer `/feature-atlas-subsystem` — it's
-  far cheaper.
-- To just re-rank/re-validate existing audits without rescanning code, use `/feature-atlas-report`.
-- Resuming later to run Phase B on an inventory-only pass: just run `/feature-atlas` again — it'll
-  see `DETAILS.md` exists but `AUDIT.md` doesn't yet for those subsystems and offer Phase B on them
-  without redoing discovery/scouting (they won't be stale unless the code changed since).
-- Repeated Phase-A-only runs are a complete, standalone workflow, not a degraded version of the
-  full command: staleness refresh (step 7), removal handling (step 9), and the coverage check
-  (mapper step 5) all run in Phase A regardless of whether Phase B ever gets invoked, so the atlas
-  stays accurate — updated where code changed, marked removed where a subsystem's paths are gone —
-  purely from inventory passes.
-- `DETAILS.md`/`AUDIT.md`/`SUMMARY.md`/`REPORT.md` describe **current state only** — never write
-  "this changed since last run" / "previously X, now Y" narrative into them (the mapper's own report
-  to you is the one place commit-range/staleness facts belong, and even that's just to decide what
-  to rescan). If a refresh surfaces something durable and worth remembering beyond current state — a
-  real gotcha, a reason behind a non-obvious design choice — route it to a `lesson`- or
-  `research`-labeled Dibs issue per the orchestrator-worker skill; if it's not worth that, drop it rather than
-  leaving it as commentary in the atlas.
+- This command never edits project source files — only the atlas (Dibs, or `.ai/feature-atlas/`)
+  and, with explicit confirmation, the project's root `CLAUDE.md`.
+- No background workers: every agent runs in the foreground.
+- For a single subsystem you already know, prefer `/feature-atlas-subsystem` — far cheaper.
+- To re-rank an existing audit without rescanning code, use `/feature-atlas-report`.
+- Repeated Phase-A-only runs are a complete workflow: refresh, removal handling and the coverage
+  check all run in Phase A.
+- The atlas describes **current state only** — never write "this changed since last run" or
+  "previously X, now Y" into the parent or a comment. If a refresh surfaces something durable (a
+  real gotcha, a reason behind a non-obvious design choice), route it to a `lesson`- or
+  `research`-labeled Dibs issue per the orchestrator-worker skill; otherwise drop it.
