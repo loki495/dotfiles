@@ -111,6 +111,9 @@ is one reviewable unit (e.g. CI commits together, a feature with its tests, an u
 refactor alone; trivial fixes ride along or wait for a housekeeping PR). Details and
 example in the `git-workflow` skill, "Splitting `local` into PRs".
 
+After a PR from a separate branch merges successfully, delete that branch locally and on
+GitHub and sync the default branch (procedure in the `git-workflow` skill, "After a PR merges").
+
 Keep commits feature-scoped and use separate commits for distinct features or fixes.
 Closely related CSS changes and purely visual polish may be grouped into one UI commit.
 
