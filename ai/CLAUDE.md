@@ -231,6 +231,26 @@ OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
   When auditing/reviewing existing tests, treat happy-path-only coverage as
   incomplete and flag it.
 
+## Verifying a site/service actually loads (not just its status code)
+
+General rule, any project, local or production: an HTTP status code alone
+(200, 301, whatever) is never sufficient evidence that a site or service
+"loads" or "works." Always inspect the actual response body/content too —
+and on a redirect, follow it and check what it actually leads to, not just
+that a redirect happened. This is the check behind "check the real routes
+return 200" in the live-site rule above: 200 plus a body that is the real app.
+
+Decided 2026-09-18, OpenCart multi-site local-dev session: reported 3 local
+Docker containers as healthy off `curl -s -o /dev/null -w '%{http_code}'`
+returning 200/301. In reality one was a PHP fatal error (stale path in
+`require_once`), one was an Apache-level infinite www-redirect loop, and one
+silently redirected straight to the real production domain instead of
+serving the local app — all with "successful" status codes. The failure was
+entirely invisible without reading the body/`Location` target.
+
+Applies equally to local dev verification and production health checks —
+don't relax the bar for local-only work just because the stakes feel lower.
+
 ## Working style
 
 - For multi-step or multi-issue work (todo lists, audit findings, phased plans),
