@@ -38,13 +38,25 @@ then verify and synthesise what comes back.
 
 Pick each agent's model by the kind of work, not by habit:
 
-- **Scan agent** (repo sections 1 and 6 below: personal/credential data, branches and temp files)
-  — mostly mechanical searching and listing with light judgement. Use a mid-tier model (e.g.
-  Sonnet).
-- **Review agent** (repo sections 2–5, 7 and 8: docs vs. code, fresh-clone walk-through, level
-  of detail, interview red flags, contributor readiness, release recommendation) — needs to read
-  code and docs together and judge them. Use the strongest model available (e.g. Opus).
-- **Recruiter/interviewer agent** — judgement and tone across everything. Strongest model.
+- **Evidence gathering** — the scan agent (repo sections 1 and 6 below: personal/credential data,
+  branches and temp files), tool runs (tests, linters, secret scan, link check), the docs-vs-code
+  comparison, and file sampling. Mostly mechanical reading and listing. Use a mid-tier model (e.g.
+  Sonnet). Workers return compact, evidence-backed findings (about 300 words), not raw output.
+- **Judgement** — ranking findings, interview red flags, contributor readiness, the release
+  recommendation, and the recruiter/interviewer agent (tone and weight across everything). Use the
+  strongest model available (e.g. Opus), over the workers' compact findings and the code excerpts
+  they cite, not over the raw repo. Sonnet tends to grade too kindly; the stronger model is for
+  catching what a reader would actually weigh.
+- To save Claude tokens, evidence gathering (and any judgement step shown to be good enough
+  there) may run on Codex, Antigravity's `agy` or opencode instead, at the model and
+  thinking/reasoning level that suits the step (check what is installed and which models are
+  offered; never guess a name). Launch commands, flags and the discovery steps are in the
+  `orchestrator-worker` skill's cross-tool section. The reporting rules above still apply:
+  compact, evidence-backed findings, and the same read-only rules, which are on the worker's honour
+  outside Claude, so give it the repo path and the rules in the prompt and verify what comes back.
+- Where one agent would both gather and judge, split it into those two steps.
+- Calibrate occasionally: run one repo's audit on both models and diff the results. Drop the
+  stronger model from a step where the cheaper one matches; keep it where it finds real issues.
 
 Each agent gets: the repo path, its stack (from the table above), which sections it owns, and the
 shared rules below.
@@ -95,6 +107,40 @@ already made deliberately. Specifically already decided, do not re-flag:
   check a number — flag the number's presence instead.
 
 **Report what's already good**, briefly, at the end. I need to know what not to touch.
+
+### Atlas, freshness and file accounting
+
+Dibs holds a feature atlas for each repo (`todo_list` label `feature atlas`): what each subsystem
+does, its interfaces and tests, and the commit it was verified at. Use it as a map of the repo, not
+as proof.
+
+**Freshness gate, before anything else.** Per repo: the working tree must be clean (`git status
+--porcelain` empty on the default branch) and local must equal the fetched origin tip. If either
+fails, say the atlas can't be confirmed against that code and stop, or read from a detached
+worktree at the origin tip. Then compare each subsystem comment's `verified-at` with the tip
+(`git diff --name-only <sha>..<tip> -- <owned paths>`). A subsystem whose files changed, or whose
+comment is partial, has unverified facts: say so by name in the output. Never rewrite the atlas from
+the audit; recommend a refresh. Git is the drift record; keep no separate checksums.
+
+**Docs against the atlas.** Compare each claim in the README, CONTRIBUTING, SECURITY, `docs/`,
+`CLAUDE.md`/`AGENTS.md` and `.example` files with the subsystem it describes. A claim that matches
+nothing in the atlas, or contradicts it, is a lead, not yet a finding: confirm it in the code
+before reporting.
+
+**Sampling, not full reads.** Read about 10 to 15 tracked files per repo, chosen fresh each run:
+always the entrypoint, the largest or most complex file, and the most recently changed files; then
+one randomly chosen file per subsystem, with extra weight on files in a partial comment's not-read
+globs. Prefer files that previous runs didn't sample.
+
+**Tripwire.** Compare every sampled file with its subsystem comment. A mismatch is an atlas-drift
+finding and marks that subsystem unverified until it's refreshed. If more than a couple of sampled
+files disagree, say plainly that the atlas can't be trusted for that repo yet and recommend a
+refresh before relying on the audit.
+
+**File accounting.** Every report ends with the files it actually looked at: each sampled file with
+its subsystem id and why it was chosen (always, random, or unread glob), the whole-tree scans that
+were run, and what was not read at all. Keep that list in the run's Dibs task so the next run can
+rotate its sample. A claim made about code that isn't on that list is unverified.
 
 ---
 
