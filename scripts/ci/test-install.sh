@@ -15,7 +15,7 @@
 #
 # Expects:
 #   - this repo checked out at exactly $HOME/dotfiles (bash/bashrc hardcodes
-#     that path unconditionally - see RESULT.md's T2 finding)
+#     that path unconditionally - hence the required path)
 #   - scripts/ci/stubs/ already prepended to PATH (systemctl no-op - see T3),
 #     so 40-systemd.sh's daemon-reload doesn't fail without a real user
 #     systemd session
@@ -39,7 +39,7 @@ if [ "$REPO_ROOT" != "$HOME/dotfiles" ]; then
     echo "FATAL: repo must be checked out at exactly \$HOME/dotfiles" >&2
     echo "  got: $REPO_ROOT" >&2
     echo "  HOME=$HOME" >&2
-    echo "bash/bashrc hardcodes ~/dotfiles/... paths - see RESULT.md's T2 entry." >&2
+    echo "bash/bashrc hardcodes ~/dotfiles/... paths - the installer cannot run from another path." >&2
     exit 1
 fi
 
