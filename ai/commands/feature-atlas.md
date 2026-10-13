@@ -31,6 +31,17 @@ output is `AUDIT-<id>.md` per subsystem and `REPORT.md`.
 The atlas describes the default branch at its recorded SHA only; unmerged branches and PRs are
 never atlas content. It holds no findings: audit findings are ordinary Dibs tasks.
 
+## Findings
+
+Findings from `/feature-atlas` audits and from `/job-search-audit` share one shape, so one
+register of known problems serves both. A finding is an ordinary Dibs task in the repo's Group with
+exactly one kind label: `bug` (a defect in the code), `docs drift` (a doc that disagrees with the
+code or the atlas) or `portfolio` (affects only how the repo reads to an outside reader). Its body
+states the repo, the atlas subsystem id, the `Verified at` SHA the evidence was checked against,
+`file:line` with the quoted text, a severity and a suggested fix. Search for an open task first and
+update it rather than filing a duplicate. A repo's public docs must list its open `bug` tasks as
+known limitations.
+
 ## Models
 
 Every atlas agent defaults to Sonnet: reading every owned file and writing down what it does (the
