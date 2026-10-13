@@ -17,4 +17,6 @@ Write a hand-off file so a fresh session can continue this work cold, then give 
 - **Open questions:** anything unresolved or unconfirmed.
 - **Don't:** things that were tried and ruled out, or that Andres said not to pursue, so the next session doesn't retry them.
 
+If Andres wants the next session to start right away, launch it instead of only printing the prompt: `sessioneer --workdir <project dir> "<the paste-ready prompt>"` (headless Claude, visible and steerable in the Sessioneer dashboard; prints the session name). Offer it, don't run it unasked.
+
 Then reply with the file path (or Dibs issue) and a short paste-ready prompt, e.g. "Read `<path>` and continue from Next steps; ask before anything listed under Open questions." Durable, general lessons also belong in a `lesson`-labeled Dibs issue or `~/.claude/lessons/`. Offer to file them.

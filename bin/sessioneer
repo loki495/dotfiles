@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Start, resume or reuse a headless Claude session in Sessioneer from the
+# shell. The real script lives in the Sessioneer repo; run `sessioneer --help`.
+set -euo pipefail
+
+root="${SESSIONEER_DIR:-$HOME/www/personal/sessioneer}"
+
+if [ ! -x "$root/bin/sessioneer" ]; then
+    echo "sessioneer: $root/bin/sessioneer not found (set SESSIONEER_DIR)" >&2
+    exit 1
+fi
+
+exec "$root/bin/sessioneer" "$@"

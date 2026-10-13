@@ -509,6 +509,28 @@ suggest re-running it if its Verified at SHA is behind the default branch. It ho
 findings: audit results are ordinary Dibs tasks under a `Feature atlas audit: <Project>
 <date>` parent task.
 
+## Spawning a continuation session (Sessioneer)
+
+`sessioneer` (on PATH; wrapper for `~/www/personal/sessioneer/bin/sessioneer`, docs in that
+repo's `docs/cli.md`) starts a headless Claude session with a first prompt, or resumes /
+reuses one by conversation id, and Andres can then watch it, answer its prompts and message it
+in the Sessioneer dashboard. Use it when work should continue in a fresh session he can steer
+(a hand-off after `/handoff`, a long job that outlives this context, a subagent's follow-up),
+instead of only printing a paste-ready prompt:
+
+```bash
+sessioneer --workdir <dir> --model sonnet "Read <handoff path> and continue from Next steps"
+sessioneer --resume <conversation-id> "next message"   # reuses the live session if there is one
+```
+
+`sessioneer --list` shows the headless sessions and `sessioneer --kill <name-or-conversation-id>`
+stops one (its conversation stays resumable; a working or blocked session needs `--force`).
+Clean up continuations you spawned when they are done. It prints the session name on success;
+claude only, host only. It spends the Claude plan's
+usage like any session, so launch one when asked or when the plan above calls for it, not
+speculatively. Prefer it to a bare `claude -p` / `Agent` fork when Andres should be able to
+interact with the result.
+
 ## Context window management
 
 Every call re-reads the whole context, so a session's size matters well before the

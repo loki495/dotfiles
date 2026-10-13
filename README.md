@@ -356,7 +356,8 @@ dev-tool wrappers (`phpactor`, `phpcs`, `phpcbf`, `composer`, `phpbrew`), system
 utilities (`battery_level_alarm.sh`, `hybrid-sleep`, `pulseaudio-control`,
 `reboot-needed-check.sh`, `find-dupes`, `clear-hd-space.php`), an OpenCart
 package-mapping tool (`oc`), Claude Code/tmux helpers (`claude-quota`,
-`tmux-sessions`), a Docker SQL-import helper (`import-sqlgz-files-docker.sh`),
+`tmux-sessions`), `sessioneer` (a wrapper that launches Claude sessions in the
+Sessioneer repo; symlink it into `~/.local/bin` so agents' shells find it), a Docker SQL-import helper (`import-sqlgz-files-docker.sh`),
 an email notifier (`notify-email`, via curl's SMTPS support — see
 backup-tools/README.md), and misc desktop scripts (`new-reddit-wallpaper`,
 `dmenu-clear-cache`, `pushbullet-message`, `open-nvim`).

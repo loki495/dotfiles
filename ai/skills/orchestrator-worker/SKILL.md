@@ -902,6 +902,18 @@ might have left running (`docker ps -a`, relevant process list) before assuming
 polling above, which only covers the launcher-side wait/race case, not a worker's
 own orphaned children.
 
+### Continuation sessions Andres can steer
+
+When the next phase should run as its own session that Andres can watch and answer (a hand-off
+to a fresh session, a long-running worker, a follow-up that outlives this context), start it with
+`sessioneer` instead of only handing him a paste-ready prompt:
+`sessioneer --workdir <dir> --model <model> "<prompt that points at the Dibs plan or hand-off>"`,
+or `sessioneer --resume <conversation-id> "<message>"` to continue an existing one (it reuses the
+live session). It prints the session name; it is Claude-only and host-only. The prompt must be
+self-contained like any worker prompt (plan id, file paths, return format), and launching it
+counts as a worker launch for the reporting rules below. Bounded workers that return a result
+to the orchestrator still use `Agent`; this is for sessions whose output is the human's to steer.
+
 ### In-Process vs Cross-Tool
 
 Communication goes through Dibs (the `dibs` MCP server, or its `todo:agent:*` CLI
