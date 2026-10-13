@@ -100,11 +100,14 @@ then exits non-zero.
 ## Email notifications
 
 `bin/notify-email <subject> <body> [recipient]` sends mail via curl's
-native SMTPS support against Gmail — no local MTA or extra package needed,
-since curl is already a hard dependency of this whole toolkit. Requires
-`GMAIL_PASSWORD` (a Gmail App Password for you@example.com) in
-`~/dotfiles/.env` (gitignored, per-machine — not something `install.sh`
-can set up for you). Used by `mysqlbk` (table dump failures),
+native SMTPS support (Gmail by default) — no local MTA or extra package needed,
+since curl is already a hard dependency of this whole toolkit. Requires these
+in the environment or `~/dotfiles/.env` (gitignored, per-machine — not
+something `install.sh` can set up for you); it exits non-zero naming any that
+are missing: `GMAIL_PASSWORD` (the SMTP password; a Gmail App Password for
+Gmail), `NOTIFY_EMAIL_FROM` (sender and SMTP login), `NOTIFY_EMAIL_TO`
+(default recipient, overridden by the `[recipient]` argument) and
+`NOTIFY_EMAIL_SMTP_HOST` (e.g. `smtp.gmail.com`). Used by `mysqlbk` (table dump failures),
 `check-hd-space` (low disk space), and `check-for-changes-today`
 (undocumented changes on the remote site).
 

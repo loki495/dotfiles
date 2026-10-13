@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Sends an email via curl's native SMTPS support against Gmail -- no local MTA
+# Sends an email via curl's native SMTPS support (Gmail by default) -- no local MTA
 # or extra package needed, just curl (already a hard dependency of this
 # toolkit, see install.sh's REQUIRED_COMMANDS). Same approach already used by
 # backup-tools/check-for-changes-today, generalized for reuse.
 #
 # Usage: notify-email <subject> <body> [recipient]
-# Requires GMAIL_PASSWORD (a Gmail App Password) in ~/dotfiles/.env.
+# Requires these in the environment or ~/dotfiles/.env:
+#   GMAIL_PASSWORD         SMTP password (a Gmail App Password for Gmail)
+#   NOTIFY_EMAIL_FROM      sender address, also the SMTP login
+#   NOTIFY_EMAIL_TO        default recipient (the [recipient] argument overrides it)
+#   NOTIFY_EMAIL_SMTP_HOST SMTP host, e.g. smtp.gmail.com
 
 usage() {
     echo "Usage: notify-email <subject> <body> [recipient]" >&2
@@ -18,21 +22,25 @@ usage() {
 
 SUBJECT="$1"
 BODY="$2"
-RECIPIENT="${3:-you@example.com}"
-FROM="you@example.com"
-
 if [ -f ~/dotfiles/.env ]; then
     set -a
     source ~/dotfiles/.env
     set +a
 fi
 
-if [ -z "${GMAIL_PASSWORD:-}" ]; then
-    echo "notify-email: GMAIL_PASSWORD not set (expected in ~/dotfiles/.env)" >&2
+missing=()
+for var in GMAIL_PASSWORD NOTIFY_EMAIL_FROM NOTIFY_EMAIL_SMTP_HOST; do
+    [[ -n "${!var:-}" ]] || missing+=("$var")
+done
+RECIPIENT="${3:-${NOTIFY_EMAIL_TO:-}}"
+[[ -n "$RECIPIENT" ]] || missing+=("NOTIFY_EMAIL_TO (or the recipient argument)")
+if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "notify-email: missing ${missing[*]} (set in the environment or ~/dotfiles/.env)" >&2
     exit 1
 fi
+FROM="$NOTIFY_EMAIL_FROM"
 
-curl --url 'smtps://smtp.gmail.com:465' --ssl-reqd \
+curl --url "smtps://$NOTIFY_EMAIL_SMTP_HOST:465" --ssl-reqd \
     --mail-from "$FROM" \
     --mail-rcpt "$RECIPIENT" \
     --user "$FROM:$GMAIL_PASSWORD" \
