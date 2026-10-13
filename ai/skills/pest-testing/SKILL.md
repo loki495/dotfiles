@@ -50,7 +50,7 @@ test framework and project type, not just Pest/Laravel.
 ## Database
 
 - Use `RefreshDatabase` trait on feature tests that touch the database.
-- Be aware of the project's DB driver (MySQL vs SQLite — see `db-context.md`). SQLite
+- Be aware of the project's DB driver (MySQL vs SQLite — see the db-context skill). SQLite
   in-memory is common for fast local test runs; confirm which a given project uses
   before assuming behavior that differs between drivers (e.g. certain SQL features).
 

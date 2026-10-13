@@ -75,7 +75,7 @@ describe('SomeAction', function () {
 ## Database and mocking
 
 - Check the project's test DB driver (SQLite in-memory for speed vs MySQL/MariaDB for
-  production parity — see `db-context.md`)
+  production parity — see the db-context skill)
 - Use `RefreshDatabase` in feature tests; don't use it in pure unit tests
 - Build test data with factory states, not raw arrays
 - Mock third-party/network calls with `Http::fake()` or the relevant facade fake

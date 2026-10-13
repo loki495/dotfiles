@@ -303,8 +303,8 @@ setup has been removed (see "Removed" below).
   is the main tree: `lazy.lua` (plugin manager bootstrap + spec list), `remap.lua`,
   `autocmds.lua`, `highlighting.lua` (native Tree-sitter), `functions.lua` (custom user commands), `php_dev.lua` (helpers
   for building/testing a local `php-src` checkout). `after/plugin/*.lua` holds
-  per-plugin config (fugitive, harpoon, telescope, treesitter, undotree, oil,
-  lsp, etc.).
+  per-plugin config (fugitive, harpoon, telescope, undotree, oil,
+  lsp, luasnip, wilder, etc.).
 
 ### Shell & install
 
@@ -321,7 +321,7 @@ setup has been removed (see "Removed" below).
 ### Install & CI (`scripts/`, `.github/`)
 
 - `scripts/install/` — the numbered sections `install.sh` runs
-  (`10-bash.sh` … `80-bin-tools.sh`), plus `lib.sh` with the shared
+  (`10-bash.sh` … `90-private.sh`), plus `lib.sh` with the shared
   `backup_and_link`/`section_header`/`command_exists` helpers. Adding a section
   means dropping in a new `NN-name.sh`; `install.sh` discovers it by filename,
   and `--list` picks it up with no registration step.
@@ -391,7 +391,7 @@ A small installable PSR-4 package (`loki495/php-lib`, see `composer.json`):
   `fix_home_dir()`).
 
 `opencart/dirs-list.txt` / `file-list.txt` — a reference manifest of a stock
-OpenCart 1.5.x install's directory/file structure, used by backup-tools scripts
+OpenCart 1.5.x install's directory/file structure, used by `bin/oc`
 for change detection. Not executable code.
 
 ### AI agent config (`ai/`)
@@ -407,7 +407,7 @@ than per tool.
 - `skills/` — Laravel, Livewire, Pest, OpenCart, Rector, DB, frontend and git
   conventions, plus infrastructure/backup runbooks and an orchestrator-worker
   pattern for multi-agent runs.
-- `commands/` — `cherry-pick-to`, `commits`, `project-bootstrap`, `ship`
+- `commands/` — `cherry-pick-to`, `commits`, `dibs`, `job-search-audit`, `project-bootstrap`, `ship`
   (commit and ship using each repo's own flow), `handoff` (current-state hand-off
   for a fresh session), and the three-command `feature-atlas` toolchain (full
   scan, single subsystem, audit report), which keeps each project's feature
@@ -454,9 +454,13 @@ the Cloudflare token, the ACME account and the certificate keys.
 - `misc/cron/cronlog.php` — PHP wrapper for logging cron job output.
 - `misc/docker/setup-dev-container.sh` — provisions a legacy-PHP Apache/Docker
   dev container.
+- `misc/docker/docker-compose.yml.example` — example compose file for the dev
+  container.
 - `misc/systemd/system-sleep/restart-hypridle` — restarts `hypridle` after
   resume (upstream idle-notifier bug workaround); correctly kills any prior
   instance before relaunching.
+- `cd-trigger/` — small PHP router (`router.php`) with its own `Dockerfile`,
+  `docker-compose.yml` and `.env.example`.
 - `utils/kodi-db/` — Docker-based Kodi media DB puller/updater
   (`pull-and-update.sh`, `update-db.py`). Credentials and the DB host live in a
   gitignored `.env`; copy `.env.example` over and fill it in before running
@@ -484,9 +488,6 @@ duplicated across two files). Neovim is now the only editor config here.
   from trusted local `.conf` files, not untrusted input) but a real fragility if
   ever touched; a full fix means restructuring `run_ssh`/`run_ssh_silent` to take
   array args across every call site.
-- `install_neovim.sh` hardcodes the download for `linux-x86_64` — detecting
-  the real OS/arch (`uname -s`/`uname -m`) would make it work on other
-  architectures too.
 
 ## Licence
 

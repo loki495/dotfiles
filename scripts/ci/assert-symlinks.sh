@@ -11,7 +11,7 @@
 # $HOME/dotfiles - bashrc hardcodes that path in several places (bash/lib/colors,
 # bash/.bash_aliases, backup-tools, bin, git/.git-completion.bash) regardless of
 # where this script itself lives. Symlink or clone the repo to $HOME/dotfiles
-# before running install.sh in a container - see RESULT.md for detail.
+# before running install.sh in a container - the repo must live at that path.
 
 set -u
 

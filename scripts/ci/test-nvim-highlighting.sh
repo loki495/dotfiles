@@ -15,14 +15,14 @@
 # rather than throwing, so a bare `pcall(...)` around them always reports
 # ok=true regardless of whether a parser was actually found - check the
 # returned value (or vim.treesitter.highlighter.active[buf]), not just pcall's
-# own ok flag. Both confirmed empirically - see RESULT.md.
+# own ok flag. Both confirmed empirically.
 #
 # PREREQUISITE: this script does NOT install parsers/queries itself - it expects
 # `install_neovim.sh --parsers` and `--queries` (or `~/.local/share/nvim/site/
 # {parser,queries}/`) to already be populated, and expects `~/.config/nvim` to
 # already resolve to this repo's nvim/ directory (e.g. via install.sh's
 # 60-neovim.sh section, or already symlinked as on a normal dev machine) so a
-# plain `nvim <file>` picks up this repo's config. See RESULT.md for why: nvim's
+# plain `nvim <file>` picks up this repo's config. Why: nvim's
 # `-u <path>` flag overrides which init file loads but NOT which directory is on
 # 'runtimepath', so `-u <repo>/nvim/init.lua` alone would fail to find the
 # require("andres.*") modules unless ~/.config/nvim already IS that repo.
@@ -74,7 +74,7 @@ declare -A FT_FIXTURE=(
 # nvim-lspconfig deprecation notice (tailwind-tools triggers
 # `vim.deprecate(..., backtrace=true)` once per nvim process, which prints its
 # own "stack traceback:" section as part of the *expected* notice). Verified
-# empirically against a live capture - see RESULT.md.
+# empirically against a live capture.
 ERROR_MARKERS=(
     "Press ENTER or type command to continue"
     "E117:"
@@ -87,7 +87,7 @@ ERROR_MARKERS=(
 # buffer capture to count as "real per-token highlighting happened" rather
 # than a flat/default color. 2 could just be gutter-vs-content even with
 # broken highlighting; 3+ means at least two distinct token colors besides
-# the gutter. See RESULT.md for the empirical basis for this threshold.
+# the gutter. Threshold chosen empirically.
 MIN_DISTINCT_COLORS=3
 
 pass_count=0
