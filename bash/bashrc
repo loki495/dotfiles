@@ -70,16 +70,16 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 parse__branch() {
-     branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
 }
 
 _color() {
-	if [[ -z $( rev-parse ---dir 2> /dev/null) ]]; then
+	if [[ -z $( git rev-parse --git-dir 2> /dev/null) ]]; then
 		return
 	fi
 
-	any="$( status --porcelain)"
-	staged="$( status --untracked-files=no --porcelain)"
+	any="$(git status --porcelain)"
+	staged="$(git status --untracked-files=no --porcelain)"
 
     if [[ ! -z "${staged// }" ]]; then
 		echo ${BoldYellow}
@@ -96,7 +96,7 @@ _color() {
 }
 
 set_bash_prompt() {
-    if [[ $PWD == \/home\/andres\/media\/shield* ]];
+    if [[ $PWD == "$HOME/media/shield"* ]];
     then
         PS1="${debian_chroot:+($debian_chroot)}${Green}[\u] ${White}\w\n \$ "
     else
