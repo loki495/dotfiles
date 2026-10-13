@@ -5,6 +5,7 @@ local PHP_SRC = vim.env.PHP_SRC or vim.fn.expand("~/dev/php-src")
 M.PHP_SRC = PHP_SRC
 
 function M.build_fast()
+  local filename = vim.api.nvim_buf_get_name(0)
   local output = {}
   local errors = {}
 

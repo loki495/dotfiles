@@ -93,8 +93,7 @@ window#waybar {
     background: #20296f;
 }
 
-#clock, #battery, #cpu, #memory, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather,
-#custom-gpu_temp, #custom-free_hd
+#clock, #battery, #cpu, #memory, #temperature,#custom-keyboard-layout, #backlight, #network, #pulseaudio, #tray, #window,#custom-launcher,#custom-power,#custom-updates ,#custom-network_traffic,#custom-weather
 {
     padding: 0 3px;
     border-bottom: 2px;
@@ -221,21 +220,6 @@ window#waybar {
     margin: 0;
 }
 
-#custom-gpu_temp.cool {
-    background-color: rgba(0, 255, 0, 0.2);
-}
-#custom-gpu_temp.warm {
-    background-color: rgba(255, 255, 0, 0.4);
-}
-#custom-gpu_temp.hot {
-    background-color: rgba(255, 0, 0, 0.3);
-}
-#custom-gpu_temp.critical {
-    background-color: rgba(255, 0, 0, 0.7);
-}
-#custom-free_hd.critical {
-    background-color: rgba(255, 0, 0, 0.7);
-}
 #custom-todo {
     background-color: rgba(55, 118, 180, 0.7);
     padding: 10px
