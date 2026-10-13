@@ -121,9 +121,8 @@ hl.bind("code:171", hl.dsp.exec_cmd("playerctl next"))
 hl.bind("code:173", hl.dsp.exec_cmd("playerctl previous"))
 
 -- screenshot
--- Screenshot a window (note: shares mainMod+M with the maximize bind above;
--- both fire in order, same as the original hyprlang config did)
-hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprshot -m window"))
+-- Screenshot a window
+hl.bind(mainMod .. " + CTRL + M", hl.dsp.exec_cmd("hyprshot -m window"))
 -- Screenshot a region
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("hyprshot -m region --freeze"))
 hl.bind(mainMod .. " + SHIFT + ALT + M", hl.dsp.exec_cmd("hyprshot -m region --freeze --clipboard-only"))
