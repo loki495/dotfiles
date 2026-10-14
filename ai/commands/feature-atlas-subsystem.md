@@ -21,7 +21,9 @@ lives"). Everything runs in the foreground.
    one-line descriptions). If ambiguous, ask. If nothing matches, confirm it's genuinely a *new*
    subsystem, and check its proposed `owned_paths` don't overlap an existing subsystem's.
 
-3. **Staleness check** — `git fetch`, tip = origin default branch. Run the Refresh procedure's
+3. **Staleness check** — tip = `HEAD` of the branch being worked (right after a commit; use the
+   origin default branch only when refreshing against a merged state; a rebase merge needs a
+   re-stamp to the merged SHA). Run the Refresh procedure's
    per-comment diff for this one comment: `git diff --name-only <comment verified-at>..<tip> --
    ':(glob)<p1>' ...` over its `owned_paths` (convert them to pathspecs first if the comment is
    still Format v1). No output: tell the user and ask whether to force a refresh anyway.
