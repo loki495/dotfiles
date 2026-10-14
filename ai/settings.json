@@ -1,6 +1,10 @@
 {
   "permissions": {
     "allow": [
+      "Bash(sessioneer --send *)",
+      "Bash(sessioneer --peers)",
+      "Bash(sessioneer --peers *)",
+      "Bash(sessioneer --whoami)",
       "Bash(basename *)",
       "Bash(basename)",
       "Bash(cat *)",
