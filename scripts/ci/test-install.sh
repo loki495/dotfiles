@@ -52,7 +52,8 @@ fail() {
 echo "=== [1/7] install.sh (all sections, non-interactive nvim choice) ==="
 NVIM_INSTALL_CHOICE=1 "$REPO_ROOT/install.sh" || fail "install.sh"
 "$REPO_ROOT/install_neovim.sh" --node-provider || fail "Node provider"
-# Systemd is deliberately opt-in; exercise it explicitly with the container stub.
+# Systemd and traefik are deliberately opt-in; exercise systemd explicitly with the
+# container stub (traefik needs the private repo, which CI doesn't have).
 "$REPO_ROOT/install.sh" systemd || fail "explicit systemd setup"
 
 # install_neovim.sh --user puts the nvim binary at $HOME/.local/bin/nvim but

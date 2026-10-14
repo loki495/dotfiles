@@ -42,7 +42,7 @@
   fresh-$HOME bootstrap bug before dying. Orchestrator completed final
   verification directly (docker exec into the second attempt's still-running
   container, reusing its already-installed deps/plugins rather than discarding
-  progress): all 6 steps passed cleanly, 22/22 symlinks, 11/11 languages,
+  progress): all 6 steps passed cleanly, all symlinks, 11/11 languages,
   zero FAILED/FATAL markers. Container removed after. See PLAN.md/RESULT.md
   for full detail.
 - **Unrelated infrastructure incident, resolved**: mid-T7, the session's own

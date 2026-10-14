@@ -4,7 +4,7 @@
 #
 # Copy this to `backup-tools.conf` (same directory) and fill it in. That file
 # is gitignored and never committed, which is the point: the real site list is
-# client infrastructure and has no business being in a public repo.
+# infrastructure detail and has no business being in a public repo.
 #
 #   cp backup-tools.conf.example backup-tools.conf
 #

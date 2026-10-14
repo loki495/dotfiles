@@ -15,13 +15,13 @@ up a new site, this skill is the workflow, that file is the schema.
 ## Setting up a new site
 
 1. **Survey a few existing `backup.conf` files first** (`ssh backups "cat
-   ~/backups/*/backup.conf"`) — conventions vary (AWS-fleet sites share
-   one fleet-wide `.pem`; non-fleet sites use their own key; OpenCart sites add
+   ~/backups/*/backup.conf"`) — conventions vary (key choice,
+   OpenCart sites add
    `MYSQL_EXCLUDED_TABLES`/`RSYNC_FOLDERS`; etc). Match the closest existing
    pattern rather than inventing a new one.
 
-2. **SSH key**: if the site's server is already on the shared AWS EC2 fleet
-   those existing sites use, reuse the fleet key. Otherwise — a new/unrelated
+2. **SSH key**: if the site's server belongs to a group of existing sites
+   that already share a key, follow that convention. Otherwise — a new/unrelated
    box — generate a **dedicated keypair on the backups machine**, add the
    public half to the site's own `authorized_keys`. Never reuse an unrelated
    site's key for a box it was never meant for.

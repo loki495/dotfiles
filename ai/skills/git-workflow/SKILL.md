@@ -71,7 +71,7 @@ anything else.
 
 ## Required status check blocks a direct push (GH006)
 
-Several ac495 repos (homie, insights, dibs) use a lightweight branch-protection
+Several of Andres's repos use a lightweight branch-protection
 pattern on `main`: a required status check (their CI's quality job) plus
 `enforce_admins`, but no required PR review — direct pushes to `main` are meant
 to stay allowed. GitHub still enforces the status check even for a direct push,

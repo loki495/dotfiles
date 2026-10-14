@@ -95,7 +95,7 @@ services:
       # - ./storage/ssh:/var/www/html/storage/ssh:rw
     labels:
       # No Host() router rule here on purpose - the main app's route lives
-      # centrally in ~/www/traefik/dynamic/ac495-sites.yml as
+      # centrally in the Traefik dynamic config as
       # <SLUG>.${TRAEFIK_DOMAIN}, added separately after this repo exists.
       # This label set just needs enable+port so that central route can
       # find this container.
@@ -122,7 +122,7 @@ services:
       - ./:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.<SLUG>-vite.rule=Host(`vite.<SLUG>.ac495.net`)"
+      - "traefik.http.routers.<SLUG>-vite.rule=Host(`vite.<SLUG>.${TRAEFIK_DOMAIN}`)"
       - "traefik.http.routers.<SLUG>-vite.entrypoints=web"
       - "traefik.http.services.<SLUG>-vite.loadbalancer.server.port=5173"
     networks:
@@ -167,7 +167,7 @@ services:
       - ./:/var/www/html
     labels:
       # No Host() router rule here on purpose - the main app's route lives
-      # centrally in ~/www/traefik/dynamic/ac495-sites.yml as
+      # centrally in the Traefik dynamic config as
       # <SLUG>.${TRAEFIK_DOMAIN}, added separately after this repo exists.
       # This label set just needs enable+port so that central route can
       # find this container; it still needs to be on the external `web`
@@ -363,8 +363,8 @@ Skip for OpenCart unless `.claude/project.md` explicitly opts in.
 
 After all steps:
 - Project type, slug, container name
-- Traefik URL: `http://<SLUG>.ac495.net` (once a route is added to `ac495-sites.yml`)
-- Vite URL (if applicable): `http://vite.<SLUG>.ac495.net`
+- Traefik URL: `http://<SLUG>.${TRAEFIK_DOMAIN}` (once a route is added to the Traefik dynamic config)
+- Vite URL (if applicable): `http://vite.<SLUG>.${TRAEFIK_DOMAIN}`
 - Database setup (MariaDB / SQLite / other)
 - Setup script location (`docker/` vs root)
 - Tools: which were present vs newly installed

@@ -21,7 +21,7 @@ package installation for missing copies uses Arch's `pacman`.
 
 1. **Clone the repository:**
    ```bash
-   git clone git@github.com:loki495/dotfiles ~/dotfiles
+   git clone https://github.com/loki495/dotfiles ~/dotfiles
    cd ~/dotfiles
    ```
    The path matters — `bash/bashrc` and several configs reference
@@ -30,7 +30,7 @@ package installation for missing copies uses Arch's `pacman`.
 
 2. **Run the installer:**
    ```bash
-   ./install.sh              # default sections; systemd is skipped
+   ./install.sh              # default sections; systemd and traefik are skipped
    ./install.sh --list       # list available sections
    ./install.sh bash git     # run only the named sections
    ```
@@ -48,7 +48,7 @@ you touched is the normal way to work here.
 | `systemd` (opt-in) | `~/.config/systemd`, then reloads an available systemd user session |
 | `ai-tools` | `~/AGENTS.md` and `~/.claude/*`; also opencode, Codex and Antigravity config, each skipped unless that tool is on `PATH` |
 | `neovim` | Installs/verifies Neovim, then links `~/.config/nvim` |
-| `traefik` | `~/www/traefik` |
+| `traefik` (opt-in) | `~/www/traefik`; needs the private repo (see [Traefik](#traefik-traefik)) |
 | `bin-tools` | Checks ripgrep/Composer and downloads PHP tools into `~/.local/bin` |
 | `private` | Links your private dotfiles repo in (see [Private dotfiles](#private-dotfiles)); does nothing when `~/.dotfiles-private` does not exist |
 
@@ -229,7 +229,7 @@ symlinks these into this checkout, all of them gitignored here:
 | `systemd/user/*` | `.config/systemd/user/*` | Units Sessioneer's `host-agent/install.sh` renders for one machine (absolute paths). `install.sh` rewrites them in place through the links |
 
 An existing real file at a target is kept in `~/.dotfiles-backups/` (see above). `traefik/` is linked the
-same way through its own tracked symlink and the `traefik` section.
+same way through its own tracked symlink and the opt-in `traefik` section.
 
 Not versioned anywhere: `ai/skills/synced/`, which Claude Code fills with the
 skills your claude.ai account syncs (proprietary, named after your account ids,
@@ -351,8 +351,7 @@ setup has been removed (see "Removed" below).
 
 ### `bin/` — personal CLI utilities
 
-Git helpers (`git-rr`, `git-summary`, `rebase-chain`, `git-root-path.php`), PHP
-dev-tool wrappers (`phpactor`, `phpcs`, `phpcbf`, `composer`, `phpbrew`), system
+Git helpers (`git-rr`, `git-summary`, `rebase-chain`, `git-root-path.php`), system
 utilities (`battery_level_alarm.sh`, `hybrid-sleep`, `pulseaudio-control`,
 `reboot-needed-check.sh`, `find-dupes`, `clear-hd-space.php`), an OpenCart
 package-mapping tool (`oc`), Claude Code/tmux helpers (`claude-quota`,
@@ -367,12 +366,11 @@ backup-tools/README.md), and misc desktop scripts (`new-reddit-wallpaper`,
 via pacman, the rest as standalone release binaries/phars. `todo-tray` stays
 committed (2.3 MB, personal Qt tool with no other surviving source) — see
 "Known rough edges". `mcphost` and its wrapper `boost-query.sh` were removed
-outright: both were a one-night experiment (Aug 2025) never actually adopted,
-and mcphost's own upstream is now archived/dead anyway.
+outright (an unadopted experiment; mcphost's upstream is archived).
 
 ### `backup-tools/` — remote-site backup/clone toolkit
 
-Bespoke toolkit for pulling git repos + MySQL dumps from ~44 remote sites into
+Bespoke toolkit for pulling git repos + MySQL dumps from many remote sites into
 `~/backups/<site>/`. See `backup-tools/README.md` for the full `backup.conf`
 schema and behavior notes (including that `pull` and `push` only auto-commit uncommitted
 changes on the **remote** site when `AUTO_COMMIT_REMOTE="true"`). Highlights: `mysqlbk` (per-table parallel dump),
@@ -442,9 +440,9 @@ multi-session initiatives and `lessons/` for what they turned up.
 ### Traefik (`traefik/`)
 
 A symlink to `~/.dotfiles-private/traefik`, linked to `~/www/traefik/` by the
-`traefik` section. The reverse-proxy config for the dev containers lives in that
+opt-in `traefik` section (`./install.sh traefik`). The reverse-proxy config for the dev containers lives in that
 private repo, so nothing under `traefik/` is tracked here. Without the private
-repo the link is dangling and the section does nothing useful; CI runs without
+repo the link is dangling, so the default install skips the section; CI runs without
 it. Real hosts and routes are infrastructure detail and stay private, along with
 the Cloudflare token, the ACME account and the certificate keys.
 

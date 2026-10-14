@@ -4,7 +4,7 @@ set -eo pipefail
 # scripts/install/ in order, or just the sections named on the command line.
 #
 # Usage:
-#   ./install.sh                       # default sections (no systemd)
+#   ./install.sh                       # default sections (no systemd, no traefik)
 #   ./install.sh bash git              # run only these sections
 #   ./install.sh --list                # list available sections
 #
@@ -78,8 +78,8 @@ for script in "$INSTALL_DIR"/[0-9][0-9]-*.sh; do
     [ "$skip" -eq 1 ] && continue
   fi
 
-  if [ "$name" = systemd ] && [ ${#REQUESTED[@]} -eq 0 ]; then
-    echo_info "Skipping systemd (opt in with ./install.sh systemd)."
+  if [[ "$name" =~ ^(systemd|traefik)$ ]] && [ ${#REQUESTED[@]} -eq 0 ]; then
+    echo_info "Skipping $name (opt in with ./install.sh $name)."
     continue
   fi
   bash "$script"

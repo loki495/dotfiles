@@ -7,8 +7,8 @@ declare(strict_types=1);
  * (homie or insights) so Watchtower checks for and pulls whatever's new,
  * instead of waiting on its own 24h poll interval. Deliberately dumb - no
  * framework, no dependencies, just a token check and one internal call to
- * Watchtower's own HTTP API. Exposed publicly via the Cloudflare Tunnel
- * (cd.ac495.net), gated only by CD_TRIGGER_TOKEN - low blast radius even
+ * Watchtower's own HTTP API. Meant to be exposed publicly, gated only by
+ * CD_TRIGGER_TOKEN - low blast radius even
  * if guessed: it can only ask Watchtower to check for image updates it's
  * already configured to track, nothing arbitrary. Run standalone via
  * `php -S 0.0.0.0:8086 -t . router.php`.

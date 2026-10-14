@@ -28,7 +28,7 @@ directly.
 Three cases verified against a fresh `$HOME=$(mktemp -d)` each time (never the real
 $HOME), plus a repo symlink at `$HOME/dotfiles` for the bashrc check:
 1. **Full setup** (matches this dev machine, which has opencode/codex/agy
-   installed): all 46 checks PASS, exit 0.
+   installed): all checks PASS, exit 0.
 2. **Minimal CI-like setup** (opencode/codex/agy absent - built a scratch `PATH`
    containing only symlinks to core tools actually needed, no AI CLIs): the three
    conditional blocks correctly print `SKIP: ... not installed in this
@@ -149,7 +149,7 @@ scripts/ci/test-install.sh via `docker exec` into an archlinux:latest
 container (already had both fixes' prerequisites - deps installed, lazy.nvim
 plugins built - from the interrupted second attempt, reused rather than
 discarded to avoid redoing the slow parts). All 6 steps passed: install.sh,
-assert-symlinks.sh (22/22), install_neovim.sh --parsers, install_neovim.sh
+assert-symlinks.sh (all pass), install_neovim.sh --parsers, install_neovim.sh
 --queries, Lazy! sync, test-nvim-highlighting.sh (11/11 languages). Zero
 FAILED/FATAL markers anywhere in the full log. `=== ALL CHECKS PASSED ===`.
 Container removed after (`docker rm -f`) per the orchestrator-worker skill's
