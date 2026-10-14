@@ -156,7 +156,8 @@ Only runs if the user confirmed at step 11, or `audit` was passed.
   and, with explicit confirmation, the project's root `CLAUDE.md`.
 - No background workers: every agent runs in the foreground.
 - For a single subsystem you already know, prefer `/feature-atlas-subsystem` — far cheaper.
-- To re-rank an existing audit without rescanning code, use `/feature-atlas-report`.
+- To re-rank an existing audit and re-check open `bug` / `docs drift` tasks against changed code
+  without rescanning, use `/feature-atlas-report`.
 - Repeated Phase-A-only runs are a complete workflow: refresh, removal handling and the coverage
   check all run in Phase A.
 - The atlas describes **current state only** — never write "this changed since last run" or
