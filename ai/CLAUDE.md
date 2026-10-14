@@ -491,6 +491,16 @@ commit stands on its own — reviewable, bisectable and revertable as one unit.
 - If a miss is found after a commit already exists, fix it in a follow-up docs commit
   and say so plainly as a miss; never rewrite a pushed commit to hide it (see the hard
   rules on history rewrites).
+- **Done means all of it.** Never leave finished work halfway: once a piece of work is
+  done and committed, in that same piece of work also update the docs the change makes
+  wrong, the feature atlas (every touched subsystem, stamped with the commit SHA;
+  re-stamp after a rebase merge or history surgery), close the Dibs tasks that are
+  finished, and update every note, plan, task or knowledge record that describes the
+  changed behaviour. A closing note states the real final state (merged SHA, released
+  tag), not an intermediate one. Do this before reporting "done"; if a step can't be
+  finished, say which and file a Dibs task instead of leaving it implicit. Decided
+  2026-10-14 during the job-search audit fixes, where closing notes still said "not
+  pushed" after the PR had merged and atlas stamps lagged the merged commits.
 
 Decided 2026-09-21 in the Dibs repo: a commit changed MCP tool arguments and left
 `skills/dibs/SKILL.md` still telling agents the old usage until a later fix.
