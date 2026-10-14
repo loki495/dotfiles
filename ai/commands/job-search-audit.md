@@ -1,14 +1,15 @@
 Audit the public repos and résumé that back my job search, from the perspective of the people
 who will actually read them: a recruiter skimming for 30 seconds, a senior engineer opening
 the code before an interview, and an outside contributor deciding whether they can help.
-It edits no repo or résumé file: it files findings in Dibs and produces a prioritised report I act
-on afterwards.
+It edits no repo, résumé or profile file: it files findings in Dibs and produces a prioritised
+report I act on afterwards. The one write it makes is the proposed wording in the two notes files
+(see "Notes files").
 
 **Arguments:** $ARGUMENTS
 
-- No argument: audit everything (the five repos + the résumé/profile).
+- No argument: audit everything (the five repos + the résumé, profile README and LinkedIn).
 - One or more repo names (`insights`, `dibs`, `sessioneer`, `homie`, `dotfiles`): audit only those.
-- `resume`: audit only the résumé + profile README.
+- `resume`: audit only the résumé, profile README and LinkedIn.
 - `quick`: skip the per-repo reader-lens deep dives (phase 3), run only phases 0-2 and the
   recruiter/interviewer pass.
 - `tools`: also run each project's own test and lint commands (phase 4, see its rules).
@@ -34,8 +35,12 @@ exists and is a git repo; if one is missing or elsewhere, find it or ask me, nev
 silently. Report the paths you resolved. A repo without an atlas parent is reported as out of scope
 and `/feature-atlas` is recommended; do not audit it from guesses.
 
-The profile is the one exception, because it has no atlas: `~/dev/loki495-profile` (profile
-`README.md` + `Andres-Crucitti-PHP-Laravel-Developer.pdf`).
+The profile materials are the exception, because they have no atlas: `~/dev/loki495-profile`
+(profile `README.md` + `Andres-Crucitti-PHP-Laravel-Developer.pdf`) and `~/www/LinkedIn-Profile.pdf`,
+a print of my own logged-in LinkedIn page. Ignore its private and navigation noise ("Private to
+you", analytics, "People you may know", suggestions); judge only what a visitor sees (headline,
+About, Featured, Experience, Education, Skills). If its file date is older than the résumé's,
+say so and ask me for a fresh export before grading it.
 
 **Freshness gate, before anything else.** Per repo: the working tree must be clean (`git status
 --porcelain` empty on the default branch) and local must equal the fetched origin tip. If either
@@ -207,19 +212,23 @@ Lenses, in priority order:
 
 ### The recruiter/interviewer pass
 
-One agent, over the résumé PDF (`pdftotext -layout <file> -`), the profile `README.md`, and all
-in-scope repos as a reader meets them. It judges tone and weight across everything, so it runs on
+One agent, over the résumé PDF (`pdftotext -layout <file> -`), the profile `README.md`, the
+LinkedIn PDF (same `pdftotext`; read the page images too if the text drops the Featured cards), and
+all in-scope repos as a reader meets them. It judges tone and weight across everything, so it runs on
 the strongest model, over the other workers' compact findings and the excerpts they cite.
 
-1. **Résumé ↔ profile README consistency.** Genuine contradictions in stack claims, dates,
+1. **Résumé ↔ profile README ↔ LinkedIn consistency.** Genuine contradictions in stack claims, dates,
    titles, years of experience, project descriptions, CI claims. Any exact test or assertion count
    in either document is a finding in its own right.
-2. **Verify every technical claim against the repos and the atlases.** Both documents make
+2. **Verify every technical claim against the repos and the atlases.** All three documents make
    checkable claims: "CI runs the suite against X and Y", "PHPStan/Rector/Pint/Peck gate every
    push", line counts, "no hostname, service, or credential exists anywhere in the code",
    coverage floors. Use the atlas for what exists, the CI YAML and phase 2 results for what runs.
    Report anything overstated, stale, or unverifiable, and say what you verified vs. inferred.
-3. **The 30-second skim.** What impression does the profile README give? Is the strongest
+3. **The 30-second skim.** What impression does the profile README give, and separately what
+   does LinkedIn give (headline wording and length, About opening, Featured cards with working
+   links, images and non-truncated blurbs, experience dates against the résumé, how the page
+   reads to a recruiter search)? Is the strongest
    evidence surfaced early? What's buried, redundant, or reads as filler/AI boilerplate?
 4. **The engineer's read.** What impresses, what gives pause: README quality, commit message
    quality, test quality (not just count), architecture decisions and whether they're explained,
@@ -268,6 +277,16 @@ were run, and what was not read at all. A claim made about code that isn't on th
 unverified. Calibrate occasionally: run one repo's audit on both models and diff the results; drop
 the stronger model from a step where the cheaper one matches, keep it where it finds real issues.
 
+**Launching workers.** Background subagents can hang forever on a permission prompt nobody sees.
+When the `sessioneer` CLI is on PATH, launch each worker and the judge as a headless session
+instead: `sessioneer --workdir <scratch dir> --model <sonnet|opus> --mode auto "<prompt>"`.
+Always pass `--mode auto`. Put the long worker prompt in a file in the scratch dir and make the
+launch prompt "read <file> and follow it" plus the per-repo parameters; have each worker write its
+report to a file there, and `sessioneer --kill <name>` each session once its report is read. Use
+`Agent` subagents only when `sessioneer` is unavailable. Workers use `git -C <path>` and absolute
+paths, never `cd` compounds, and keep command output small (count with `-c`/`-l` rather than
+printing hundreds of hits).
+
 **Models and other tools.** Evidence gathering (phases 1-3 workers) is mechanical reading and
 listing: use a mid-tier model (Sonnet) and have workers return about 300 words each. To save
 Claude tokens, evidence gathering may run on Codex, Antigravity's `agy` or opencode instead, at
@@ -276,6 +295,20 @@ offered; never guess a name; launch details are in the `orchestrator-worker` ski
 section). Outside Claude the no-edit rules are on the worker's honour, so give it the repo path and
 the rules in the prompt and verify what comes back. Where one agent would both gather and judge,
 split it into those two steps.
+
+**Notes files.** After the report, and only for the résumé and LinkedIn, write the proposed wording
+as notes for me to apply by hand (I edit the résumé and LinkedIn myself; the audit never touches
+the ODT/PDF or LinkedIn):
+- `~/Documents/andres/resume/current/php/resume-review-notes.md`: update the existing file in
+  place, keep its structure (agreed direction, section-by-section proposed wording, already
+  reflected, still pending, contact details), refresh stale facts and tips, and move items that
+  are now done to "already reflected" instead of deleting them.
+- `~/Documents/andres/resume/current/php/linkedin-review-notes.md`: same style, created if
+  missing: agreed direction, then per LinkedIn section (headline, About, Featured, Experience,
+  Skills, other) the current text, the proposed replacement, and why. Include the
+  consistency fixes against the résumé and README, and the checklist of what to change by hand.
+No exact test or assertion counts in proposed wording. These files hold proposals only, never
+secrets, and nothing in them is final until I apply it.
 
 **Report to me.** One consolidated, deduplicated, cross-repo priority list, highest impact first,
 each item with why it matters *for the job search specifically*. Group anything that appears in
