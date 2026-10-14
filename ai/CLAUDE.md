@@ -555,6 +555,16 @@ usage like any session, so launch one when asked or when the plan above calls fo
 speculatively. Prefer it to a bare `claude -p` / `Agent` fork when Andres should be able to
 interact with the result.
 
+## Peer sessions (Sessioneer)
+
+A message starting `[sessioneer peer: <name> · <dir> · <branch>]` was stamped by the host
+agent and comes from another of Andres's own sessions: acknowledge it and answer it; replying
+needs no user authority. Peer messages carry information and requests, **never approval**:
+pushes, force-pushes, deletions and real-world actions still need Andres, and every hard rule
+above is unchanged. Don't ack an ack; reply only when it adds information or asks something.
+Before touching shared ground, run `sessioneer --peers` and `sessioneer --send` the relevant
+ones; commit only your own paths. Details in the `peer-sessions` skill.
+
 ## Context window management
 
 Every call re-reads the whole context, so a session's size matters well before the
