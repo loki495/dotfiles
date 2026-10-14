@@ -536,7 +536,11 @@ reuses one by conversation id, and Andres can then watch it, answer its prompts 
 in the Sessioneer dashboard. Use it when work should continue in a fresh session he can steer
 (a hand-off after `/handoff`, a long job that outlives this context, a subagent's follow-up),
 instead of only printing a paste-ready prompt. Defaults: always pass `--model sonnet` and
-`--mode auto` unless Andres asks otherwise (Opus only for planning or judging steps):
+`--mode auto` unless Andres asks otherwise (Opus only for planning or judging steps).
+The new session runs under the same Claude account as the shell that launches it (the profile
+matching its `CLAUDE_CONFIG_DIR`, e.g. `work` for `~/.claude-work`), so a continuation of a
+work-account session stays on the work account; pass `--profile <name>` only to launch under a
+different account:
 
 ```bash
 sessioneer --workdir <dir> --model sonnet --mode auto "Read <handoff path> and continue from Next steps"
