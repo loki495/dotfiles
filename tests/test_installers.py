@@ -169,7 +169,7 @@ chmod +x "$prefix/bin/nvim"
         self.run_script('install.sh', 'neovim', NVIM_SOURCE='1')
         self.assertIn('-source.', str((self.home / '.local/bin/nvim').resolve()))
 
-    def test_default_install_excludes_systemd(self):
+    def test_default_install_excludes_opt_in_sections(self):
         checkout = self.root / 'checkout'
         (checkout / 'scripts/install').mkdir(parents=True)
         shutil.copy(REPO / 'install.sh', checkout)
@@ -177,10 +177,24 @@ chmod +x "$prefix/bin/nvim"
         shutil.copytree(REPO / 'bash/lib', checkout / 'bash/lib')
         (checkout / 'scripts/install/10-noop.sh').write_text('true\n')
         (checkout / 'scripts/install/40-systemd.sh').write_text('touch "$HOME/systemd-touched"\n')
+        (checkout / 'scripts/install/70-traefik.sh').write_text('touch "$HOME/traefik-touched"\n')
         result = subprocess.run(['bash', str(checkout / 'install.sh')], env=self.env,
                                 text=True, capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.home / 'systemd-touched').exists())
+        self.assertFalse((self.home / 'traefik-touched').exists())
+
+    def test_explicit_traefik_section_runs(self):
+        checkout = self.root / 'checkout'
+        (checkout / 'scripts/install').mkdir(parents=True)
+        shutil.copy(REPO / 'install.sh', checkout)
+        shutil.copy(REPO / 'scripts/install/lib.sh', checkout / 'scripts/install')
+        shutil.copytree(REPO / 'bash/lib', checkout / 'bash/lib')
+        (checkout / 'scripts/install/70-traefik.sh').write_text('touch "$HOME/traefik-touched"\n')
+        result = subprocess.run(['bash', str(checkout / 'install.sh'), 'traefik'], env=self.env,
+                                text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.home / 'traefik-touched').exists())
 
     def test_explicit_systemd_without_user_session_does_not_modify_configuration(self):
         self.stub('systemctl', '#!/bin/sh\nexit 1\n')

@@ -40,7 +40,7 @@ function prompt_yes_no() {
 
 # === Project Name ===
 while true; do
-  read -p "$(echo -e "${CYAN}Project name (used as subdomain, e.g. project.ac495.net):${RESET} ")" PROJECT
+  read -p "$(echo -e "${CYAN}Project name (used as subdomain, e.g. project.example.com):${RESET} ")" PROJECT
   if [[ -z "${PROJECT}" ]]; then
     echo -e "${RED}Project name cannot be empty.${RESET}"
   else
@@ -136,7 +136,7 @@ services:
       - ./docker/logs:/var/www/html/logs:rw
     labels:
       # No Host() router rule here on purpose - the main app's route lives
-      # centrally in ~/www/traefik/dynamic/ac495-sites.yml as
+      # centrally in the Traefik dynamic config as
       # ${PROJECT_SLUG}.\${TRAEFIK_DOMAIN}, added separately after this repo
       # exists. This label set just needs enable+port so that central route
       # can find this container.
@@ -164,7 +164,7 @@ if ${USE_VITE}; then
       - ./:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_SLUG}-vite.rule=Host(\`vite.${PROJECT_SLUG}.ac495.net\`)"
+      - "traefik.http.routers.${PROJECT_SLUG}-vite.rule=Host(\`vite.${PROJECT_SLUG}.\${TRAEFIK_DOMAIN}\`)"
       - "traefik.http.routers.${PROJECT_SLUG}-vite.entrypoints=web"
       - "traefik.http.services.${PROJECT_SLUG}-vite.loadbalancer.server.port=5173"
     networks:
@@ -188,6 +188,6 @@ grep -v '^COMPOSE_PROJECT_NAME=' "${ENV_FILE}" > "${ENV_FILE}.tmp" && mv "${ENV_
 echo "COMPOSE_PROJECT_NAME=${PROJECT_SLUG}" >> "${ENV_FILE}"
 
 echo -e "\n${GREEN}✅ docker-compose.yml created (inline Dockerfile) for project '${PROJECT_SLUG}'.${RESET}"
-echo -e "${CYAN}🌐 Add a route for it in ~/www/traefik/dynamic/ac495-sites.yml to reach it at ${PROJECT_SLUG}.ac495.net.${RESET}"
+echo -e "${CYAN}🌐 Add a route for it in your Traefik dynamic config to reach it at ${PROJECT_SLUG}.<your dev domain>.${RESET}"
 echo -e "${CYAN}📂 Apache document root: ./${APACHE_ROOT}${RESET}"
 echo -e "${YELLOW}ℹ️ Note: This compose does NOT create a per-project DB. Use your central mariadb and point DB host accordingly.${RESET}"

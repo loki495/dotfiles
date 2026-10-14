@@ -9,7 +9,7 @@ every site under a base dir).
 
 `backup_crons.sh`, `check-hd-space full`, and `common-git` read their site
 lists and base paths from `backup-tools.conf` in this directory. It is
-gitignored — the site list is client infrastructure and doesn't belong in a
+gitignored — the site list is infrastructure detail and doesn't belong in a
 public repo — so a fresh clone has to create it first:
 
 ```bash
@@ -23,14 +23,13 @@ Scripts that need it exit with a clear message if it's missing. See
 ## `backup.conf`
 
 Each site's folder needs a `backup.conf` (bash, sourced directly — `# vi: ft=bash`
-at the top for syntax highlighting). Surveyed across ~44 sites' actual conf
+at the top for syntax highlighting). Surveyed across many sites' actual conf
 files; not every variable is used by every site.
 
 **Required:**
 - `SSH_HOST`, `SSH_USER` — remote box to pull from.
-- `SSH_KEY` — private key path. Prefer a **dedicated key per site** when the
-  site isn't on the shared AWS EC2 fleet (one `.pem` is shared across the many
-  sites that *are* on that fleet — don't reuse it for an unrelated box).
+- `SSH_KEY` — private key path. Prefer a **dedicated key per site** and
+  don't reuse one site's key for an unrelated box.
 - `SSH_BASE_PATH` + `SSH_PATH` — concatenated to the remote code directory.
 - `LOCAL_BASE` (almost always `` `pwd` ``) + `LOCAL_PATH` (almost always
   `public_html`) — where the git clone lands locally.

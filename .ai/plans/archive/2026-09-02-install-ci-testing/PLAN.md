@@ -200,7 +200,7 @@ before touching anything that invokes `install.sh` or its sections directly.
      test-install.sh, before the highlighting check.
 - **Final verified run** (orchestrator, direct docker exec into a container
   that already had both fixes' prerequisites from the interrupted attempt):
-  all 6 steps passed cleanly, `assert-symlinks.sh` 22/22,
+  all 6 steps passed cleanly, `assert-symlinks.sh` all passing,
   `test-nvim-highlighting.sh` 11/11, `=== ALL CHECKS PASSED ===`. Zero FAILED/
   FATAL markers anywhere in the full log. Container removed after.
 - Owner: fork or general-purpose worker with a strong-enough model - likely
