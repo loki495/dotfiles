@@ -503,11 +503,20 @@ issue `Feature atlas: <Project>` (labels `research` and `feature atlas`, in the 
 find atlases with `todo_list` label `feature atlas`) with one comment per subsystem; when Dibs
 is unreachable it is `.ai/feature-atlas/` files with the same fields. Where it exists, it's
 the source of truth for feature boundaries, interfaces, dependencies and the SHA each fact
-was verified at, and it is updated along with any change that touches a subsystem
-(see "Docs and tests travel with the change") — read it before re-deriving that by rescanning the codebase, and proactively
-suggest re-running it if its Verified at SHA is behind the default branch. It holds no
-findings: audit results are ordinary Dibs tasks under a `Feature atlas audit: <Project>
-<date>` parent task.
+was verified at. It is updated after every commit that touches a subsystem (see "Docs and
+tests travel with the change"), not at merge time: Verified at may be a local, unpushed SHA,
+and pushing or opening a PR is optional. History surgery or a rebase merge changes SHAs, so
+re-stamp afterwards to the resulting SHA. Read it before re-deriving that by rescanning the
+codebase, and proactively suggest re-running it if its Verified at SHA is behind the branch
+being worked. It holds no findings: audit results are ordinary Dibs tasks under a `Feature
+atlas audit: <Project> <date>` parent task.
+
+Dibs's local database is authoritative. Before working on a repo, compare its GitHub tip (the
+atlas's branch on `origin`) with the atlas's Verified at; if GitHub is ahead or differs, bring
+the atlas up to date (refresh the changed subsystems) before going further. An atlas records
+the branch it describes in a `Branch:` line, defaulting to the default branch (`main`/`master`);
+another branch that needs its own atlas gets a separate parent, titled `Feature atlas:
+<Project> [<branch>]`.
 
 ## Spawning a continuation session (Sessioneer)
 
@@ -516,10 +525,11 @@ repo's `docs/cli.md`) starts a headless Claude session with a first prompt, or r
 reuses one by conversation id, and Andres can then watch it, answer its prompts and message it
 in the Sessioneer dashboard. Use it when work should continue in a fresh session he can steer
 (a hand-off after `/handoff`, a long job that outlives this context, a subagent's follow-up),
-instead of only printing a paste-ready prompt:
+instead of only printing a paste-ready prompt. Defaults: always pass `--model sonnet` and
+`--mode auto` unless Andres asks otherwise (Opus only for planning or judging steps):
 
 ```bash
-sessioneer --workdir <dir> --model sonnet "Read <handoff path> and continue from Next steps"
+sessioneer --workdir <dir> --model sonnet --mode auto "Read <handoff path> and continue from Next steps"
 sessioneer --resume <conversation-id> "next message"   # reuses the live session if there is one
 ```
 

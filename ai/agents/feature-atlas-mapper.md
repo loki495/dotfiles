@@ -16,7 +16,7 @@ You are told the project root, the conventions, where the atlas lives (Dibs pare
 
 ## Atlas format (Format v2)
 
-Parent body: Repo / Verified at: `<full SHA>` / Latest release / Purpose / Stack / rule line /
+Parent body: Repo / Branch (the branch the atlas describes, default the default branch) / Verified at: `<full SHA>` / Latest release / Purpose / Stack / rule line /
 Subsystem index (`<id> - <comment id> - <one line>`, ` (partial)` appended when the comment is not
 full-read) / Shared infrastructure (pathspec globs owned by no subsystem, one reason each) / Not
 read (globs). One comment per subsystem with fields `subsystem`, `verified-at`, `depth`,
@@ -37,7 +37,8 @@ services/domain modules, frontend pages, jobs.
 
 ## 2. Find the tip and the atlas
 
-`git fetch`, then tip = the origin default branch (`origin/HEAD`); record its full SHA. If the
+`git fetch`, then tip = the atlas's `Branch:` on origin (default: the origin default branch,
+`origin/HEAD`); record its full SHA. If the
 project is not a git repo, say so: there is no SHA, and staleness falls back to comparing file
 listings and mtimes against the atlas, reported as lower confidence.
 

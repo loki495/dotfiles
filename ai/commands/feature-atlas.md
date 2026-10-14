@@ -28,8 +28,17 @@ defined in the mapper and scout agent docs.
 parent body and `.ai/feature-atlas/<id>.md` each subsystem comment, with the same fields. Audit
 output is `AUDIT-<id>.md` per subsystem and `REPORT.md`.
 
-The atlas describes the default branch at its recorded SHA only; unmerged branches and PRs are
-never atlas content. It holds no findings: audit findings are ordinary Dibs tasks.
+The atlas describes the code at its recorded SHA, the commit last verified, which may be local
+and unpushed. Refresh the touched subsystems after every commit (`/feature-atlas-subsystem`), on
+whichever branch the work is committed; pushing or opening a PR is optional. Entries for unmerged
+work are provisional: if the branch is dropped, re-verify at the default branch tip. After history
+surgery or a rebase merge changes SHAs, re-stamp to the resulting SHA. Dibs's local database is
+authoritative; before working on a repo, compare its GitHub tip (the atlas's branch on `origin`)
+with the atlas's Verified at and, if GitHub is ahead or differs, bring the atlas up to date first.
+The parent body carries a `Branch:` line naming the branch the atlas describes, default the
+default branch (`main`/`master`); a branch that needs its own atlas gets a separate parent titled
+`Feature atlas: <Project> [<branch>]`. It holds no findings: audit findings are ordinary Dibs
+tasks.
 
 ## Findings
 

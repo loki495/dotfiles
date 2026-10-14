@@ -104,6 +104,16 @@ land it unchanged.
    (committer date shifts). Sync local `main`: `git fetch origin main`, confirm
    `git diff <old-sha> origin/main` is empty, then `git reset --hard origin/main`.
 
+## After each commit: refresh the atlas
+
+In a project that has a feature atlas, refresh the subsystems a commit touched right after the
+commit (`/feature-atlas-subsystem`), stamped with that commit's SHA, not at merge time. The commit
+need not be pushed and a PR is optional. Whenever you rewrite unpushed commits (amend, squash,
+reorder) or a rebase merge produces new SHAs, re-stamp the atlas to the resulting SHA. Before
+working on a repo, compare its GitHub tip (the atlas's branch) with the atlas's Verified at and
+refresh the atlas if GitHub is ahead. The atlas names its branch (default: `main`/`master`).
+Details: the `feature-atlas` command's "Where the atlas lives".
+
 ## After a PR merges: delete the branch, locally and on GitHub
 
 For any repo where work goes through a PR from a separate branch, once the PR has merged
