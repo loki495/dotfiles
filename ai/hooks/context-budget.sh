@@ -23,8 +23,10 @@ mkdir -p "$marker_dir"
 # Relies on the transcript format (assistant entries carrying .message.usage and
 # .timestamp). If a Claude Code update changes it, say so once per session instead of
 # silently going inert.
-last=$(tac "$transcript" | jq -cn 'first(inputs | select(.type == "assistant" and .message.usage))' 2>/dev/null)
-ctx=$(jq -e '.message.usage | (.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0)' <<<"$last" 2>/dev/null)
+# A compaction (manual, auto or idle) after the last assistant entry has already shrunk
+# the context, so it counts instead, at its postTokens, from its own timestamp.
+last=$(tac "$transcript" | jq -cn 'first(inputs | select((.type == "assistant" and .message.usage) or (.subtype == "compact_boundary" and .compactMetadata.postTokens)))' 2>/dev/null)
+ctx=$(jq -e 'if .subtype == "compact_boundary" then .compactMetadata.postTokens else .message.usage | (.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0) end' <<<"$last" 2>/dev/null)
 ts=$(jq -r '.timestamp // empty' <<<"$last" 2>/dev/null)
 then_s=$(date -d "$ts" +%s 2>/dev/null)
 if [[ ! $ctx =~ ^[0-9]+$ || ! $then_s =~ ^[0-9]+$ ]]; then
