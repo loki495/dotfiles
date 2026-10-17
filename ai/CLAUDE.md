@@ -501,6 +501,17 @@ commit stands on its own — reviewable, bisectable and revertable as one unit.
   finished, say which and file a Dibs task instead of leaving it implicit. Decided
   2026-10-14 during the job-search audit fixes, where closing notes still said "not
   pushed" after the PR had merged and atlas stamps lagged the merged commits.
+- **No housekeeping after the fact.** The records are part of the step, not a follow-up
+  to it: if a commit, merge, tag or release exists and an atlas comment, the atlas
+  parent (Verified at, Latest release), a doc, a plan or a Dibs task still describes the
+  old state, the work was not done. Update them in the same step that creates the commit,
+  merge, tag or release, before any push or "done" report, and never offer "housekeeping
+  remaining" as a closing item or ask permission for it; it is not optional. A rebase merge
+  or a release changes SHAs and versions, so the step that merges or tags also re-stamps
+  and updates the records. The one exception is a record that is blocked on someone else
+  (a claim held by a live process, a decision only the user can make): say which and file
+  it in Dibs. Decided 2026-10-17 in Sessioneer: a release was tagged and the atlas's
+  Latest release and the plan's closure were offered as leftover housekeeping.
 
 Decided 2026-09-21 in the Dibs repo: a commit changed MCP tool arguments and left
 `skills/dibs/SKILL.md` still telling agents the old usage until a later fix.
@@ -513,10 +524,15 @@ issue `Feature atlas: <Project>` (labels `research` and `feature atlas`, in the 
 find atlases with `todo_list` label `feature atlas`) with one comment per subsystem; when Dibs
 is unreachable it is `.ai/feature-atlas/` files with the same fields. Where it exists, it's
 the source of truth for feature boundaries, interfaces, dependencies and the SHA each fact
-was verified at. It is updated after every commit that touches a subsystem (see "Docs and
-tests travel with the change"), not at merge time: Verified at may be a local, unpushed SHA,
-and pushing or opening a PR is optional. History surgery or a rebase merge changes SHAs, so
-re-stamp afterwards to the resulting SHA. Read it before re-deriving that by rescanning the
+was verified at. **Keeping it current is non-negotiable for every session that changes the
+project, including workers and continuations:** a commit that touches a subsystem updates that
+subsystem's atlas comment (content and Verified at) as part of the same piece of work (see
+"Docs and tests travel with the change"). The latest acceptable point is before any push, PR
+or merge to the default branch; never push, open a PR or merge with a stale atlas, and never
+leave it for "the next session". Verified at may be a local, unpushed SHA, and pushing or
+opening a PR is optional. History surgery or a rebase merge changes SHAs, so re-stamp
+afterwards to the resulting SHA (a change that landed from another branch or session counts:
+check the atlas against the tip you are about to ship, not only your own commits). Read it before re-deriving that by rescanning the
 codebase, and proactively suggest re-running it if its Verified at SHA is behind the branch
 being worked. It holds no findings: audit results are ordinary Dibs tasks under a `Feature
 atlas audit: <Project> <date>` parent task.
