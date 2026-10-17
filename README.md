@@ -396,7 +396,9 @@ checks: disk space, stale backups, htaccess, etc.), OpenCart packaging
 
 ### PHP (`php/`)
 
-A small installable PSR-4 package (`loki495/php-lib`, see `composer.json`):
+A small installable PSR-4 package (`loki495/php-lib`, see `composer.json`). It has no dependencies; run `composer install` in
+`php/` to generate the untracked `php/vendor/` autoloader that `bin/clear-hd-space.php` and
+`misc/cron/cronlog.php` include:
 - `src/Core/Config.php` — INI-file config loader.
 - `src/Helpers/HDCleaner.php` — used by `bin/clear-hd-space.php` to prune old
   OpenCart error logs, sessions, and DB backup files by age.
