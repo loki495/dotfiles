@@ -1,0 +1,9 @@
+[Unit]
+Description=Review the Claude Code changelog on Wednesdays and Saturdays
+
+[Timer]
+OnCalendar=Wed,Sat *-*-* 12:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

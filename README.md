@@ -290,7 +290,10 @@ setup has been removed (see "Removed" below).
   Neovim's data directory. If none exists, the plugin offers to install into its
   own directory. Update externally installed copies through their original installer.
 - `systemd/user/` — user units: clipboard sync, a Unison dev-sync job, a
-  `cloudcli` (Claude Code UI) unit and the codex remote-control check. The units
+  `cloudcli` (Claude Code UI) unit, the codex remote-control check and
+  `claude-changelog-review.timer` (Wed and Sat 12:00, `Persistent=true`), which starts a
+  Sessioneer session from `ai/scheduled/changelog-review.md` to review the Claude Code
+  changelog and file Sessioneer follow-ups in Dibs. The units
   Sessioneer generates (its socket-activated host agent, the push-check and
   quota timers, the Codex, OpenCode-events and Claude headless services, and
   `opencode-serve.service`) carry one machine's absolute paths, so they are not

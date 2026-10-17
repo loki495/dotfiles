@@ -1,0 +1,6 @@
+[Unit]
+Description=Start a Sessioneer session that reviews the Claude Code changelog
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'exec %h/.local/bin/sessioneer --workdir %h/www/personal/sessioneer --model sonnet --mode auto - < %h/dotfiles/ai/scheduled/changelog-review.md'
