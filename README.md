@@ -250,6 +250,14 @@ docker run --rm --network none -e DOTFILES_TEST_CONTAINER=1 \
   -v "$PWD:/repo:ro" dotfiles-installer-tests python3 /repo/tests/test_installers.py
 ```
 
+The backup-tools test checks that `backup-tools/common-git` never commits on a remote site
+unless `AUTO_COMMIT_REMOTE=true`. It uses a stubbed `ssh` in a temp directory, so it is safe
+to run on the host:
+
+```bash
+python3 tests/test_backup_tools.py
+```
+
 The full install/highlighting suite below also requires a throwaway container:
 
 ```bash
@@ -262,8 +270,8 @@ Runs the real `install.sh` against `$HOME`, so it requires the explicit
 machine. The stubs on `PATH` stand in for `systemctl` and `sudo`, which a
 container has no working equivalent of.
 
-`.github/workflows/ci.yml` runs exactly this on every push, in an
-`archlinux:latest` container. See "Install & CI" below for what it covers.
+`.github/workflows/ci.yml` runs both Python test files (in a `node:22` container) and this
+install suite (in an `archlinux:latest` container) on every push. See "Install & CI" below for what it covers.
 
 ## Repository structure
 
@@ -282,7 +290,11 @@ setup has been removed (see "Removed" below).
   network, todo tray, etc.), with separate profiles for the laptop panel (`eDP-1`)
   and TV output (`HDMI-A-1`).
 - `fish/` — Fish shell config, aliases, tab-completions, Catppuccin Mocha theme.
-- `alacritty/` — terminal emulator config.
+- `alacritty/` — terminal emulator config (`alacritty.toml`).
+- `starship.toml` — the Starship prompt config that `fish/config.fish` initialises;
+  `starship_cat.toml` is an alternate theme. The installer does not link either:
+  `ln -s ~/dotfiles/.config/starship.toml ~/.config/starship.toml` (Starship reads that
+  path, or `STARSHIP_CONFIG`).
 - `wireplumber/` — PipeWire/WirePlumber audio routing rules.
 - `phpactor/` — PHP language server config (used by both editor configs below).
   Neovim shares one executable selection for PHPActor commands and its LSP:
@@ -489,6 +501,10 @@ duplicated across two files). Neovim is now the only editor config here.
   from trusted local `.conf` files, not untrusted input) but a real fragility if
   ever touched; a full fix means restructuring `run_ssh`/`run_ssh_silent` to take
   array args across every call site.
+
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Licence
 
