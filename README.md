@@ -506,9 +506,9 @@ duplicated across two files). Neovim is now the only editor config here.
   ever touched; a full fix means restructuring `run_ssh`/`run_ssh_silent` to take
   array args across every call site.
 
-## Contributing and security
+## Security
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+See [SECURITY.md](SECURITY.md).
 
 ## Licence
 
