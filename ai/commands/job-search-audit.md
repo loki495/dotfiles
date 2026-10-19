@@ -240,6 +240,12 @@ the strongest model, over the other workers' compact findings and the excerpts t
    me). Assess honestly how the *artifacts* read to a hiring manager, and whether the one-sentence
    disclosure on the profile is the right dosage, too defensive, or contradicted by what the repos
    show.
+7. **The verdict: CALL BACK / MAYBE / PASS** for a senior/lead PHP/Laravel role, given separately
+   by three readers: a recruiter doing a 30-second skim of LinkedIn + profile README + résumé; a
+   hiring manager who opens the top repos; a senior engineer doing a pre-interview technical
+   screen. For each: the verdict, the 3 strongest reasons, the 3 weakest, and 1-2 changes that
+   would raise it a notch. Then one overall paragraph. Candid, every reason cited to evidence
+   (a file, a link, a line of the README), no softening.
 
 ---
 
@@ -313,6 +319,7 @@ secrets, and nothing in them is final until I apply it.
 **Report to me.** One consolidated, deduplicated, cross-repo priority list, highest impact first,
 each item with why it matters *for the job search specifically*. Group anything that appears in
 more than one repo (the same leak pattern, the same doc-drift class) so I fix it once everywhere.
-Then the "already strong, don't touch" list and a per-repo release line. Say which items are
+Open with the three-reader verdict (CALL BACK / MAYBE / PASS, with strongest and weakest
+reasons, the changes that would raise it, and the overall paragraph). Then the "already strong, don't touch" list and a per-repo release line. Say which items are
 purely mechanical and which need a decision from me, present the decisions in one batch with a
 recommendation each, and don't start fixing anything until I've picked.
