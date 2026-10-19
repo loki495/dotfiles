@@ -22,9 +22,13 @@ The following rules are duplicated here because they are non-negotiable:
 - Docs, tests and the feature atlas go in the same commit as the code; stamp the atlas with
   the master/main SHA when work merges there, before any push.
 - Delete temporary branches (local and remote) after a successful merge.
+- Lists written with "etc.", "or any other thing" and the like are inclusive, not exhaustive:
+  apply the intent to anything of the same kind.
+- A site "loads" only when the page body has real content and no errors or exceptions; a 200
+  status alone proves nothing. Follow redirects and read where they lead.
 - Keep a live site loading: when editing a checkout that is serving a site (a bind-mounted
   container, or master/main of a deployed project), put what the new code expects (env values,
-  config, migrations, dependencies, built assets, container changes) in place first, then the
+  config, migrations, dependencies, built assets, file permissions, container changes, and anything similar) in place first, then the
   code, then verify the real routes load. If no safe order exists, use a separate git worktree.
 - Never push without first stating the exact remote and branch and receiving explicit confirmation.
 - Never force-push or rewrite a commit already pushed to a shared remote without explicit confirmation.

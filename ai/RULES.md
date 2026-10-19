@@ -8,6 +8,10 @@ agy, opencode's `instructions`). Product terms map across agents: "CLAUDE.md" me
 project's instruction file (prefer a local `AGENTS.md` if one exists), a named skill,
 command or agent means the equivalent in your tool.
 
+**Reading lists.** When Andres writes a list with "etc.", "or any other thing", "and similar"
+or the like, it is inclusive but not exhaustive: apply the intent to anything of the same
+kind, not just the named items. The same goes for the lists in these rules.
+
 ## Core principles: collaboration and records
 
 Andres's workflow is built on **Dibs** (tasks, plans, bugs, knowledge) and **Sessioneer**
@@ -82,8 +86,9 @@ named below; these are the points everything else follows from.
   work. Before editing one, order the changes so the site loads at every step: whatever
   the new code expects to find (an `.env` value, a config key, a compose setting, a
   container recreate, a migration or schema change, an installed dependency, a built
-  asset, a seeded row) goes in first, then the code, then check the real routes return 200
-  with the real app in the body, never a crash or error page. If no such order exists, do the work
+  asset, a seeded row, file permissions or ownership, files that must exist, and anything
+  similar) goes in first, then the code, then check the real routes return 200
+  with real page content and no errors (see "Verifying a site/service actually loads"). If no such order exists, do the work
   in a separate git worktree. Decided 2026-10-06: a Host allowlist edited straight
   into Sessioneer's live checkout went live before `.env` had `ALLOWED_HOSTS`, and the
   site stopped loading until another agent fixed it.
@@ -303,7 +308,9 @@ General rule, any project, local or production: an HTTP status code alone
 "loads" or "works." Always inspect the actual response body/content too —
 and on a redirect, follow it and check what it actually leads to, not just
 that a redirect happened. This is the check behind "check the real routes
-return 200" in the live-site rule above: 200 plus a body that is the real app.
+return 200" in the live-site rule above: 200 plus a body that is the real app: the page has real content, not an empty or blank
+body, and contains no errors, exceptions, stack traces or warnings (also check the app's
+error log and the browser console when you can).
 
 Decided 2026-09-18, OpenCart multi-site local-dev session: reported 3 local
 Docker containers as healthy off `curl -s -o /dev/null -w '%{http_code}'`
