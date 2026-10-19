@@ -41,7 +41,7 @@ idle=$(( ($(date +%s) - then_s) / 60 ))
 k=$(( ctx / 1000 ))
 if (( idle >= idle_min && ctx >= idle_floor )) && [[ $(cat "$marker" 2>/dev/null) != "$ts" ]]; then
   printf '%s' "$ts" >"$marker"
-  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Re-send it to continue anyway, or run /handoff then /clear and resume from the hand-off." \
+  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Decide whether this context is worth that cost: re-send the same prompt to continue anyway, or start a fresh session from a /handoff. Either way, keep a Dibs task current with the work's state so another session can pick it up." \
     '{decision: "block", reason: $r}'
   exit 0
 fi
