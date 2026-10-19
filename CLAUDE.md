@@ -1,5 +1,7 @@
 # dotfiles
 
+Delivery: direct push to `origin` (GitHub), after explicit push confirmation. Commit on the default branch.
+
 Personal dotfiles (Hyprland/waybar desktop, Neovim, shell, PHP dev tooling, shared AI-agent
 config). README.md is the reference; this file is the short version for agents.
 
