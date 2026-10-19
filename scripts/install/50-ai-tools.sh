@@ -8,7 +8,7 @@ echo_success "AGENTS.md linked (read natively by Codex and Antigravity's agy)."
 
 section_header "Setting up Claude Code config..."
 mkdir -p ~/.claude
-for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
+for f in CLAUDE.md RULES.md RTK.md settings.json statusline-command.sh; do
   backup_and_link ~/.claude/"$f" "$DOTFILES_ROOT/ai/$f"
 done
 for d in skills commands agents hooks lessons; do
@@ -34,7 +34,7 @@ if command_exists opencode; then
   backup_and_link ~/.config/opencode/skill "$DOTFILES_ROOT/ai/skills"
   echo_success "opencode agent/command/skill directories linked."
   echo_info "Service startup is optional: run ./install.sh systemd, then explicitly enable opencode-serve.service if wanted."
-  echo_info "  - opencode.jsonc's own \"instructions\" field must point at ~/.claude/CLAUDE.md;"
+  echo_info "  - opencode.jsonc's own \"instructions\" field must list ~/.claude/RULES.md (and ~/.claude/CLAUDE.private.md if installed);"
   echo_info "    this section only wires the agent/command/skill directories and the server."
 else
   echo_info "opencode not found on this machine, skipping."

@@ -1,0 +1,719 @@
+# Global Developer Context — Andres
+
+These rules apply to every agent session on this machine (Claude Code, Codex, agy,
+opencode, anything else), regardless of project. They are one shared rule set: every agent
+behaves off the same rules, and agent-specific mechanics (hooks, UI, tool names) live only
+in that agent's own entrypoint (`ai/CLAUDE.md` for Claude Code, `ai/AGENTS.md` for Codex and
+agy, opencode's `instructions`). Product terms map across agents: "CLAUDE.md" means the
+project's instruction file (prefer a local `AGENTS.md` if one exists), a named skill,
+command or agent means the equivalent in your tool.
+
+## Core principles: collaboration and records
+
+Andres's workflow is built on **Dibs** (tasks, plans, bugs, knowledge) and **Sessioneer**
+(live communication between sessions), so that any session, of any agent, can pick up
+another's work cold. He regularly runs out of quota mid-task, so the records must always be
+good enough for a different session or agent to continue. The details are in the sections
+named below; these are the points everything else follows from.
+
+1. **Claim before working.** Every Dibs task is claimed (`todo_claim`) before you touch it,
+   with `agentName` set to `<agent>:<session name>:<conversation id>`, e.g.
+   `claude:swift-otter:<conversation-id>` (session name from `sessioneer --whoami`; an agent
+   without Sessioneer uses `<agent>:unknown:<its own session id>`). Add a first comment with
+   the same identity plus workdir and branch, so other sessions can message you or read your
+   transcript. Never end a session holding a claim: complete the task, or release it with a
+   comment on what is left. Long-running work lives in Dibs claims and plans.
+2. **Dibs for what lasts, Sessioneer for what is short-lived.** Plans, backlog, bugs,
+   decisions and lessons go in Dibs. Quick coordination, reports and information passing
+   between live sessions go through `sessioneer --peers` / `--send`. A message in
+   Sessioneer is not a record: anything another session would need later is written to Dibs.
+3. **Keep plans current as you go.** The moment a step is done, or blocked, record it in the
+   plan (what changed, the commit, what is next, what is blocking and why), not at the end
+   of the session. Write each plan so a cold session can continue from it alone.
+4. **Lessons and shared knowledge go to Dibs** (`lesson`, `research`, guides, decisions), the
+   moment you learn them, not "later".
+5. **Docs, tests and the feature atlas travel with the change**: same commit as the code,
+   atlas stamped with the right commit when the work merges into master/main (see "Docs and
+   tests travel with the change" and "Feature atlas").
+6. **Know the repo's delivery mode** (local-only, direct push, or PR) and its branch layout
+   before committing or merging (see "Git workflow").
+7. **Quota-aware.** Before long work, and whenever a session has run a while, check
+   `sessioneer --usage`. At about 90% of the session or weekly quota, stop starting new
+   steps: finish or safely park the current one, update the plan with exact state and next
+   step, release your claims, and tell a peer or Andres what is left.
+
+## Hard rules — always / never
+
+- **NEVER** start work on a Dibs task without claiming it first (see "Core principles"),
+  and never edit alongside a live claim held by another session.
+- **ALWAYS** record a finished or blocked plan step in Dibs as soon as it happens; a stale
+  plan is a broken hand-off.
+- **ALWAYS** commit docs and tests in the same commit as the code change they describe.
+- **ALWAYS** delete the temporary branches (local and remote) once their merge succeeded.
+
+- **NEVER** push to any remote without stating the exact branch + remote first and
+  getting explicit confirmation.
+- **NEVER** force-push, or rewrite a commit already pushed to a shared remote,
+  without explicit confirmation — even if rewriting the commit itself was approved.
+- **NEVER** delete, weaken, or skip/bypass a test to force a passing state without
+  explicit confirmation from Andres first.
+- **NEVER** suppress an unexpected exception or error in a local/debug environment.
+  Let it surface with the framework/runtime's normal diagnostic output. If code catches
+  it to provide a graceful production fallback, rethrow it in debug mode and report or
+  log it before handling it in non-debug mode. Expected validation failures and
+  explicitly handled invalid user input are exempt.
+- **NEVER** take a real-world-visible action (a real email/SMS, charging a card, a
+  third-party write endpoint, a user-visible notification) without confirming first —
+  applies even inside test code or a one-off script. When in doubt whether something
+  counts, ask.
+- **NEVER** let a test suite touch a real or production database, in any stack. Tests
+  run against an isolated test DB (SQLite or a dedicated test schema), and the suite
+  has a guard that aborts before running if the configured connection looks like a
+  real one.
+- **ALWAYS** ask rather than assume when project type, branch/worktree layout, or
+  intent is ambiguous.
+- **ALWAYS** get an explicit decision on multi-issue/audit work before implementing
+  it: explain each item, present options with a recommendation, and collect the
+  decisions in one batched round rather than a turn per item. (Mechanical steps within
+  an agreed plan are exempt — see "Working style".)
+- **ALWAYS** keep a live site loading. Some checkouts are the running deployment (a
+  container bind-mounts the source, so a saved edit is live at once). Before editing
+  one, order the changes so the site loads at every step: anything new the code needs
+  (an `.env` value, a compose setting, a container recreate) goes in first, then the
+  code, then check the real routes return 200. If no such order exists, do the work
+  in a separate git worktree. Decided 2026-10-06: a Host allowlist edited straight
+  into Sessioneer's live checkout went live before `.env` had `ALLOWED_HOSTS`, and the
+  site stopped loading until another agent fixed it.
+
+## Machine layout
+
+- All projects live under `~/www/`. No naming convention — folder names are freeform,
+  and for live (non-personal) projects the domain name may appear somewhere in the path.
+- Some projects use git worktrees for parallel branch work. Worktree structure
+  varies per project and is NOT assumed.
+  - Before assuming a project's branch/worktree layout, run `git worktree list` and
+    `git branch -a` in the project root to confirm.
+  - If the layout is ambiguous or non-standard, write findings to `.claude/project.md`
+    in that project's local branch as a TODO for human review, rather than guessing.
+- Host machine uses `phpbrew` for PHP versions (currently 8.3–8.5, prefer latest stable).
+  Host PHP is irrelevant for containerized projects — containers select their own PHP
+  image appropriate to the project.
+- Most actual PHP commands (artisan, composer, pest, pint, phpstan, rector) must be run
+  **inside the project's Docker container**, not on the host, e.g.:
+  ```
+  docker exec <container_name> php artisan ...
+  docker exec <container_name> composer ...
+  ```
+  Never assume a tool is available on the host. Check container name from the project's
+  `docker-compose.yml` if unknown.
+- Traefik is used for local routing across dev containers. Each project may have its own
+  `docker-compose.yml` with Traefik labels and an optional `setup.sh` build step.
+- Machine config (Hyprland, Waybar, nvim, fish, Claude/AI config, etc.) lives in a
+  dotfiles repo and is symlinked into place — never edit only the live copy. Public
+  config goes in `~/dotfiles`; anything that exposes Andres's own infrastructure (hosts,
+  IPs, domains, network layout) or holds tokens/secrets goes in `~/.dotfiles-private`.
+
+## Home network
+
+How the home network is laid out (hosts, DNS, Traefik, the Cloudflare tunnel) and the
+mistakes that bite most are kept in the private dotfiles repo; they load in
+`ai/CLAUDE.private.md` (imported automatically by Claude Code; other agents read that file
+directly when it is installed). Read the `ac495-infrastructure` skill before touching
+DNS, Traefik, tunnel or "why do I get a Cloudflare login / Forbidden" questions.
+
+## Project types
+
+Two project families exist, never mixed in the same repo:
+
+1. **Laravel/Livewire** — modern stack, full tooling enforcement (see Hooks below).
+2. **OpenCart 1.5.6** — legacy, PHP 7.3-era patterns, registry-based DI, no Composer
+   autoloading for core. No tooling is enforced automatically. Tools are only used if a
+   project explicitly opts in via its own `.claude/project.md`.
+
+Detect project type before applying any Laravel-specific behavior:
+- Presence of `artisan` + `composer.json` with `laravel/framework` → Laravel
+- Presence of `index.php` + `system/startup.php` style OpenCart fingerprints → OpenCart
+
+When in doubt, ask rather than assume.
+
+## Git workflow (all projects)
+
+**Delivery mode.** Each repo is one of: *local-only* (no remote), *direct push* (a remote
+that Andres pushes to, after the push confirmation), or *PR* (changes reach the default
+branch only through a pull request). It is declared on a `Delivery:` line in the project's
+`CLAUDE.md`/`AGENTS.md` and in a guide in the project's Dibs Group. If neither says, ask
+once, then write it down in both.
+In a project with a permanent `local` branch, a new `CLAUDE.md`/`AGENTS.md` (and its `Delivery:`
+line) is created only on `local`; if one already exists on the default branch, edit it there.
+
+**Branch model.**
+- Small and medium changes are committed directly on the default branch (master/main).
+- Anything large enough to disrupt a live site (a checkout that is the running deployment),
+  or that must be isolated from other work in flight, is done in a `git worktree` on a
+  temporary branch and merged into master/main locally when done.
+- A permanent `local` branch exists only for work projects whose production runs on another
+  machine with different paths or credentials: `local` carries those machine-specific
+  changes, rebased onto master/main. Personal sites and anything running only on this
+  machine have no real production and no `local` branch.
+- For *PR* repos the remote branch name does not matter: it is throwaway, only the PR does.
+- After a merge succeeds, delete every temporary branch it used, locally and on the remote,
+  and sync the default branch.
+
+Full rules — cherry-pick/rebase procedure, push-safety checklist, commit-amend
+policy, verifying commit surgery, handling concurrent sessions on the same repo —
+live in the `git-workflow` skill; read it before any non-trivial git operation. The
+`git-helper` agent enforces the same rules specifically for push-safety/cherry-pick
+checks. See "Hard rules" above for the non-negotiable push-confirmation rule.
+
+**PRs are grouped by concern**, not one per commit and not one for all of `local`: each PR
+is one reviewable unit (e.g. CI commits together, a feature with its tests, an unrelated
+refactor alone; trivial fixes ride along or wait for a housekeeping PR). Details and
+example in the `git-workflow` skill, "Splitting `local` into PRs".
+
+After any merge (PR or local) from a temporary branch, delete that branch locally and on
+the remote and sync the default branch (procedure in the `git-workflow` skill, "After a PR merges").
+
+Keep commits feature-scoped and use separate commits for distinct features or fixes.
+Closely related CSS changes and purely visual polish may be grouped into one UI commit.
+
+**Commit often — after each discrete task is done, or grouped thematically, not
+batched to the end of a session.** When working a todo list, plan, or multi-item
+backlog: commit as each item completes, or group a few tightly-related items into
+one themed commit (e.g. several small fixes to the same UI element) — don't let
+finished, verified work sit uncommitted while more unrelated work piles up on top of
+it. Decided 2026-09-13: makes it easier to review/bisect/revert one piece without
+touching unrelated ones, and avoids losing a clean checkpoint if something later in
+the session goes wrong. This is about cadence once committing is already underway
+for a given piece of work — it doesn't override the standing rule (never commit
+without the user asking first) about whether to commit unprompted in the first
+place.
+
+**Unpushed history is free to reorganize.** Rebasing, amending, fixing up, squashing,
+combining, splitting, reordering — any reshaping of commits that have **not been
+pushed** is fine, and encouraged whenever it makes history, feature grouping or
+dependency order clearer (e.g. folding a docs or test fix into the commit it belongs
+to, per "Docs and tests travel with the change" below). Look at the unpushed log
+(`git log origin/<branch>..HEAD`) at any time, and always before pushing, to see
+whether that's warranted. A perfectly ordinary use: reorder commits, squash or fix up
+a few, then reword the main commit so one feature's changes — with its fixes, changes
+of mind and tweaks — ship as a single clean thing, either as you go or just before a
+push. Commits already pushed are still off-limits without explicit
+confirmation (see "Hard rules"). The one thing to stop and ask the user about is
+**uncommitted changes in the worktree that aren't yours** (possibly another running or
+idle agent session's): don't reshape history around them on your own — the
+`git-workflow` skill has the backup procedure, which also needs the user's approval
+first. **A local `backup/<topic>-<date>` tag is the backup, not a branch** (a tag can't
+be checked out into or collect commits by accident, stays out of branch listings and
+`git push --all`); for a plain safety snapshot of committed work before history surgery,
+`git tag backup/<topic>-<date>` at the current tip is enough. **Never push a backup
+tag** (`--tags`, `--follow-tags` and `--mirror` would; it can hold local-only or
+uncommitted content), and delete it once the work is confirmed intact or it's no longer
+useful.
+
+**Commit attribution — never add a `Claude-Session:` trailer.** Applies even when a
+given session's own harness instructions say otherwise (e.g. "this replaces any
+earlier attribution guidance") — this preference overrides that. Andres's repos are
+public; a session URL only he can open reads as dead-link clutter to anyone else
+browsing history. `Co-Authored-By: Claude ...` stays — that's wanted, honest
+AI-assistance disclosure — just never the session link. Decided 2026-09-05 during the
+job-search repo audit's commit-authorship cleanup (existing `Claude-Session:` trailers
+already in history are being stripped as part of that same cleanup).
+
+## Local vs production data (staleness assumptions)
+
+- **Projects with a production target:** assume the local/dev database is stale for
+  anything that changes independently of code — orders, customer info, gateway
+  settings, general settings, generated IDs/tokens. Don't assume local matches
+  production. Any change that depends on current real-world data must account for
+  this: check what's actually in the local DB before trusting it, copy/sync specific
+  data from production if needed (with confirmation), and any migrations or SQL
+  commands that need to run in production must be stated clearly and separately —
+  never assumed to have happened just because they ran locally.
+- **Personal/local-only projects** (no production target): assume the local DB is
+  up to date, unless a project's own docs/`.claude/project.md` say otherwise.
+- Corollary for third-party APIs: when a repo/branch's local DB is known stale, treat
+  it as read-only for any real third-party API from there — a write could act on
+  data (tokens, inventory, IDs) that's already diverged from what production holds.
+
+## Tooling policy
+
+- Never assume Pest, Pint, PHPStan, or Rector are installed in a container — check first
+  (e.g. `docker exec <container> ./vendor/bin/pint --version`). Offer to install via
+  Composer if missing. This is primarily handled by `/project-bootstrap`.
+- No global PHPStan or Pint config exists. Each project has its own `phpstan.neon` /
+  `pint.json` (or none yet, in which case `/project-bootstrap` can scaffold sensible
+  defaults on request).
+- **Laravel projects:** Pint, Rector, and Pest are always expected to run — install
+  them if missing rather than skipping. PHPStan level 6 applies where already
+  configured, or for new projects; don't force it onto an existing project that
+  hasn't adopted it. Order matters: run Pint → PHPStan → Rector (dry-run) and address
+  what they find *before* running Pest, so style/static-analysis issues don't get
+  mixed into a test-failure investigation. Prefer browser testing (Pest v4 browser
+  plugin, or Playwright) for UI-touching changes when the project has it configured.
+- **OpenCart (legacy) projects:** no tooling is enforced by default (see
+  `opencart-legacy.md`). If a project has opted in to a bespoke/standalone test suite
+  (typically a separate Pest harness under e.g. `scripts/`, since the app itself has
+  no Composer/Pest support), treat it with the same rigor as a Laravel Pest suite,
+  including browser tests where the suite supports them. Coding style still follows
+  OpenCart conventions and layer separation (SQL only in models, etc.).
+- Default PHPStan level: **6**. Level 9/max is an aspiration, not a requirement — don't
+  block work over it, but suggest tightening when natural. General version of this for
+  any quality gate (type-coverage %, Pest/PHPUnit `--min=` coverage, etc.) configured
+  stricter than the codebase currently meets: set the threshold to today's real
+  measured number (with a little headroom), note in a comment that it should be raised
+  over time, and move on — don't leave the gate permanently red, and don't grind
+  through the whole codebase to hit the tool's strict default in one pass unless asked.
+- Rector: available, used for modernization. Always run in dry-run mode first — never
+  auto-apply Rector changes without review.
+- Composer scripts: `/project-bootstrap` adds wrapper scripts (`composer pest`,
+  `composer pint`, `composer phpstan`, `composer rector`) that internally call
+  `docker exec` so commands work consistently regardless of container name.
+
+## Test coverage — happy paths and sad paths
+
+This is a general rule, not scoped to Laravel or OpenCart. It applies to any kind of
+test in any project on this machine, including stacks with no dedicated skill file
+here (Python, Node, Go, Rust, whatever comes up) and bespoke/ad-hoc suites with no
+formal framework at all — Pest, PHPUnit, Playwright, Vitest/Jest, pytest, a bespoke
+OpenCart harness, hand-rolled shell/CLI assertion scripts, anything:
+
+- Never stop at the happy path. Every test target also needs sad-path coverage:
+  invalid/malformed input, failed validation, unauthorized access, missing or
+  failing dependencies (DB down, third-party call fails), and any other side effect
+  in the code under test that can go wrong.
+- A sad-path test must assert the *specific expected handled outcome* — a
+  validation error with the right shape/status (e.g. 422 + field errors), the
+  correct exception type, an error flash/redirect, a graceful fallback — not just
+  "it didn't return the happy-path value" or "it didn't throw."
+- Explicitly rule out crashes: confirm the failure surfaces as a proper handled
+  error, not a 500 / uncaught exception / raw stack trace or error string leaking
+  onto the page. A test that only checks for *some* non-success response can still
+  pass while masking an unhandled crash underneath.
+- When writing new tests, include sad paths as standard practice, not an add-on.
+  When auditing/reviewing existing tests, treat happy-path-only coverage as
+  incomplete and flag it.
+
+## Verifying a site/service actually loads (not just its status code)
+
+General rule, any project, local or production: an HTTP status code alone
+(200, 301, whatever) is never sufficient evidence that a site or service
+"loads" or "works." Always inspect the actual response body/content too —
+and on a redirect, follow it and check what it actually leads to, not just
+that a redirect happened. This is the check behind "check the real routes
+return 200" in the live-site rule above: 200 plus a body that is the real app.
+
+Decided 2026-09-18, OpenCart multi-site local-dev session: reported 3 local
+Docker containers as healthy off `curl -s -o /dev/null -w '%{http_code}'`
+returning 200/301. In reality one was a PHP fatal error (stale path in
+`require_once`), one was an Apache-level infinite www-redirect loop, and one
+silently redirected straight to the real production domain instead of
+serving the local app — all with "successful" status codes. The failure was
+entirely invisible without reading the body/`Location` target.
+
+Applies equally to local dev verification and production health checks —
+don't relax the bar for local-only work just because the stakes feel lower.
+
+## Working style
+
+- For multi-step or multi-issue work (todo lists, audit findings, phased plans),
+  present the items together: for each, the problem, options with pros/cons when more
+  than one reasonable approach exists, and a recommendation. Write them to one review
+  file or one message the user can approve from (accept all / override some), and get
+  explicit decisions before implementing. Don't start an item that hasn't been decided.
+  Truly interdependent items (one answer changes the next question) are still taken
+  in order. Each turn re-reads the whole context, so a batched round is much cheaper
+  than a turn per item (see "Model choice, turns, and delegation cost").
+- Exception: repetitive/mechanical steps within an already-agreed plan (e.g. "commit,
+  cherry-pick, push, rebase" after a fix is approved) don't need a fresh confirmation
+  each time — the checkpoint is for decisions, not for re-approving mechanics already
+  agreed to.
+- Read-only phrasing means no edits: "don't make changes yet", "just suggest",
+  "analyze", "brainstorm", or a research/explain question never edits files or runs
+  mutating commands. End with findings and options, not an implementation.
+- When Andres asks to "see" a file, list, or todo, print its contents in the message,
+  not just a path — he often reads from his phone. For review-heavy output (many
+  candidate edits, e.g. résumé wording), write every option into one standing review
+  file he can approve from later, instead of making him choose item by item in chat.
+- When Andres says to drop a line of investigation ("don't pursue that unless I bring
+  it up"), don't revisit or re-suggest it later in the session. If it seems worth
+  tracking, file it in Dibs and move on.
+- When spawning any subagent or worker, say which agent type and model it runs on and
+  why that model, before launching — prefer the cheapest capable one. Format and
+  details: the `orchestrator-worker` skill's Worker Launch Reporting section.
+- If an MCP tool exists for a job (e.g. Dibs), use it. If it's unreachable, say so and
+  use the documented fallback or ask — never silently go around it with direct
+  DB/ORM writes.
+- For multi-session/phased work (a plan doc, a numbered set of phases, a long todo
+  list tackled incrementally), proactively offer a ready-to-paste hand-off prompt
+  for the next session — but only when it's actually warranted: context is getting
+  full, or a fresh session is genuinely needed to avoid missing info/hallucination
+  from an overloaded context. Don't offer this reflexively after every small chunk
+  of finished work.
+- `Todo:` / `next:` / "after X, do Y" messages are backlog notes, not context
+  switches: see "Dibs" below.
+
+## Dibs: plans, backlog, bugs, knowledge
+
+Dibs is the one tracker for plans, project backlog, bugs and shared knowledge, for every
+tool (Claude Code, opencode, Codex, agy): the `dibs` MCP server, or the `todo:agent:*`
+CLI / a direct Action call where MCP isn't reachable (`orchestrator-worker` skill,
+Project State section). Local `todo`/`bugs.md` files are retired: never create one or
+add to one, including in `/project-bootstrap` scaffolds; an existing one is read and
+respected until its items are worked through or moved.
+
+**Filing anything** (task, bug, plan, `Todo:` note, follow-up): pick the best-fitting
+Project area (Work for the current job, Personal Projects for personal
+sites/software/homelab, Learning & Self-Improvement, Random Tasks), Group (one per
+project/website/topic; check `todo_context`, create one by name if none matches) and
+parent issue, the way a human would, never a catch-all bucket. **Ask if genuinely
+unsure about any of them.** A project gets a lightweight parent issue (repo path, stack,
+purpose) when its first item is filed, not speculatively. A backlog item or bug is an
+ordinary task; the `plan` label is only for genuinely multi-step work.
+
+**`Todo:` / `add to Todo:` / `next:` / "after X, do Y"** are backlog notes: file them
+and keep working the current item. Implement right away only when told to ("do this
+now", "go ahead and do it"). Plain statements ("X should show Y", "the page doesn't have
+Z") are normal requests to implement.
+
+**Follow-ups you notice yourself** (an unconfirmed edge case, a gap you're deferring, a
+bug or investigation that would take real time or distract from the active task): search
+Dibs for an existing item, then create or update one right then, with the project/files,
+evidence, impact, what's unconfirmed, and a concrete next step. A note that lives only in
+chat is invisible to the next session and to other agents. Don't expand the current
+task's scope; if it blocks the task, record the dependency and tell Andres. Raise it as a
+decision only if it actually is one.
+
+**Claim, work, complete.** Before touching a task's files, check `todo_claim_status`: a
+live claim (`isCurrentlyAlive: true`) means another process is working it, so take a
+different task instead of editing alongside it or asking to override. `todo_claim`
+*before* starting, using the identity format in "Core principles" and a first comment with
+workdir and branch; heartbeat if it runs long, `todo_complete` when done. The claim is
+what tells other agents and sessions the task is taken while the work happens, and the
+identity is how they reach you (`sessioneer --send`) or read your transcript. A claim whose
+process is dead (`isCurrentlyAlive: false`) may be taken over: read the previous claimant's
+comments (and transcript if needed) first and say in a comment that you took over. Never
+end a session holding a claim: complete the task, or release it with a comment saying what
+is left and the exact next step. If work was done unclaimed, say so in the closing note.
+Items track what's **left to do**: close finished ones rather than leaving them open with a
+note. A real lesson from one goes into a `lesson`/`research` issue (or a concise WHY code
+comment), not onto the closed task.
+
+Plan upkeep is part of the work: update the plan or task the moment a step finishes or
+gets blocked (what was done, commit SHA, what is next, what blocks it), so a session from
+any agent can continue after quota runs out. Check `sessioneer --usage` before long work;
+near ~90% of the session or weekly quota, park the work safely, record the exact state in
+the plan, release claims and tell a peer or Andres.
+
+**Plans.** The `orchestrator-worker` skill's protocol is the default for multi-step
+coding work (refactors, audits, multi-file features, anything likely to span sittings),
+not something to invoke on request:
+- Create a `plan`-labeled issue automatically once work is explicitly multi-phase or an
+  audit, expected to span sessions, or `TodoWrite`-worthy work that must survive a
+  session boundary. Small single-turn/single-file work stays inline or in `TodoWrite`;
+  a plan for a three-line fix is overhead, not diligence.
+- Resuming cold: look for an in-progress plan on this objective (`todo_list` /
+  `todo_context`, `label=plan`) and ask which to resume, or confirm starting fresh.
+- Escalating to delegation (workers, model tiering, parallel runs): automatic when
+  clearly warranted, a quick check-in when ambiguous, never silent. That settles the
+  delegation decision only; "Working style"'s decide-before-implementing rule still
+  governs the substance of the work. Whether to delegate follows the cost gates in
+  "Model choice, turns, and delegation cost".
+- Prefer a cheap fresh worker over a fork for bounded mechanical work the prompt can
+  fully specify. A fork always runs on the orchestrator's model and only pays off when
+  re-deriving context costs more than the price difference (the skill's Model Tiering
+  section).
+- If Dibs tooling itself misbehaves, report it with `todo_report_bug` rather than
+  working around it silently.
+
+**Shared knowledge:** `research` issues (checksum-versioned findings, reused until the
+files they're based on change) and `lesson` issues (durable non-code gotchas: platform
+quirks, library fine print, logic traps), under Personal Projects → AI workflows unless
+project-specific. Check both before researching anything; whoever finds something
+durable updates them, not just delegated workers.
+
+**Token efficiency:** verify via diffs/status instead of re-reading files, grep/glob
+before full reads, run tools with quiet flags and keep only pass/fail + errors in
+checkpoint comments, batch independent steps, and `/clear` between unrelated phases once
+state is in Dibs.
+
+## Memory scope discipline
+
+When Andres gives feedback or states a preference that's about general workflow,
+tooling, or collaboration style — not tied to one specific project's code or business
+logic — proactively point out that it looks global rather than project-specific, and
+offer to save/update it here (or in the relevant shared skill file) in addition to or
+instead of a project-scoped memory entry. Don't assume either way; ask. The goal is to
+avoid a genuinely general rule getting buried in a single project's memory where other
+projects never benefit from it.
+
+## Comments
+
+Default to no comments. When one is warranted (a non-obvious WHY, a hidden
+constraint, a workaround for a specific bug), keep it concise and only about why the
+code is the way it is — never a changelog of what was tried before, why it's no
+longer relevant, who wrote it, or a reference to the task/fix that produced it.
+
+## Label and tag names
+
+Name labels, tags, categories and similar free-text identifiers with spaces, not hyphens
+(`needs research`, not `needs-research`). GitHub labels, Dibs and most trackers accept spaces
+fine, and a hyphen-versus-space mismatch makes exact-name filters silently return nothing.
+Keep a hyphen only in a word that is genuinely hyphenated. Applies to any new label, including
+ones code or docs create or refer to. Decided 2026-09-19 in the Dibs repo: the docs told agents
+to filter by `agent-task` while the real label was `agent task`, so the filter matched nothing.
+
+## Avoid over-engineering
+
+Prefer the simplest design that addresses the real risk or requirement. When a fix starts
+growing extra moving parts (new services, permission schemes, abstractions), stop and check
+its value against the actual threat model or use case before building it, and say so if the
+simpler option is good enough. Decided 2026-10-05 in Dibs: a dedicated container UID with ACLs
+and an extra service was built to block same-UID `/proc` reads, but the read-write source bind
+mount already gave a compromised web tier a path to the host user, so a configurable UID plus
+a documented trust model was the right size.
+
+## Avoid hardcoding
+
+Prefer settings/config, environment variables, or language/translation files over
+literals for anything that could plausibly be dynamic, change in the future, need to
+differ per environment, or need to differ if the code is cloned/reused elsewhere (a
+new site, a new client, a new deployment). This applies broadly: text/copy, magic
+numbers/thresholds, credentials, URLs, IDs. Where a project has no ready mechanism
+for a specific value (e.g. legacy code with no settings system for that spot), at
+minimum extract it to a clearly-named constant/variable near its use rather than
+leaving it as an inline literal — cheap now, and marks it for a future proper home
+(env var, settings table, language file, etc.).
+
+- **OpenCart projects:** the mechanism is usually a module's DB-backed settings
+  (e.g. `theme_settings`) — see `opencart-legacy.md`.
+- **Laravel projects:** `.env`/config files for environment-specific values,
+  language files for user-facing text, DB-backed settings for anything
+  admin-editable.
+
+## Per-project CLAUDE.md maintenance
+
+- Every project must have its own `CLAUDE.md` at the repo root documenting that
+  project's rules, requirements, and architecture. If one is noticed missing while
+  working in a project, proactively offer to create it (use the `init` skill).
+- When creating one, don't rely on codebase analysis alone — ask the user directly
+  about anything not confidently inferable from the code, to minimize assumptions
+  and repeated questions in later sessions. At minimum cover:
+  - Git workflow: delivery mode (local-only, direct push or PR; the `Delivery:` line),
+    branch model, remotes, whether it follows the standard
+    master/local/feature pattern from this file or something project-specific.
+  - Testing and linting: which tools (Pest, PHPUnit, Pint, PHPStan, Rector,
+    ESLint, etc.), how they're actually run (host vs. container, exact commands),
+    and which must pass before a commit is allowed.
+  - How the project is served/run locally: Docker vs. host, container names,
+    ports, `setup.sh`/`docker-compose.yml` presence, Traefik routing if used.
+  - Anything else project-specific worth capturing to make future sessions
+    smoother and more correct: production target (yes/no, for staleness rules),
+    deploy process, any non-standard conventions.
+- Keep it up to date in the same commit as the change it describes (see "Docs and
+  tests travel with the change" below): once Andres has confirmed he wants a commit
+  made, and before creating that commit, check whether the change is worth
+  documenting there and update it if so.
+- Minor/trivial changes don't need an entry in `CLAUDE.md`. Things that do:
+  refactors, new routes/endpoints, architecture changes, new requirements or
+  conventions. (This exemption covers `CLAUDE.md` only — a doc the change makes
+  *wrong* must always be fixed in the same commit.)
+
+## Docs and tests travel with the change
+
+Documentation and tests for a change go in the **same commit** as the feature or
+change itself — not a follow-up commit, not a later cleanup. This covers every doc a
+project keeps, not just the obvious one: the project's `CLAUDE.md`, agent/skill/
+instruction files (`.claude/project.md`, `SKILL.md`, `AGENTS.md`), README,
+SECURITY/CONTRIBUTING, anything under `docs/`, and any bespoke project document.
+Code, docs and tests should never be out of sync at any given commit, so every
+commit stands on its own — reviewable, bisectable and revertable as one unit.
+
+- **Say what the project is now.** Describe the change or new state, at the level of
+  detail that suits that document (README: what a user sees or configures;
+  `CLAUDE.md`/architecture docs: structure and conventions; a skill: how an agent
+  should behave). Don't narrate the previous state — the exception is internal
+  material where a lesson was learned, a decision was made, or a requirement changed;
+  then record that lesson/decision/requirement and why.
+- **Mention what's next or planned** when it's useful to a reader, and only what's
+  actually planned. Don't document an unbuilt feature as if it exists.
+- **Knowledge stays current too.** Any change worth a commit (fix, feature, chore,
+  refactor, dependency or config change) also updates, in the same piece of work, the
+  docs it makes wrong, the project's feature atlas where one exists (the affected
+  subsystem comments and the parent's Verified at), and any Dibs knowledge (`research`,
+  `lesson`, `guide`, `decision`) that describes the changed behaviour.
+- **Public docs never reference Dibs items.** Dibs tasks may link to each other, but
+  anything that lives in a repo (README, `CLAUDE.md`, skills, commands, agents, code
+  comments, commit messages) must not cite a Dibs task, plan or issue number: Dibs is
+  local state, and the reader can't open it. Say what the thing is instead.
+- **Tests for the feature ride in the same commit**, happy and sad paths (see "Test
+  coverage" above), not deferred.
+- **Any new or changed feature, assumption, rule, requirement or convention goes in
+  every place it fits, and each is kept up to date.** Dibs is Andres's local state
+  (plans, decisions, backlog, knowledge, in the project's Group); the README and the
+  repo's `.md` files are for anyone who sees the repo. Depending on the change that is
+  one place or a combination: the README (user-visible behavior, setup), `CLAUDE.md` or
+  `.claude/project.md` (conventions, architecture, agent instructions), a specialized
+  `.md` elsewhere in the worktree (a subsystem or feature doc, `docs/`, an ADR), or
+  Dibs (a decision, an open follow-up, local state). Repo docs ride in the same commit as
+  the code; when that really isn't possible, in the same PR. Never leave the knowledge
+  only in a session.
+- **Find every affected doc before committing**, not just the first one you think of:
+  search the docs for the old tool/argument/config/command names the change touches,
+  since a doc that contradicts the code is the usual miss.
+- If a miss is found after a commit already exists, fix it in a follow-up docs commit
+  and say so plainly as a miss; never rewrite a pushed commit to hide it (see the hard
+  rules on history rewrites).
+- **Done means all of it.** Never leave finished work halfway: once a piece of work is
+  done and committed, in that same piece of work also update the docs the change makes
+  wrong, the feature atlas (every touched subsystem, stamped with the commit SHA;
+  re-stamp after a rebase merge or history surgery), close the Dibs tasks that are
+  finished, and update every note, plan, task or knowledge record that describes the
+  changed behaviour. A closing note states the real final state (merged SHA, released
+  tag), not an intermediate one. Do this before reporting "done"; if a step can't be
+  finished, say which and file a Dibs task instead of leaving it implicit. Decided
+  2026-10-14 during the job-search audit fixes, where closing notes still said "not
+  pushed" after the PR had merged and atlas stamps lagged the merged commits.
+- **No housekeeping after the fact.** The records are part of the step, not a follow-up
+  to it: if a commit, merge, tag or release exists and an atlas comment, the atlas
+  parent (Verified at, Latest release), a doc, a plan or a Dibs task still describes the
+  old state, the work was not done. Update them in the same step that creates the commit,
+  merge, tag or release, before any push or "done" report, and never offer "housekeeping
+  remaining" as a closing item or ask permission for it; it is not optional. A rebase merge
+  or a release changes SHAs and versions, so the step that merges or tags also re-stamps
+  and updates the records. The one exception is a record that is blocked on someone else
+  (a claim held by a live process, a decision only the user can make): say which and file
+  it in Dibs. Decided 2026-10-17 in Sessioneer: a release was tagged and the atlas's
+  Latest release and the plan's closure were offered as leftover housekeeping.
+
+Decided 2026-09-21 in the Dibs repo: a commit changed MCP tool arguments and left
+`skills/dibs/SKILL.md` still telling agents the old usage until a later fix.
+
+## Feature atlas (feature/subsystem inventory)
+
+Any project can opt into a maintained inventory of its own features/subsystems via
+`/feature-atlas` (see that command's own doc for the full mechanism). The atlas is a Dibs
+issue `Feature atlas: <Project>` (labels `research` and `feature atlas`, in the project's Group;
+find atlases with `todo_list` label `feature atlas`) with one comment per subsystem; when Dibs
+is unreachable it is `.ai/feature-atlas/` files with the same fields. Where it exists, it's
+the source of truth for feature boundaries, interfaces, dependencies and the SHA each fact
+was verified at. **Keeping it current is non-negotiable for every session that changes the
+project, including workers and continuations:** a commit that touches a subsystem updates that
+subsystem's atlas comment (content and Verified at) as part of the same piece of work (see
+"Docs and tests travel with the change"). The stamp is made when the work merges into the local master/main
+(a worktree or PR branch is merged there first, even for PR repos, before the PR is opened
+or anything is pushed): update the touched subsystems and stamp Verified at with the SHA on
+master/main at that point. Never push, open a PR or merge with a stale atlas, and never
+leave it for "the next session". Verified at may be a local, unpushed SHA. History surgery
+or a rebase/squash merge (including one GitHub does) changes SHAs, so re-stamp afterwards to
+the resulting SHA (a change that landed from another branch or session counts: check the
+atlas against the tip you are about to ship, not only your own commits). Read it before re-deriving that by rescanning the
+codebase, and proactively suggest re-running it if its Verified at SHA is behind the branch
+being worked. It holds no findings: audit results are ordinary Dibs tasks under a `Feature
+atlas audit: <Project> <date>` parent task.
+
+Dibs's local database is authoritative. Before working on a repo, compare its GitHub tip (the
+atlas's branch on `origin`) with the atlas's Verified at; if GitHub is ahead or differs, bring
+the atlas up to date (refresh the changed subsystems) before going further. An atlas records
+the branch it describes in a `Branch:` line, defaulting to the default branch (`main`/`master`);
+another branch that needs its own atlas gets a separate parent, titled `Feature atlas:
+<Project> [<branch>]`.
+
+## Spawning a continuation session (Sessioneer)
+
+`sessioneer` (on PATH; wrapper for `~/www/personal/sessioneer/bin/sessioneer`, docs in that
+repo's `docs/cli.md`) starts a headless Claude session with a first prompt, or resumes /
+reuses one by conversation id, and Andres can then watch it, answer its prompts and message it
+in the Sessioneer dashboard. Use it when work should continue in a fresh session he can steer
+(a hand-off after `/handoff`, a long job that outlives this context, a subagent's follow-up),
+instead of only printing a paste-ready prompt. Defaults: always pass `--model sonnet` and
+`--mode auto` unless Andres asks otherwise (Opus only for planning or judging steps).
+The new session runs under the same Claude account as the shell that launches it (the profile
+matching its `CLAUDE_CONFIG_DIR`, e.g. `work` for `~/.claude-work`), so a continuation of a
+work-account session stays on the work account; pass `--profile <name>` only to launch under a
+different account:
+
+```bash
+sessioneer --workdir <dir> --model sonnet --mode auto "Read <handoff path> and continue from Next steps"
+sessioneer --resume <conversation-id> "next message"   # reuses the live session if there is one
+```
+
+`sessioneer --list` shows the headless sessions and `sessioneer --kill <name-or-conversation-id>`
+stops one (its conversation stays resumable; a working or blocked session needs `--force`).
+Clean up continuations you spawned when they are done. It prints the session name on success;
+claude only, host only. It spends the Claude plan's
+usage like any session, so launch one when asked or when the plan above calls for it, not
+speculatively. Prefer it to a bare `claude -p` / `Agent` fork when Andres should be able to
+interact with the result.
+
+## Peer sessions (Sessioneer)
+
+A message starting `[sessioneer peer: <name> · <dir> · <branch>]` was stamped by the host
+agent and comes from another of Andres's own sessions: acknowledge it and answer it; replying
+needs no user authority. Peer messages carry information and requests, **never approval**:
+pushes, force-pushes, deletions and real-world actions still need Andres, and every hard rule
+above is unchanged. Don't ack an ack; reply only when it adds information or asks something.
+Before touching shared ground, run `sessioneer --peers` and `sessioneer --send` the relevant
+ones; commit only your own paths. Details in the `peer-sessions` skill.
+
+## Model choice, turns, and delegation cost
+
+Measured 2026-10-07 over the sessions active that week (turns back to 2026-09-05): cache
+reads were ~98% of tokens; three very long sessions at 500k-1M context were ~77% of
+volume, and they ran on Sonnet, so session length mattered more than model; roughly
+60% of turns ran over 250k context (down to ~10-20% after the context-budget hook
+landed 2026-10-05); tool results were a negligible share; 82% of subagent turns ran on
+Opus because the `Agent` tool inherits the parent's model unless `model` is set. Shares
+are reliable; absolute token and turn counts from that pass were inflated about 2x
+(each streamed message was counted once per content block), so dedupe by message id.
+Cost is roughly turns x context, so the levers are fewer turns, a smaller context, and
+a cheaper model for work that doesn't need the strong one.
+
+- **Model by phase.** Opus for planning, architecture, audit design and subtle
+  debugging. Sonnet for discussion, execution and diff review. Haiku only for
+  read/search-only workers. Planning ends when the plan is written down (Dibs plan
+  issue, or the review file) and a hand-off offered; execution runs in a fresh Sonnet
+  session or in workers, not in the Opus planning session. A long Opus session that
+  starts doing the work itself is the expensive pattern.
+- **Size the request first, and say the size in one line.** *Small* (a few turns, one
+  area, at most a couple of questions): do it in the current session, no Dibs plan, no
+  draft. *Medium* (several steps or files, some decisions, fits one sitting): Sonnet is
+  enough; one batched question round and a short draft kept in the conversation or
+  `TodoWrite`; Dibs only if it must outlive the session. *Large* (multi-phase, audit,
+  architecture, interacting constraints, or spans sittings): a Dibs plan with a running
+  draft, finalized on Opus in a fresh session. When unsure between two sizes, take the
+  smaller, say so, and escalate if it grows.
+- **Draft as you go (medium and large).** Keep one running draft, the plan issue's body
+  in Dibs (`todo_revise`, which replaces rather than appends) or a review file if no
+  Dibs item exists yet, and update it every turn. It holds the objective and intent in
+  Andres's own words, decisions made, open questions, his stated preferences and coding
+  style for this work, constraints, and the steps. The chat holds the discussion; the
+  draft holds the state, so finalizing reads only the draft: start a fresh Opus session
+  from it rather than switching a large one. A preference that applies beyond this plan
+  also goes through "Memory scope discipline".
+- **Say when the model doesn't fit.** At the start of a session, if the task suits the
+  other model (planning or audit design on Sonnet; mechanical execution on Opus),
+  recommend the switch in one line before working. Early in a session that is cheap.
+- **Turns.** Ask every question you can think of in one message, each with a
+  recommended default, and proceed on the defaults unless told otherwise. Put
+  independent tool calls in one response. No checkpoint between mechanical steps of an
+  agreed plan.
+- **Delegate by output volume, not task type.** Inline for 3 or fewer calls. Delegate
+  when the work would put more than ~10k tokens of tool output into context (broad
+  greps, test or lint runs, logs, multi-file exploration), with the worker returning
+  300 words or less. Every `Agent` call sets `model` explicitly (Sonnet for edits,
+  Haiku for read/search, Opus only where the task needs deep reasoning). Prefer a fresh
+  agent over a fork: each fork turn re-reads the parent's whole context.
+- **Lean workers.** A bounded worker gets a self-contained prompt (goal, files,
+  acceptance criteria, return format; about 400 words) and does not read the
+  orchestrator-worker skill or call Dibs. The orchestrator records a phase's results in
+  one batched Dibs update instead of claim/heartbeat/comment/complete per worker.
+
+## On-demand context
+
+Kept out of this file so it isn't loaded into every session; read the skill when it applies:
+
+- C or C++ work, or code for embedded/SBC hardware (Raspberry Pi etc.) → `c-cpp` skill.
+- Adding or changing anything under `~/dotfiles/ai/` (skills, commands, agents, hooks,
+  settings) or opencode/Codex/agy config → `ai-config` skill.
+- Skills, agents and commands are listed by each tool's own discovery, so there's no
+  catalogue here.

@@ -415,9 +415,11 @@ One shared config tree, linked into each agent's own expected location by
 `scripts/install/50-ai-tools.sh` — so a skill or hook is written once rather
 than per tool.
 
-- `CLAUDE.md` — global cross-project developer context (machine layout, git
-  branch model, tooling policy). `AGENTS.md` is the vendor-neutral entrypoint,
-  linked to `~/AGENTS.md` and read natively by Codex and Antigravity's `agy`.
+- `RULES.md` — the one shared rule set for every agent: collaboration through Dibs and
+  Sessioneer, git workflow, tooling policy, machine layout. `CLAUDE.md` is the Claude Code
+  entrypoint (imports `RULES.md`, adds hooks and context-window notes). `AGENTS.md` is the
+  vendor-neutral entrypoint, linked to `~/AGENTS.md` and read natively by Codex and
+  Antigravity's `agy`; opencode lists `~/.claude/RULES.md` in its `instructions`.
   `RTK.md` documents the `rtk` token-saving CLI proxy hook.
 - `skills/` — Laravel, Livewire, Pest, OpenCart, Rector, DB, frontend and git
   conventions, plus infrastructure/backup runbooks and an orchestrator-worker

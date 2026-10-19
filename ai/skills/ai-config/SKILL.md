@@ -7,7 +7,7 @@ description: How Andres's shared AI-agent config in ~/dotfiles/ai is wired for C
 
 Everything under `~/dotfiles/ai/` is shared, not Claude-only. opencode links `commands/` and
 `skills/` directly and has its own agent copies in `agents-opencode/`. Codex reads
-`AGENTS.md` (which points back to `CLAUDE.md`) plus one wrapper skill per item in
+`AGENTS.md` (which points to `RULES.md`) plus one wrapper skill per item in
 `codex-skills/claude-import-<name>/`. Antigravity's `agy` discovers `skills/` through
 `gemini-config-skills.json`. When adding or changing a skill, command, or agent:
 
@@ -20,7 +20,7 @@ Everything under `~/dotfiles/ai/` is shared, not Claude-only. opencode links `co
   script's Codex section links every wrapper in that directory.
 - For a new agent, add the opencode copy in `agents-opencode/` too.
 - Claude-only pieces (hooks, `settings.json`, plugins) don't exist for the other agents.
-  When a rule is enforced by a hook, keep the rule written in `CLAUDE.md` as well, so agents without
+  When a rule is enforced by a hook, keep the rule written in `RULES.md` as well, so agents without
   the hook still follow it.
 
 ## opencode restart requirement
@@ -35,4 +35,4 @@ running server keeps the already-loaded config):
 - `~/.config/opencode/command(s)/` — command files
 - `~/.config/opencode/skill(s)/<name>/SKILL.md` — skill definitions
 - `~/.config/opencode/plugin(s)/` or any `plugin:` listed JS/TS plugin
-- any file referenced by `instructions` (e.g. `~/.claude/CLAUDE.md`) that changes system context
+- any file referenced by `instructions` (e.g. `~/.claude/RULES.md`) that changes system context

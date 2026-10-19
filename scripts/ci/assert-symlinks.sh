@@ -88,7 +88,7 @@ check_symlink ~/.config/systemd "$SCRIPTPATH/.config/systemd" "~/.config/systemd
 
 echo "=== 50-ai-tools.sh ==="
 check_symlink ~/AGENTS.md "$SCRIPTPATH/ai/AGENTS.md" "~/AGENTS.md -> ai/AGENTS.md"
-for f in CLAUDE.md RTK.md settings.json statusline-command.sh; do
+for f in CLAUDE.md RULES.md RTK.md settings.json statusline-command.sh; do
   check_symlink ~/.claude/"$f" "$SCRIPTPATH/ai/$f" "~/.claude/$f -> ai/$f"
 done
 for d in skills commands agents hooks lessons; do

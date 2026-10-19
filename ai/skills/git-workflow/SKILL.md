@@ -1,31 +1,39 @@
 ---
 name: git-workflow
-description: Git branch model (master/local/feature), cherry-picking to production, rebase sequences, push safety, and verifying commit surgery. Use before any non-trivial git operation or push.
+description: Git delivery modes (local-only, direct push, PR), branch model (default branch, worktrees, `local` for work projects), cherry-picking to production, push safety, and verifying commit surgery. Use before any non-trivial git operation or push.
 ---
 
 # Git Workflow
 
-## Branch model
+## Delivery mode and branch model
 
-```
-master/main/stable  — perfect mirror of production
-  └── local          — permanent local-only branch, rebased onto master/main
-        └── feature  — per-feature branch when multiple things are in flight,
-                       rebased onto local, named for the feature
-```
+Each repo has a delivery mode, declared on a `Delivery:` line in its `CLAUDE.md`/`AGENTS.md`
+and in a guide in its Dibs Group (ask once if missing, then write both):
 
-- Work directly on `local` when only one thing is in flight. Create a feature branch
-  off `local` only when you need to isolate parallel work.
+- **local-only**: no remote; commit on the default branch.
+- **direct push**: has a remote you push to (after the push confirmation).
+- **PR**: changes reach the default branch only through a pull request. The remote branch name
+  is throwaway and doesn't matter; only the PR does.
+
+Branches:
+
+- Small and medium changes are committed directly on the default branch (`master`/`main`).
+- Work large enough to disrupt a live site (a checkout that is the running deployment), or
+  that must be isolated, goes in a `git worktree` on a temporary branch, merged into the default
+  branch locally when done. After the merge, delete the temporary branch, locally and on the
+  remote.
+- `local` is a permanent branch only for work projects whose production is another machine
+  with different paths/credentials. It carries the machine-specific changes and is rebased onto
+  the default branch. Personal and this-machine-only projects have no `local`.
 - Local-only changes (debug code, config tweaks, experiments) must never land on
   `master`/`main`/`stable`.
 - Remote is usually `origin`. Some projects use `upstream` for the canonical/production
   remote when `origin` is a personal fork — verify before pushing.
-- `local` is a per-developer branch-naming convention, not a name one person owns —
-  on a shared repo, each teammate may have their own `local` branch. Never push it
-  to the shared remote, and never assume a `local` branch (local or on origin)
-  belongs to you or should be pulled/merged.
+- Where `local` exists it is a per-developer branch-naming convention, not a name one person
+  owns: on a shared repo, each teammate may have their own. Never push it to the shared remote,
+  and never assume a `local` branch (local or on origin) belongs to you or should be pulled/merged.
 
-## Cherry-picking to production
+## Cherry-picking to production (repos with a `local` branch)
 
 Use `/cherry-pick-to` for the standard cherry-pick flow. The intent behind it:
 
@@ -40,7 +48,7 @@ Why cherry-pick goes to `master` first (not the other way): `master` must never
 contain local-only work. Rebasing `local` onto the updated `master` brings it in sync
 without risking that local-only commits slip through.
 
-## Rebase sequences
+## Rebase sequences (repos with a `local` branch)
 
 After any update to `master`/`main`/`stable`:
 
@@ -60,7 +68,7 @@ anything else.
   which remote, and whether it's fast-forward or forced.
 - If a push to `master`/`main`/`stable` is rejected (non-fast-forward), stop — do NOT
   suggest `--force`. Investigate why (remote has commits not in local?) and fix properly.
-- Local-only branches (`local`, feature branches) should never be pushed to the shared
+- Local-only branches (`local`, temporary worktree branches) should never be pushed to the shared
   remote unless the user explicitly wants to share them.
 - Before pushing, scan the commits being sent: does any of them contain local-only
   work (debug code, personal config, experiments)? If yes to `master`/`main`/`stable`,
@@ -104,20 +112,24 @@ land it unchanged.
    (committer date shifts). Sync local `main`: `git fetch origin main`, confirm
    `git diff <old-sha> origin/main` is empty, then `git reset --hard origin/main`.
 
-## After each commit: refresh the atlas
+## Atlas: update and stamp when the work merges into master/main
 
-In a project that has a feature atlas, refresh the subsystems a commit touched right after the
-commit (`/feature-atlas-subsystem`), stamped with that commit's SHA, not at merge time. The commit
-need not be pushed and a PR is optional. Whenever you rewrite unpushed commits (amend, squash,
-reorder) or a rebase merge produces new SHAs, re-stamp the atlas to the resulting SHA. Before
-working on a repo, compare its GitHub tip (the atlas's branch) with the atlas's Verified at and
-refresh the atlas if GitHub is ahead. The atlas names its branch (default: `main`/`master`).
-Details: the `feature-atlas` command's "Where the atlas lives".
+In a project that has a feature atlas, refresh the subsystems the work touched
+(`/feature-atlas-subsystem`) and stamp Verified at when the work lands on the local
+`master`/`main`, before any push. For worktree and PR work, merge into the local default branch
+first (even in a PR repo, where the PR branch is then prepared from it), stamp with the SHA
+there, then push or open the PR. The commit need not be pushed. Whenever you rewrite unpushed
+commits (amend, squash, reorder) or a rebase/squash merge (including GitHub's) produces new
+SHAs, re-stamp to the resulting SHA. Before working on a repo, compare its GitHub tip (the
+atlas's branch) with the atlas's Verified at and refresh if GitHub is ahead. The atlas names
+its branch (default: `main`/`master`). Details: the `feature-atlas` command's "Where the atlas
+lives".
 
-## After a PR merges: delete the branch, locally and on GitHub
+## After a merge: delete the temporary branch, locally and on the remote
 
-For any repo where work goes through a PR from a separate branch, once the PR has merged
-successfully the branch is finished: delete it in both places and sync the default branch.
+For any merge from a temporary branch (a PR, or a worktree branch merged locally), once it has
+merged successfully the branch is finished: delete it in both places and sync the default
+branch.
 
 1. Merge with `gh pr merge <number> --rebase --delete-branch` (or the repo's usual merge style
    with `--delete-branch`); that removes the remote branch. Where it was merged some other way,
@@ -133,13 +145,13 @@ successfully the branch is finished: delete it in both places and sync the defau
    PR or unmerged commits. Do this only after the merge is confirmed, never on a failed or
    unmerged PR. Dependabot branches go with their PRs.
 
-## Splitting `local` into PRs
+## Splitting accumulated commits into PRs (PR repos)
 
 A PR is a reviewable unit of work: its title and description should let a reviewer
 understand "this PR does X, and these changes are necessary to accomplish X." When
-`local` holds commits for several concerns, group them by concern into separate PRs
-(cherry-picked onto branches off `main`), not one PR per commit and not one PR for
-everything. Example `local` stack:
+the local default branch (or `local`) holds commits for several concerns, group them by concern into separate PRs
+(cherry-picked onto temporary branches off `main`), not one PR per commit and not one PR for
+everything. Example stack:
 
 ```
 A  Add GitHub Actions CI
@@ -170,7 +182,7 @@ feature, and the dependency order between commits clearer. This is encouraged, n
 merely tolerated: check the unpushed log (`git log --oneline origin/<branch>..HEAD`)
 from time to time, and always before a push, and reshape it when that helps. Typical
 reasons: a docs or test fix that belongs in the feature commit it describes (the
-"Docs and tests travel with the change" rule in `CLAUDE.md`), a follow-up that
+"Docs and tests travel with the change" rule in `RULES.md`), a follow-up that
 should be part of the commit it fixes, two commits for one feature, one commit
 mixing two features, a commit that depends on a later one.
 
@@ -278,4 +290,4 @@ git branch -a       # what branches exist locally and remotely?
 ```
 
 If the layout is non-standard or ambiguous, write findings to `.claude/project.md` in
-the project (local branch) as a TODO for human review rather than guessing.
+the project as a TODO for human review rather than guessing.
