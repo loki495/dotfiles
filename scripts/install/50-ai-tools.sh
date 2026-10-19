@@ -16,8 +16,9 @@ for d in skills commands agents hooks lessons; do
 done
 echo_success "Claude Code config linked to ~/.claude."
 echo_info "  - settings.json's own hook commands use \$HOME, portable to any username. Sessioneer's"
-echo_info "    hooks (added by its Install hooks, with that checkout's absolute path) are specific to"
-echo_info "    one machine: delete them where Sessioneer is not installed. Claude Code reads no"
+echo_info "    hooks (committed as \$HOME/www/personal/sessioneer/...; its Install hooks may rewrite them"
+echo_info "    with that checkout's absolute path) assume that checkout: delete them where Sessioneer"
+echo_info "    is not installed. Claude Code reads no"
 echo_info "    user-level settings.local.json; see ai/settings.local.json.example."
 
 section_header "Setting up ponytail config..."

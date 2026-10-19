@@ -177,9 +177,9 @@ Indentation and textobjects are outside this highlighting setup.
   For a fresh setup, run `nvim --headless "+Lazy! sync" +qa` to finish plugin builds.
 - **Claude Code:** `ai/settings.json` is your user-level Claude Code settings file
   (`~/.claude/settings.json` links to it), and its own hook commands use `$HOME`.
-  Sessioneer's five hooks are added to it by Sessioneer's **Install hooks**, with the
-  absolute path of that checkout, so those entries belong to one machine; on a machine
-  without Sessioneer, delete them. Claude Code reads no user-level `settings.local.json`
+  Sessioneer's five hooks are committed there as `$HOME/www/personal/sessioneer/...`
+  (Sessioneer's **Install hooks** may rewrite them with the absolute path of its
+  checkout), so they assume that checkout; on a machine without Sessioneer, delete them. Claude Code reads no user-level `settings.local.json`
   (`settings.local.json` exists only per project, as `.claude/settings.local.json`), so
   there is no separate user-wide place for such hooks. `ai/settings.local.json.example`
   is a template for personal hooks you merge by hand into `settings.json` or copy into
@@ -441,7 +441,7 @@ than per tool.
   Code settings and a custom statusline, portable (`$HOME` throughout).
   `settings.local.json.example` is a copyable template for personal hooks (it assumes
   a Sessioneer checkout at `~/www/personal/sessioneer`); see Post-install. Sessioneer's
-  own hook entries in `settings.json` carry that checkout's absolute path.
+  own hook entries in `settings.json` assume that checkout at `$HOME/www/personal/sessioneer`.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at
