@@ -23,10 +23,8 @@ units under `systemd/user/` into this checkout and, for `CLAUDE.private.md`, int
 `~/.claude/` too. All of those targets are gitignored here. Set `DOTFILES_PRIVATE_ROOT`
 if the private repo is not at `~/.dotfiles-private`.
 
-Traefik is separate: `traefik` in this repo is a **tracked symlink** to
-`/home/andres/.dotfiles-private/traefik` (the author's path), and `./install.sh traefik`
-links `~/www/traefik` to it. On another machine, re-point it first:
-`ln -sfn ~/.dotfiles-private/traefik ~/dotfiles/traefik`.
+Traefik is separate: `./install.sh traefik` links `~/www/traefik` straight to
+`~/.dotfiles-private/traefik` (or `$DOTFILES_PRIVATE_ROOT/traefik`) and fails without it.
 
 Without the private repo everything else still works: the `private` section skips itself
 and the `@CLAUDE.private.md` import in `ai/CLAUDE.md` is ignored silently.

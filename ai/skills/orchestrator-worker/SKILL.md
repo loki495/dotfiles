@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Default protocol for any multi-step coding work — solo, forked, or delegated to workers. A plan is a `plan`-labeled issue in Dibs (the personal MCP-backed task tracker, registered as the `dibs` MCP server; CLI fallback via `docker compose -f /home/andres/www/dibs/docker-compose.yml exec` when a tool can't reach MCP directly), created automatically once work is explicitly multi-phase or spans sessions, so a fresh session (this one resuming later, or a different tool entirely) can pick it up cold from Dibs alone — no local plan files. Small work escalates to full delegation (workers, model tiering, parallel execution) automatically when it's clearly warranted, or with a quick check when it's ambiguous — never silently. Two shared, cross-plan knowledge stores back every plan, also in Dibs: `research`-labeled issues (checksum-versioned against the files they're based on) and `lesson`-labeled issues (durable non-code gotchas — platform quirks, library fine print, logic traps) — checked before and updated after any research or implementation step, filed under Personal Projects → AI workflows unless project-specific. Tool-agnostic throughout: Claude Code, opencode, Codex, and agy can each play orchestrator or worker — via the `dibs` MCP server where registered, the `todo:agent:*` CLI otherwise. Use this by default for multi-step work, not only when explicitly asked.
+description: Default protocol for any multi-step coding work — solo, forked, or delegated to workers. A plan is a `plan`-labeled issue in Dibs (the personal MCP-backed task tracker, registered as the `dibs` MCP server; CLI fallback via `docker compose -f ~/www/dibs/docker-compose.yml exec` when a tool can't reach MCP directly), created automatically once work is explicitly multi-phase or spans sessions, so a fresh session (this one resuming later, or a different tool entirely) can pick it up cold from Dibs alone — no local plan files. Small work escalates to full delegation (workers, model tiering, parallel execution) automatically when it's clearly warranted, or with a quick check when it's ambiguous — never silently. Two shared, cross-plan knowledge stores back every plan, also in Dibs: `research`-labeled issues (checksum-versioned against the files they're based on) and `lesson`-labeled issues (durable non-code gotchas — platform quirks, library fine print, logic traps) — checked before and updated after any research or implementation step, filed under Personal Projects → AI workflows unless project-specific. Tool-agnostic throughout: Claude Code, opencode, Codex, and agy can each play orchestrator or worker — via the `dibs` MCP server where registered, the `todo:agent:*` CLI otherwise. Use this by default for multi-step work, not only when explicitly asked.
 ---
 
 # Orchestrator/Worker Protocol
@@ -159,12 +159,12 @@ unrelated files, repositories, configuration, credentials, or user data.
 ## Project State
 
 A project's multi-step work lives in **Dibs** — the personal MCP-backed task
-tracker (`/home/andres/www/dibs`) — instead of local plan files. Reach it through
+tracker (`~/www/dibs`) — instead of local plan files. Reach it through
 the `dibs` MCP server (registered at user scope for Claude Code as of 2026-09-13;
 register it the same way in any other tool's own MCP config before relying on it
 there — `claude mcp list`/that tool's equivalent shows whether it's connected) or,
 when a tool can't reach MCP directly, the `todo:agent:*` CLI fallback:
-`docker compose -f /home/andres/www/dibs/docker-compose.yml exec -T -u www-data app
+`docker compose -f ~/www/dibs/docker-compose.yml exec -T -u www-data app
 php artisan todo:agent:<command>`. Call `todo_status` (or `todo:agent:list`) once per
 session to confirm connectivity before relying on it further.
 
@@ -931,7 +931,7 @@ requires either the `dibs` MCP server registered in that specific tool's own con
 (each tool has its own separate MCP registration — Claude Code's is user-scoped as
 of 2026-09-13; opencode/codex/agy each need their own, done the same way, before a
 worker in that tool can call `todo_*` tools directly), or falling back to the
-`todo:agent:*` CLI via `docker compose -f /home/andres/www/dibs/docker-compose.yml
+`todo:agent:*` CLI via `docker compose -f ~/www/dibs/docker-compose.yml
 exec`, which works from any tool regardless of its own MCP support. Confirm which
 path a given worker actually has before assuming MCP tool calls will just work —
 include the CLI fallback form in its prompt either way, since a cross-tool worker

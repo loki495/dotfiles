@@ -196,6 +196,31 @@ chmod +x "$prefix/bin/nvim"
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.home / 'traefik-touched').exists())
 
+    def traefik_checkout(self):
+        checkout = self.root / 'checkout'
+        (checkout / 'scripts/install').mkdir(parents=True)
+        shutil.copy(REPO / 'install.sh', checkout)
+        shutil.copy(REPO / 'scripts/install/lib.sh', checkout / 'scripts/install')
+        shutil.copy(REPO / 'scripts/install/70-traefik.sh', checkout / 'scripts/install')
+        shutil.copytree(REPO / 'bash/lib', checkout / 'bash/lib')
+        return checkout
+
+    def test_traefik_section_links_the_private_config(self):
+        checkout = self.traefik_checkout()
+        root = self.home / '.dotfiles-private'
+        (root / 'traefik').mkdir(parents=True)
+        subprocess.run(['bash', str(checkout / 'install.sh'), 'traefik'], env=self.env,
+                       text=True, capture_output=True, timeout=15, check=True)
+        self.assertEqual(os.readlink(self.home / 'www/traefik'), str(root / 'traefik'))
+
+    def test_traefik_section_fails_cleanly_without_the_private_config(self):
+        checkout = self.traefik_checkout()
+        result = subprocess.run(['bash', str(checkout / 'install.sh'), 'traefik'], env=self.env,
+                                text=True, capture_output=True, timeout=15)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('No Traefik config', result.stdout + result.stderr)
+        self.assertFalse((self.home / 'www/traefik').exists() or (self.home / 'www/traefik').is_symlink())
+
     def test_explicit_systemd_without_user_session_does_not_modify_configuration(self):
         self.stub('systemctl', '#!/bin/sh\nexit 1\n')
         self.run_script('install.sh', 'systemd', success=False)

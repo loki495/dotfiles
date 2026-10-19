@@ -1,1 +1,0 @@
-- 2026-09-02-install-ci-testing | archived | Test the whole dotfiles install (install.sh + sections + install_neovim.sh) and add GitHub Actions CI, including a tmux-based check that nvim renders real syntax highlighting with no error popups | updated 2026-09-02
