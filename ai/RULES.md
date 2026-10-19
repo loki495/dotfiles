@@ -77,10 +77,13 @@ named below; these are the points everything else follows from.
   decisions in one batched round rather than a turn per item. (Mechanical steps within
   an agreed plan are exempt — see "Working style".)
 - **ALWAYS** keep a live site loading. Some checkouts are the running deployment (a
-  container bind-mounts the source, so a saved edit is live at once). Before editing
-  one, order the changes so the site loads at every step: anything new the code needs
-  (an `.env` value, a compose setting, a container recreate) goes in first, then the
-  code, then check the real routes return 200. If no such order exists, do the work
+  container bind-mounts the source, so a saved edit is live at once), and that includes
+  committing on master/main of a checkout that is currently serving a site, locally or at
+  work. Before editing one, order the changes so the site loads at every step: whatever
+  the new code expects to find (an `.env` value, a config key, a compose setting, a
+  container recreate, a migration or schema change, an installed dependency, a built
+  asset, a seeded row) goes in first, then the code, then check the real routes return 200
+  with the real app in the body, never a crash or error page. If no such order exists, do the work
   in a separate git worktree. Decided 2026-10-06: a Host allowlist edited straight
   into Sessioneer's live checkout went live before `.env` had `ALLOWED_HOSTS`, and the
   site stopped loading until another agent fixed it.

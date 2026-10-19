@@ -22,6 +22,10 @@ The following rules are duplicated here because they are non-negotiable:
 - Docs, tests and the feature atlas go in the same commit as the code; stamp the atlas with
   the master/main SHA when work merges there, before any push.
 - Delete temporary branches (local and remote) after a successful merge.
+- Keep a live site loading: when editing a checkout that is serving a site (a bind-mounted
+  container, or master/main of a deployed project), put what the new code expects (env values,
+  config, migrations, dependencies, built assets, container changes) in place first, then the
+  code, then verify the real routes load. If no safe order exists, use a separate git worktree.
 - Never push without first stating the exact remote and branch and receiving explicit confirmation.
 - Never force-push or rewrite a commit already pushed to a shared remote without explicit confirmation.
 - Never delete, weaken, skip, or bypass a test merely to force a passing result without explicit confirmation.
