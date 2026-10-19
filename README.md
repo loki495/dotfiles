@@ -229,7 +229,7 @@ symlinks these into this checkout, all of them gitignored here:
 | `systemd/user/*` | `.config/systemd/user/*` | Units Sessioneer's `host-agent/install.sh` renders for one machine (absolute paths). `install.sh` rewrites them in place through the links |
 
 An existing real file at a target is kept in `~/.dotfiles-backups/` (see above). `traefik/` is linked the
-same way through its own tracked symlink and the opt-in `traefik` section.
+same way, straight into `~/www/traefik`, by the opt-in `traefik` section.
 
 Not versioned anywhere: `ai/skills/synced/`, which Claude Code fills with the
 skills your claude.ai account syncs (proprietary, named after your account ids,
@@ -328,9 +328,9 @@ setup has been removed (see "Removed" below).
   colored output, pushd/popd wrappers).
 - `install.sh` / `install_neovim.sh` — top-level dotfiles installer and standalone
   Neovim installer (see Installation above).
-- `weekly-cleanup` — cron script: prunes pacman cache, dangling Docker
+- `bin/weekly-cleanup` — cron script: prunes pacman cache, dangling Docker
   images/volumes, old journal logs, `/tmp`.
-- `log-notifications.sh` — tails desktop notification bodies via `dbus-monitor`
+- `bin/log-notifications.sh` — tails desktop notification bodies via `dbus-monitor`
   (dev/debug tool, not wired into any service).
 
 ### Install & CI (`scripts/`, `.github/`)
@@ -451,16 +451,16 @@ This repo's own root-level `.claude/settings.local.json` is separate again from 
 of the above — Claude Code's project-scoped local permission allowlist, applying only
 to sessions run inside this checkout, not part of the linked `ai/` tree.
 
-`.ai/` (distinct from `ai/`) holds this repo's own working notes — `plans/` for
-multi-session initiatives and `lessons/` for what they turned up.
+`.ai/` (distinct from `ai/`) holds this repo's own working notes — `lessons/` for what
+past initiatives turned up.
 
 ### Traefik (`traefik/`)
 
-A symlink to `~/.dotfiles-private/traefik`, linked to `~/www/traefik/` by the
-opt-in `traefik` section (`./install.sh traefik`). The reverse-proxy config for the dev containers lives in that
-private repo, so nothing under `traefik/` is tracked here. Without the private
-repo the link is dangling, so the default install skips the section; CI runs without
-it. Real hosts and routes are infrastructure detail and stay private, along with
+The opt-in `traefik` section (`./install.sh traefik`) links `~/www/traefik/` to
+`traefik/` in the private repo (`$DOTFILES_PRIVATE_ROOT`, default `~/.dotfiles-private`).
+The reverse-proxy config for the dev containers lives there, so nothing is tracked here.
+Without the private repo the section fails and changes nothing, so the default install
+skips it; CI runs without it. Real hosts and routes are infrastructure detail and stay private, along with
 the Cloudflare token, the ACME account and the certificate keys.
 
 ### Other

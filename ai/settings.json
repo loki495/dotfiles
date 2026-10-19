@@ -333,7 +333,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/stop.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/stop.php"
           }
         ]
       }
@@ -362,7 +362,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/pre_tool_use.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/pre_tool_use.php"
           }
         ]
       }
@@ -373,7 +373,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/session_start.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/session_start.php"
           }
         ]
       }
@@ -384,7 +384,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/permission_request.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/permission_request.php"
           }
         ]
       }
@@ -395,7 +395,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "php /home/andres/www/personal/sessioneer/host-agent/hooks/user_prompt_submit.php"
+            "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/user_prompt_submit.php"
           }
         ]
       },

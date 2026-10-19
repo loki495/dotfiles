@@ -3,7 +3,7 @@
 # create actually exists and points at the right repo path, plus that
 # ~/.bashrc sources cleanly. Run this AFTER install.sh has executed against
 # some $HOME - a throwaway one in a container, NEVER this machine's real
-# $HOME (see .ai/plans/2026-09-02-install-ci-testing/PLAN.md's safety note).
+# $HOME (see the README's Tests section).
 #
 # Usage: HOME=<throwaway home> scripts/ci/assert-symlinks.sh
 #
@@ -122,11 +122,10 @@ echo "=== 60-neovim.sh ==="
 check_symlink ~/.config/nvim "$SCRIPTPATH/nvim" "~/.config/nvim -> nvim"
 
 echo "=== 70-traefik.sh (opt-in) ==="
-# The section is opt-in (default installs skip it) and dotfiles/traefik is a symlink into
-# the private dotfiles repo (see INFRASTRUCTURE_SETUP.md), so it is only checked when it
-# was actually installed.
+# The section is opt-in (default installs skip it) and links into the private dotfiles
+# repo (see INFRASTRUCTURE_SETUP.md), so it is only checked when it was actually installed.
 if [ -L ~/www/traefik ]; then
-  check_symlink ~/www/traefik "$SCRIPTPATH/traefik" "~/www/traefik -> traefik"
+  check_symlink ~/www/traefik "${DOTFILES_PRIVATE_ROOT:-$HOME/.dotfiles-private}/traefik" "~/www/traefik -> private traefik"
 else
   echo "SKIP: ~/www/traefik symlink - traefik section not installed in this environment"
 fi

@@ -6,6 +6,7 @@ don't fit it.
 
 ## Before you open a PR
 
+- Branch from `master` and open the PR against it.
 - Read the README's Installation and Tests sections. The repo must live at `~/dotfiles`
   (several configs hardcode that path).
 - Run the tests that apply:
