@@ -20,7 +20,7 @@ there, so deploying a change is commit, push, then `git -C ~/.dotfiles-private
 pull` on the backups machine. It runs from cron at 01:30 under `flock`. For every account of the
 cPanel server it writes `~/backups/inmotion2/<acct>/`:
 
-- `files/<date>/`: rsync of the whole home dir (mail, logs, caches excluded),
+- `files/<date>/`: rsync of the whole home dir (mail, logs, caches and OpenCart `image/cache/` excluded),
   hard-linked against `files/latest` so an unchanged day costs almost nothing.
 - `database/<db>-<date>.sql.gz`: one `mysqldump` per database, gzipped on the
   server.
