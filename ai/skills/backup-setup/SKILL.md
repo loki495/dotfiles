@@ -62,6 +62,30 @@ soon as the user session is back). Files a container owns (live MySQL data dirs)
 are skipped (rsync exit 23 is treated as success); those apps' data needs a
 dump of its own.
 
+## Dibs database (push, daily)
+
+A systemd user timer (`backup-dibs.timer`, 03:10, `Persistent=true`) runs
+`~/.dotfiles-private/backup/backup-dibs.sh`: `sqlite3 .backup` of the Dibs
+database (WAL mode, so never a raw copy), `PRAGMA integrity_check` on the copy,
+then rsync to `~/backups/dibs/<date>/` on the backups machine; 30 days kept,
+published by `.partial` rename like the personal snapshot.
+
+## Media machine (pull, nightly)
+
+The backups machine pulls the media machine's app config (arr apps, Bazarr,
+Jackett, NZBGet, qBittorrent, Home Assistant), `docker` compose and ESPHome
+configs, and two small sites over the SSH alias `media` into
+`~/backups/media/<date>/`, hard-linked, 30 kept, from cron at 02:30 under
+`flock` (script `backup-media.sh` in the private repo's `backup/`, deployed like
+`backup-inmotion2`; log `~/backups/logs/media-<date>.log`). SQLite files are
+first copied with Python's `sqlite3` backup API on the media machine (no
+`sqlite3` binary there) into a temp dir, integrity-checked, pulled and removed,
+so live databases are never copied raw. The media library itself is not backed
+up. Root-only paths (Pi-hole and tunnel config, Home Assistant's `.storage`, the
+Insights docker volume) need sudo there and are a documented manual step in the
+private repo's `backup/README.md`. If the key changes, compare the fingerprint
+before refreshing `known_hosts` on the backups machine.
+
 ## Older per-site scripts (`backup.conf`)
 
 `~/dotfiles/backup-tools/` (`mysqlbk`, `pull`, `full-backup`, `check-backup`)
