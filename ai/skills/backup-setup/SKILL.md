@@ -1,81 +1,73 @@
 ---
 name: backup-setup
-description: Backs up a site's git repo + database from its production/live server into ~/backups/<site>/ on the dedicated backups machine. Use when setting up, running, or debugging site backups (mysqlbk, pull, full-backup, backup.conf conventions).
+description: Backs up production cPanel sites (files + databases) and personal projects onto the dedicated backups machine under ~/backups/. Use when setting up, running, or debugging site backups (backup-inmotion2, setup-backup-db-users.py, backup-personal, and the older mysqlbk/pull backup.conf scripts).
 ---
 
-# Setting Up Site Backups
+# Site and project backups
 
-Backs up a site's git repo + database from its production/live server into
-`~/backups/<site>/` on the dedicated backups machine, reached throughout this
-skill by its SSH alias `backups` (define the real host, user and port once in
-`~/.ssh/config`). Full variable/script reference:
-`~/dotfiles/backup-tools/README.md` on that machine — read it before setting
-up a new site, this skill is the workflow, that file is the schema.
+Everything lands in `~/backups/` on the dedicated backups machine, an always-on
+laptop on the LAN reached by the SSH alias `backups` (real host, user and port
+in `~/.ssh/config`; its login shell is fish, so pipe multi-line commands to
+`bash -s`). `~/backups` is its own LVM volume.
 
-## Setting up a new site
+## Production cPanel accounts (pull, nightly)
 
-1. **Survey a few existing `backup.conf` files first** (`ssh backups "cat
-   ~/backups/*/backup.conf"`) — conventions vary (key choice,
-   OpenCart sites add
-   `MYSQL_EXCLUDED_TABLES`/`RSYNC_FOLDERS`; etc). Match the closest existing
-   pattern rather than inventing a new one.
+The scripts live in the private dotfiles repo, `~/.dotfiles-private/inmotion/`
+(also reachable as `~/www/inmotion-migration/scripts`, a symlink). The backups
+machine has its own clone of that repo, and its
+`~/backups/bin/backup-inmotion2` is a symlink to `inmotion/backup-inmotion2.sh`
+there, so deploying a change is commit, push, then `git -C ~/.dotfiles-private
+pull` on the backups machine. It runs from cron at 01:30 under `flock`. For every account of the
+cPanel server it writes `~/backups/inmotion2/<acct>/`:
 
-2. **SSH key**: if the site's server belongs to a group of existing sites
-   that already share a key, follow that convention. Otherwise — a new/unrelated
-   box — generate a **dedicated keypair on the backups machine**, add the
-   public half to the site's own `authorized_keys`. Never reuse an unrelated
-   site's key for a box it was never meant for.
-   ```bash
-   ssh backups "ssh-keygen -t ed25519 -f ~/.ssh/<site>_key -N '' -C 'backups-server -> <site>'"
-   # then add ~/.ssh/<site>_key.pub to the site's own authorized_keys
-   ```
+- `files/<date>/`: rsync of the whole home dir (mail, logs, caches excluded),
+  hard-linked against `files/latest` so an unchanged day costs almost nothing.
+- `database/<db>-<date>.sql.gz`: one `mysqldump` per database, gzipped on the
+  server.
+- 30 days of both are kept; logs in `~/backups/logs/inmotion2-<date>.log`
+  (summary of ok / skipped / failed at the end).
 
-3. **Create the folder + `backup.conf`** under `~/backups/<site>/` on the
-   backups machine (`chmod 600` — it holds a real DB password). Also
-   `mkdir -p ~/backups/<site>/database` — nothing auto-creates it before the
-   first `mysqlbk` run.
+Accounts it can't SSH into are skipped and listed as `skipped`, not failed.
+Read-only from the server's side: nothing on the live site is changed.
 
-4. **Get the site's real DB credentials** from its own `.env`/config on the
-   live server (read-only) — don't guess or reuse another site's.
+Databases are dumped as a read-only MySQL user `<acct>_bk` (SELECT, LOCK
+TABLES, SHOW VIEW, TRIGGER, EVENT), whose credentials live only in
+`~/backups/inmotion2/<acct>/db.cnf` (chmod 600) and travel to the server over
+stdin into a temp file. `~/.dotfiles-private/inmotion/setup-backup-db-users.py`
+(run on the main machine, which holds the WHM API token) creates the users,
+writes `db.cnf` and grants them on every DB the account has. It is idempotent:
+**re-run it after an account gets a new database**, or that DB is not dumped
+(the dump lists databases at run time but only sees those granted).
 
-5. **Run the two commands manually the first time**, from inside the site's
-   backup folder, and verify output before trusting it's wired up:
-   ```bash
-   ssh backups "cd ~/backups/<site> && ~/dotfiles/backup-tools/mysqlbk"
-   ssh backups "cd ~/backups/<site> && ~/dotfiles/backup-tools/pull"
-   ```
-   Check: table count in the dump output matches `SHOW TABLES` count on the
-   live DB; `public_html/.git` exists and `git log` on it matches the live
-   site's HEAD.
+### Adding an account
 
-6. **Never touch another site's folder or `backup.conf`** while doing this —
-   each is independent; there's no shared state between sites beyond the
-   scripts themselves.
+1. Shell access on: WHM `modifyacct shell=/usr/local/cpanel/bin/jailshell`
+   (`whm-api.sh` in the same scripts folder).
+2. The backups machine's `~/.ssh/id_rsa.pub` authorized on the account
+   (cPanel → SSH Access → Import Key; the API has no route for it).
+3. `setup-backup-db-users.py <acct>`, add the account to `ACCOUNTS` in
+   `backup-inmotion2.sh` if it isn't there, commit, push and pull it on the
+   backups machine, then run
+   `~/backups/bin/backup-inmotion2 <acct>` once and check the log, the
+   snapshot and that each dump ends with `-- Dump completed`.
 
-## The one non-obvious gotcha: `pull` can create a real commit on the LIVE site
+## Personal projects (push, nightly)
 
-`pull` and `push` stop when the **remote** (live) site has uncommitted
-changes, unless `AUTO_COMMIT_REMOTE="true"` is set in `backup-tools.conf`.
-Then they run `git add . && git commit -m "Auto-commit -
-MM/DD/YYYY"` over SSH on the site itself, not a local/backup-side
-operation. This is by design (it's how sites with no deploy discipline still
-get their live edits captured), but it means:
+The main machine pushes `~/www/personal` (untracked files included,
+`node_modules/` and `vendor/` excluded) to `~/backups/personal/<date>/` on the
+backups machine, hard-linked snapshots, 30 kept. Script
+`~/.dotfiles-private/backup/backup-personal.sh`, systemd user timer
+`backup-personal.timer` (03:30, `Persistent=true` so a missed night runs as
+soon as the user session is back). Files a container owns (live MySQL data dirs) can't be read and
+are skipped (rsync exit 23 is treated as success); those apps' data needs a
+dump of its own.
 
-- Running a backup is not read-only from the live site's perspective. If the
-  site had real uncommitted work sitting on it, that work is now a commit in
-  its history, with a generic message, not one you wrote.
-- If you want descriptive commit messages for a site's in-progress live
-  edits, capture and commit them yourself **before** running `pull`/
-  `full-backup` — otherwise a routine backup run will beat you to it with a
-  generic one.
-- After running a backup on a site you're also actively developing against
-  elsewhere (a local clone, another branch), re-fetch/rebase there — the
-  site's git history may have just moved.
+## Older per-site scripts (`backup.conf`)
 
-## Orchestration for ongoing (not first-time) backups
-
-`full-backup` = `mysqlbk` + `pull` + `sync-folders.php` +
-`check-for-changes-today`, and accepts `--process-subfolders <base-dir>` to
-sweep every site under it in one call. `check-backup` is read-only status
-(current branch, whether it's behind, most recent dump date) — doesn't back
-anything up, safe to run anytime.
+`~/dotfiles/backup-tools/` (`mysqlbk`, `pull`, `full-backup`, `check-backup`)
+drive one site per folder from a `backup.conf` (SSH_*, MYSQL_*, LOCAL_*). Not
+used for the cPanel accounts above. One gotcha if you do use them: `pull` and
+`push` stop when the live site has uncommitted changes, unless
+`AUTO_COMMIT_REMOTE="true"`, in which case they run `git add . && git commit
+-m "Auto-commit - MM/DD/YYYY"` **on the live site** over SSH. Commit real
+in-progress live edits yourself first, and re-fetch any local clone afterwards.
