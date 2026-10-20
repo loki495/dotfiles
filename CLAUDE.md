@@ -5,7 +5,7 @@ Delivery: direct push to `origin` (GitHub), after explicit push confirmation. Co
 Personal dotfiles (Hyprland/waybar desktop, Neovim, shell, PHP dev tooling, shared AI-agent
 config). README.md is the reference; this file is the short version for agents.
 
-- The global developer rules are `ai/CLAUDE.md`, already loaded as `~/.claude/CLAUDE.md`;
+- The global developer rules are `ai/RULES.md` (shared by every agent; `ai/CLAUDE.md` is the Claude entrypoint that imports it, loaded as `~/.claude/CLAUDE.md`);
   don't duplicate them here.
 - Files here are symlinked into `$HOME`, so editing the repo copy changes the live config at
   once. Never edit only the live copy.
