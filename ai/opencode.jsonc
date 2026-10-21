@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "{env:HOME}/.claude/RULES.md",
+    "{env:HOME}/.claude/CLAUDE.private.md"
+  ],
+  "plugin": [
+    "./plugin/laravel-post-tool.js"
+  ],
+  "mcp": {
+    "dibs": {
+      "type": "local",
+      "command": ["sh", "-c", "exec docker compose -f $HOME/www/personal/dibs/docker-compose.yml exec -T -u www-data -e DIBS_CLIENT_PID=$PPID app php artisan mcp:start todo"]
+    }
+  }
+}

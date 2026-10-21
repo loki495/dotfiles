@@ -239,7 +239,13 @@ chmod +x "$prefix/bin/nvim"
         self.stub('systemctl', '#!/bin/sh\ntouch "$HOME/systemd-touched"\nexit 1\n')
         self.run_script('install.sh', 'ai-tools')
         self.assertTrue((self.home / '.config/opencode/agent').is_symlink())
+        self.assertEqual((self.home / '.config/opencode/opencode.jsonc').resolve(), REPO / 'ai/opencode.jsonc')
         self.assertFalse((self.home / 'systemd-touched').exists())
+
+    def test_ai_configuration_links_agy_mcp_config(self):
+        self.stub('agy', '#!/bin/sh\nexit 0\n')
+        self.run_script('install.sh', 'ai-tools')
+        self.assertEqual((self.home / '.gemini/config/mcp_config.json').resolve(), REPO / 'ai/gemini-config-mcp.json')
 
     def test_ai_configuration_links_ponytail_config(self):
         self.run_script('install.sh', 'ai-tools')

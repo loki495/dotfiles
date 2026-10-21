@@ -99,6 +99,7 @@ if command -v opencode >/dev/null 2>&1; then
   check_symlink ~/.config/opencode/agent "$SCRIPTPATH/ai/agents-opencode" "~/.config/opencode/agent -> ai/agents-opencode"
   check_symlink ~/.config/opencode/command "$SCRIPTPATH/ai/commands" "~/.config/opencode/command -> ai/commands"
   check_symlink ~/.config/opencode/skill "$SCRIPTPATH/ai/skills" "~/.config/opencode/skill -> ai/skills"
+  check_symlink ~/.config/opencode/opencode.jsonc "$SCRIPTPATH/ai/opencode.jsonc" "~/.config/opencode/opencode.jsonc -> ai/opencode.jsonc"
 else
   echo "SKIP: opencode symlinks - opencode not installed in this environment"
 fi
@@ -114,6 +115,7 @@ fi
 
 if command -v agy >/dev/null 2>&1; then
   check_symlink ~/.gemini/config/skills.json "$SCRIPTPATH/ai/gemini-config-skills.json" "~/.gemini/config/skills.json -> ai/gemini-config-skills.json"
+  check_symlink ~/.gemini/config/mcp_config.json "$SCRIPTPATH/ai/gemini-config-mcp.json" "~/.gemini/config/mcp_config.json -> ai/gemini-config-mcp.json"
 else
   echo "SKIP: agy skills.json symlink - agy not installed in this environment"
 fi

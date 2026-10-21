@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "dibs": {
+      "args": [
+        "-c",
+        "exec docker compose -f $HOME/www/personal/dibs/docker-compose.yml exec -T -u www-data -e DIBS_CLIENT_PID=$PPID app php artisan mcp:start todo"
+      ],
+      "command": "sh",
+      "disabled": false
+    }
+  }
+}

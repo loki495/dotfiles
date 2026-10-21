@@ -32,10 +32,10 @@ if command_exists opencode; then
   backup_and_link ~/.config/opencode/agent "$DOTFILES_ROOT/ai/agents-opencode"
   backup_and_link ~/.config/opencode/command "$DOTFILES_ROOT/ai/commands"
   backup_and_link ~/.config/opencode/skill "$DOTFILES_ROOT/ai/skills"
-  echo_success "opencode agent/command/skill directories linked."
+  backup_and_link ~/.config/opencode/opencode.jsonc "$DOTFILES_ROOT/ai/opencode.jsonc"
+  echo_success "opencode config and agent/command/skill directories linked."
   echo_info "Service startup is optional: run ./install.sh systemd, then explicitly enable opencode-serve.service if wanted."
-  echo_info "  - opencode.jsonc's own \"instructions\" field must list ~/.claude/RULES.md (and ~/.claude/CLAUDE.private.md if installed);"
-  echo_info "    this section only wires the agent/command/skill directories and the server."
+  echo_info "  - ai/opencode.jsonc lists ~/.claude/RULES.md in \"instructions\" and registers the Dibs MCP server (assumes a Dibs checkout at ~/www/personal/dibs)."
 else
   echo_info "opencode not found on this machine, skipping."
 fi
@@ -56,7 +56,8 @@ section_header "Setting up Antigravity (agy) skills config..."
 if command_exists agy; then
   mkdir -p ~/.gemini/config
   backup_and_link ~/.gemini/config/skills.json "$DOTFILES_ROOT/ai/gemini-config-skills.json"
-  echo_success "agy skills.json linked (points agy's global skill discovery at ai/skills)."
+  backup_and_link ~/.gemini/config/mcp_config.json "$DOTFILES_ROOT/ai/gemini-config-mcp.json"
+  echo_success "agy skills.json and mcp_config.json linked (skill discovery at ai/skills; Dibs MCP server, assumes a checkout at ~/www/personal/dibs)."
 else
   echo_info "agy not found on this machine, skipping."
 fi

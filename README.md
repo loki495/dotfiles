@@ -447,7 +447,10 @@ than per tool.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at
-  `ai/skills`). Each is linked only if that tool is on `PATH`.
+  `ai/skills`), `gemini-config-mcp.json` (agy's MCP servers) and `opencode.jsonc`
+  (opencode's config: instructions, plugin, MCP servers). Both MCP entries start the Dibs
+  server through `sh -c` so `$HOME` expands and `DIBS_CLIENT_PID=$PPID` hands Dibs the agent's
+  own PID; they assume a Dibs checkout at `~/www/personal/dibs`. Each is linked only if that tool is on `PATH`.
 
 This repo's own root-level `.claude/settings.local.json` is separate again from both
 of the above — Claude Code's project-scoped local permission allowlist, applying only
