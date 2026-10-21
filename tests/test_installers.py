@@ -247,6 +247,35 @@ chmod +x "$prefix/bin/nvim"
         self.run_script('install.sh', 'ai-tools')
         self.assertEqual((self.home / '.gemini/config/mcp_config.json').resolve(), REPO / 'ai/gemini-config-mcp.json')
 
+    def codex_config(self):
+        return self.home / '.codex/config.toml'
+
+    def test_codex_config_merge_keeps_codex_state_and_replaces_a_hand_made_table(self):
+        self.stub('codex', '#!/bin/sh\nexit 0\n')
+        self.codex_config().parent.mkdir(parents=True)
+        self.codex_config().write_text('model = "x"\n\n[projects."/a"]\ntrust_level = "trusted"\n\n'
+                                       '[mcp_servers.dibs]\ncommand = "docker"\n\n[tui]\nnux = 1\n')
+        self.run_script('install.sh', 'ai-tools')
+        text = self.codex_config().read_text()
+        self.assertEqual(text.count('[mcp_servers.dibs]'), 1)
+        self.assertNotIn('command = "docker"', text)
+        self.assertIn('[projects."/a"]', text)
+        self.assertIn('[tui]\nnux = 1', text)
+        self.assertIn('DIBS_CLIENT_PID=$PPID', text)
+        self.assertFalse(self.codex_config().is_symlink())
+
+    def test_codex_config_merge_is_idempotent_and_includes_the_private_fragment(self):
+        self.stub('codex', '#!/bin/sh\nexit 0\n')
+        private = self.home / '.dotfiles-private/ai/codex'
+        private.mkdir(parents=True)
+        (private / 'config.managed.toml').write_text('[mcp_servers.other]\ncommand = "x"\n')
+        self.run_script('install.sh', 'ai-tools')
+        first = self.codex_config().read_text()
+        self.run_script('install.sh', 'ai-tools')
+        self.assertEqual(self.codex_config().read_text(), first)
+        self.assertEqual(first.count('BEGIN dotfiles-managed'), 1)
+        self.assertIn('[mcp_servers.other]', first)
+
     def test_ai_configuration_links_ponytail_config(self):
         self.run_script('install.sh', 'ai-tools')
         link = self.home / '.config/ponytail/config.json'

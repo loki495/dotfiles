@@ -48,6 +48,12 @@ if command_exists codex; then
     backup_and_link ~/.codex/skills/"$name" "$DOTFILES_ROOT/ai/codex-skills/$name"
   done
   echo_success "Codex claude-import-* skill wrappers linked to shared ai/ config."
+  # config.toml is machine state Codex rewrites, so it is merged into, not linked: the public
+  # fragment, plus the private repo's if it is cloned.
+  "$DOTFILES_ROOT/scripts/install/codex-merge-config.sh" ~/.codex/config.toml \
+    "$DOTFILES_ROOT/ai/codex/config.managed.toml" \
+    "${DOTFILES_PRIVATE_ROOT:-$HOME/.dotfiles-private}/ai/codex/config.managed.toml"
+  echo_success "Codex config.toml: managed block (Dibs MCP server) merged."
 else
   echo_info "codex not found on this machine, skipping."
 fi

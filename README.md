@@ -451,6 +451,10 @@ than per tool.
   (opencode's config: instructions, plugin, MCP servers). Both MCP entries start the Dibs
   server through `sh -c` so `$HOME` expands and `DIBS_CLIENT_PID=$PPID` hands Dibs the agent's
   own PID; they assume a Dibs checkout at `~/www/personal/dibs`. Each is linked only if that tool is on `PATH`.
+  Codex's `config.toml` is machine state Codex rewrites itself (trusted projects, hook hashes), so it is
+  not linked: `scripts/install/codex-merge-config.sh` merges `codex/config.managed.toml` (plus
+  `~/.dotfiles-private/ai/codex/config.managed.toml` when that repo is cloned) into it as one
+  `# BEGIN/END dotfiles-managed` block, replacing any hand-made table of the same name, and leaves the rest alone.
 
 This repo's own root-level `.claude/settings.local.json` is separate again from both
 of the above — Claude Code's project-scoped local permission allowlist, applying only
