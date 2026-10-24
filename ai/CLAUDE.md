@@ -24,6 +24,10 @@ full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine
 - Push guard (`hooks/push-guard.sh`, PreToolUse on Bash): any command containing
   `git push` (including `rtk git push` and chained commands) forces a permission prompt
   showing the exact command, whatever the permission mode or allow rules.
+- Claim overlap (`hooks/claim-overlap.sh`, PreToolUse on Edit/Write/MultiEdit/NotebookEdit):
+  asks Dibs (`todo:agent:claims`, via `docker exec dibs-app`) whether the file lies inside the
+  claimed `paths` of another live claim and, if so, adds a warning to the context; never blocks,
+  and says so when Dibs is unreachable. Claims list their paths through `todo_claim`'s `paths`.
 - Context budget (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default
   250k, `CLAUDE_CTX_BUDGET`) it shows a warning and tells Claude to offer `/handoff` +
   `/clear`; after an idle gap (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over
