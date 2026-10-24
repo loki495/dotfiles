@@ -373,6 +373,32 @@ preferences; a Dibs lesson is cross-project by construction.
 
 ---
 
+## Sizing a request and the running draft
+
+Size the request first and say the size in one line. *Small* (a few turns, one area, at most a
+couple of questions): do it in the current session, no Dibs plan, no draft. *Medium* (several
+steps or files, some decisions, fits one sitting): Sonnet is enough; one batched question round
+and a short draft kept in the conversation or `TodoWrite`; Dibs only if it must outlive the
+session. *Large* (multi-phase, audit, architecture, interacting constraints, or spans sittings): a
+Dibs plan with a running draft, finalized on Opus in a fresh session. When unsure between two
+sizes, take the smaller, say so, and escalate if it grows.
+
+Model by phase: Opus for planning, architecture, audit design and subtle debugging; Sonnet for
+discussion, execution and diff review; Haiku only for read/search-only workers. Planning ends when
+the plan is written down and a hand-off offered; execution runs in a fresh Sonnet session or in
+workers, not in the Opus planning session. At the start of a session, if the task suits the other
+model, recommend the switch in one line before working.
+
+For medium and large work keep one running draft (the plan issue's body via `todo_revise`, or a
+review file if no Dibs item exists yet) and update it every turn: objective and intent in Andres's
+own words, decisions made, open questions, his preferences and style for this work, constraints,
+steps. The chat holds the discussion, the draft holds the state, so finalizing reads only the draft
+and starts a fresh Opus session from it. Create a `plan`-labelled issue automatically once work is
+explicitly multi-phase or an audit expected to span sessions; when resuming cold, look for an
+in-progress plan on the objective (`todo_list` / `todo_context`, `label=plan`) and ask which to
+resume. Check `sessioneer --usage` before long work; near 90% of the session or weekly quota, park
+the work, record the exact state in the plan and release claims.
+
 ## Planning
 
 Before delegating any implementation:

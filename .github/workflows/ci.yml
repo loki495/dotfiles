@@ -24,6 +24,8 @@ jobs:
         run: python3 tests/test_dibs_reconcile.py
       - name: Test the commit and push gate hooks
         run: python3 tests/test_commit_push_gates.py
+      - name: Test the rule export and the rule-inject hook
+        run: python3 tests/test_rules_export.py && python3 tests/test_rule_inject_hook.py
 
   test-install:
     runs-on: ubuntu-latest

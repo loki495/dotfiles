@@ -55,6 +55,10 @@ If Dibs is unreachable it writes nothing and exits 2.
 It does not launch repair workers. Closed tasks outside plans are not checked (the CLI lists open
 tasks only).
 
+After the checks (not on `--dry-run`) it also runs the rules export below with `--commit` semantics:
+`ai/rules.md` and the private file are rewritten when the rule records changed and committed (just
+those paths, never pushed).
+
 Tests: `python3 -I tests/test_dibs_reconcile.py` (fixture git repo, fake Dibs: violation present,
 second run, violation cleared, dry run, Dibs unreachable).
 
@@ -71,3 +75,21 @@ included), total tokens, tokens per session, cache-read share, the share of turn
 was over `--ctx-limit` (the context-budget target), a change-vs-previous-week column on the weekly table, and a bar scaled to the busiest bucket.
 
 Tests: `python3 -I tests/test_token_usage.py`.
+
+## rules-export.py
+
+Exports the open Dibs issues labelled `rule` to files agents read: `ai/rules.md` (public) and
+`~/.dotfiles-private/ai/rules.private.md` (records also labelled `private`; never in the public
+file). Each rule is a `## <id>@<revision> <title>` heading and its text (the record body up to the
+first `Trigger:`/`Check:`/`Applies to:`/`Source:`/`Merged candidates:` line). Ordered by id, so the
+output is stable and a file is rewritten only when it changed.
+
+```bash
+python3 ~/dotfiles/ai/scripts/rules-export.py [--public PATH] [--private PATH] [--commit]
+```
+
+`--commit` commits just the changed paths in their own repo; it never pushes. The reconciler runs it
+hourly. Exit 2 and nothing written when Dibs is unreachable. The `rule-inject` hook and the other
+agents read these files, never Dibs.
+
+Tests: `python3 -I tests/test_rules_export.py`.

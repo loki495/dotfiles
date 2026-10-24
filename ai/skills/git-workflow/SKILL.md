@@ -33,6 +33,17 @@ Branches:
   owns: on a shared repo, each teammate may have their own. Never push it to the shared remote,
   and never assume a `local` branch (local or on origin) belongs to you or should be pulled/merged.
 
+## Commit cadence
+
+Commit after each discrete task, or group a few tightly related items into one themed commit
+(several small fixes to the same UI element, closely related CSS, purely visual polish); do not
+batch to the end of a session and do not let finished, verified work sit uncommitted while
+unrelated work piles up on it. Each commit is then reviewable, bisectable and revertable on its
+own, and a later failure does not cost the last clean checkpoint. This is cadence once committing
+is underway; it does not decide whether to commit unprompted in the first place. Keep commits
+feature-scoped: separate commits for distinct features or fixes. Never add a `Claude-Session:`
+trailer (`Co-Authored-By: Claude ...` stays).
+
 ## Cherry-picking to production (repos with a `local` branch)
 
 Use `/cherry-pick-to` for the standard cherry-pick flow. The intent behind it:

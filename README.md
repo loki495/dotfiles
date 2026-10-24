@@ -257,6 +257,8 @@ to run on the host:
 ```bash
 python3 tests/test_backup_tools.py
 python3 tests/test_dibs_measure.py
+python3 tests/test_rules_export.py
+python3 tests/test_rule_inject_hook.py
 ```
 
 The full install/highlighting suite below also requires a throwaway container:
@@ -417,9 +419,12 @@ One shared config tree, linked into each agent's own expected location by
 `scripts/install/50-ai-tools.sh` — so a skill or hook is written once rather
 than per tool.
 
-- `RULES.md` — the one shared rule set for every agent: collaboration through Dibs and
-  Sessioneer, git workflow, tooling policy, machine layout. `CLAUDE.md` is the Claude Code
-  entrypoint (imports `RULES.md`, adds hooks and context-window notes). `AGENTS.md` is the
+- `RULES.md` — the one shared rule set for every agent, kept to principles, the hard rules and
+  pointers (about 2k tokens). The detailed rules are Dibs `rule` records exported by
+  `scripts/rules-export.py` to `rules.md` (public) and `~/.dotfiles-private/ai/rules.private.md`
+  (private); the `rule-inject` hook delivers the relevant ones at the moment they apply, other agents
+  read the exports (see "Hooks" below). `CLAUDE.md` is the Claude Code
+  entrypoint (imports `RULES.md`, adds the context-window note). `AGENTS.md` is the
   vendor-neutral entrypoint, linked to `~/AGENTS.md` and read natively by Codex and
   Antigravity's `agy`; opencode lists `~/.claude/RULES.md` in its `instructions`.
   `RTK.md` documents the `rtk` token-saving CLI proxy hook.
@@ -435,15 +440,14 @@ than per tool.
 - `agents/` — `code-reviewer`, `git-helper`, `legacy-auditor`, `test-writer`,
   and the four `feature-atlas-*` roles (scout, mapper, auditor, synthesizer)
   those commands drive.
-- `hooks/` — Pint/PHPStan/Rector/Pest automation on write
-  (`laravel-post-write.sh`) and pre-commit (`laravel-pre-commit.sh`), plus
-  `push-guard.sh`, which forces a permission prompt for every `git push`.
+- `hooks/` — Claude Code hooks, listed under "Hooks" below.
 - `ponytail/` — ponytail plugin config (default `lite` mode), linked to
   `~/.config/ponytail/`.
 - `lessons/` — an accumulated store of findings carried between sessions.
 - `scripts/` — helper scripts, run by hand, not linked anywhere. `dibs-measure.py` is the repeatable
   workflow measurement (atlas drift, push-vs-atlas, dead claims); `dibs-reconcile.py` is the hourly
-  invariant check that keeps a standing findings issue in Dibs; see `ai/scripts/README.md`.
+  invariant check that keeps a standing findings issue in Dibs and refreshes the rule export;
+  `rules-export.py` writes the rule records to `rules.md`; see `ai/scripts/README.md`.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout).
   `settings.local.json.example` is a copyable template for personal hooks (it assumes
@@ -467,6 +471,51 @@ to sessions run inside this checkout, not part of the linked `ai/` tree.
 
 `.ai/` (distinct from `ai/`) holds this repo's own working notes — `lessons/` for what
 past initiatives turned up.
+
+#### Hooks
+
+All projects:
+- **Push guard** (`hooks/push-guard.sh`, PreToolUse on Bash): any command containing `git push`
+  (including `rtk git push` and chained commands) forces a permission prompt showing the exact
+  command, whatever the permission mode or allow rules. In a repo with a feature atlas it first
+  denies the push when a subsystem's owned files changed since that subsystem's `Verified at` (or
+  its stamp is no longer on the branch), naming the subsystems; Dibs unreachable skips only that
+  check (`hooks/atlas-helper.py`, atlas cached 5 min).
+- **Commit gate** (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message
+  that says docs were updated (a `Docs: updated` line, or prose such as "README updated") when no
+  documentation file (`.md`, `.rst`, `docs/`) is in the commit (a test file does not count);
+  otherwise it only adds context: a code-only commit without docs/tests (add them or say
+  `Docs: n/a (reason)`) and the atlas subsystems the commit touches (update and stamp them after
+  committing). Commit messages never mention Dibs or the atlas.
+- **Claim overlap** (`hooks/claim-overlap.sh`, PreToolUse on Edit/Write/MultiEdit/NotebookEdit): asks
+  Dibs (`todo:agent:claims`, via `docker exec dibs-app`) whether the file lies inside the claimed
+  `paths` of another live claim and, if so, adds a warning; never blocks, and says so when Dibs is
+  unreachable. Claims list their paths through `todo_claim`'s `paths`.
+- **Stop gate** (`hooks/stop-gate.sh`, Stop): blocks ending the session while it still holds a live
+  Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
+  Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
+  `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;
+  `DIBS_STOP_GATE=off` skips it; Dibs unreachable allows with a warning. Subagent stops are not gated.
+- **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default 250k,
+  `CLAUDE_CTX_BUDGET`) it warns and tells Claude to offer `/handoff` + `/clear`; after an idle gap
+  (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over `CLAUDE_CTX_IDLE_FLOOR` (default 100k) it
+  blocks the prompt once; re-send to continue. Slash commands always pass through.
+- **Rule inject** (`hooks/rule-inject.py`; PreToolUse on Bash, file edits, Agent and the Dibs
+  create/complete/release tools; PostToolUse on `todo_claim`; SessionStart; UserPromptSubmit): reads the
+  rule exports (`ai/rules.md`, `~/.dotfiles-private/ai/rules.private.md`, `RULE_FILES` overrides) and
+  injects only the rules an event is about, e.g. `git commit` (docs and tests with the change, no Dibs
+  references, no session trailer), `git push`, test files, `*.md` and `CLAUDE.md` edits, subagent
+  launches, `todo_create`, a `[sessioneer peer:` prompt. Each rule goes in once per context lifetime by
+  id and revision (delivered set under `$XDG_RUNTIME_DIR/dibs-rules/`, `RULE_STATE_DIR` overrides; one
+  set per subagent). The first `git commit` and `git push` are denied with their rules; the re-run
+  proceeds. A `todo_claim` response that carries rule texts marks them delivered, and SessionStart
+  after compact/clear/resume empties the set and reminds Claude to pass `contextReset: true`. It is silent
+  and exits 0 whenever the exports are missing or the input is malformed.
+
+Laravel projects: on PHP file write Pint (auto-fix) then PHPStan level 6 (report only);
+pre-commit Pint (auto-fix, re-stage), PHPStan level 6 (blocks), Rector dry-run (blocks, shows the diff,
+never auto-applies), Pest (blocks). OpenCart projects: no automatic hooks; opt in through the
+project's own `.claude/project.md`.
 
 ### Traefik (`traefik/`)
 

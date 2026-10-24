@@ -306,6 +306,15 @@
             "command": "$HOME/.claude/hooks/laravel-post-write.sh"
           }
         ]
+      },
+      {
+        "matcher": "mcp__dibs__todo_claim",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rule-inject.py"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -388,6 +397,15 @@
             "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/pre_tool_use.php"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rule-inject.py"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -397,6 +415,15 @@
           {
             "type": "command",
             "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/session_start.php"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rule-inject.py"
           }
         ]
       }
@@ -428,6 +455,15 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/context-budget.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rule-inject.py"
           }
         ]
       }

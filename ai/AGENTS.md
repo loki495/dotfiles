@@ -3,37 +3,20 @@
 This is the entrypoint for Codex, agy and any other agent that reads `AGENTS.md`. Claude Code
 reads `ai/CLAUDE.md`, which imports the same rules.
 
-Before substantive project work, read `~/dotfiles/ai/RULES.md` completely. It is the single
-rule set shared by every agent. Also read `~/dotfiles/ai/CLAUDE.private.md` when it exists
-(home-network notes). Translate product-specific terminology as follows:
+Before substantive project work, read these completely, in order:
+
+1. `~/dotfiles/ai/RULES.md`, the single rule set shared by every agent (principles, hard rules, pointers).
+2. `~/dotfiles/ai/rules.md`, the detailed rules exported from the Dibs `rule` records (`[rule N]` in
+   `RULES.md` is a record id), and `~/.dotfiles-private/ai/rules.private.md` when it exists. Claude
+   Code gets the relevant ones injected by a hook; you have no such hook, so read both files and
+   re-check the rules for a `git commit`, `git push`, test or doc edit before doing it.
+3. `~/dotfiles/ai/CLAUDE.private.md` when it exists (home-network notes).
+
+Do not copy rule text into other files; link to the record id. Translate product-specific
+terminology as follows:
 
 - `CLAUDE.md` or `.claude/project.md` means the corresponding project instructions or notes; prefer a local `AGENTS.md` when one exists.
 - A named Claude skill, command, or agent maps to the matching skill in your tool (Codex: `~/.codex/skills/claude-import-*`).
 - Claude hooks describe desired quality gates, but they do not authorize writes, pushes, production access, or other external actions.
 - Claude-only UI, notification, context-window, and OpenCode restart instructions do not apply to other agents.
-
-The following rules are duplicated here because they are non-negotiable:
-
-- Collaboration runs through Dibs and Sessioneer: claim every Dibs task before working
-  (`agentName` = `<agent>:<session name>:<conversation id>`), keep plans current the moment a
-  step finishes or blocks, save lessons to Dibs, use `sessioneer --send/--peers` for short-lived
-  coordination, release claims before you stop, and check `sessioneer --usage` so a quota
-  cutoff never leaves a stale plan.
-- Docs, tests and the feature atlas go in the same commit as the code; stamp the atlas with
-  the master/main SHA when work merges there, before any push.
-- Delete temporary branches (local and remote) after a successful merge.
-- Lists written with "etc.", "or any other thing" and the like are inclusive, not exhaustive:
-  apply the intent to anything of the same kind.
-- A site "loads" only when the page body has real content and no errors or exceptions; a 200
-  status alone proves nothing. Follow redirects and read where they lead.
-- Keep a live site loading: when editing a checkout that is serving a site (a bind-mounted
-  container, or master/main of a deployed project), put what the new code expects (env values,
-  config, migrations, dependencies, built assets, file permissions, container changes, and anything similar) in place first, then the
-  code, then verify the real routes load. If no safe order exists, use a separate git worktree.
-- Never push without first stating the exact remote and branch and receiving explicit confirmation.
-- Never force-push or rewrite a commit already pushed to a shared remote without explicit confirmation.
-- Never delete, weaken, skip, or bypass a test merely to force a passing result without explicit confirmation.
-- Never perform a real-world-visible action such as sending email/SMS, charging a card, calling a third-party write endpoint, or triggering a user-visible notification without confirmation.
-- Detect the project type and inspect its actual branch/worktree/container layout before applying project-family conventions.
 - Preserve project notes under `.claude/`; they remain durable project context even though the directory name originated with Claude.
-- When a discovered bug, improvement, or investigation would distract from the current task or take substantial time, search Dibs and create or update a follow-up task with evidence and a next step before continuing. Keep unconfirmed findings explicit; do not silently expand the current task.

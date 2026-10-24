@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Mechanical Dibs invariant check (no model session). Never pushes, never leaves the host.
 
+Also refreshes the rule export (ai/rules.md and the private file; committed, never pushed).
 Checks: atlas Verified at vs branch tip, dead-owner claims, plans whose Status misses a closed
 step, closed plan steps without a commit. Findings go into ONE standing issue (body rewritten
 only when it changed); an atlas violation also gets one task under it, keyed by an idempotency
@@ -20,6 +21,9 @@ _here = os.path.dirname(os.path.abspath(__file__))
 _loader = importlib.machinery.SourceFileLoader("dibs_measure", os.path.join(_here, "dibs-measure.py"))
 M = importlib.util.module_from_spec(importlib.util.spec_from_loader("dibs_measure", _loader))
 _loader.exec_module(M)
+_xl = importlib.machinery.SourceFileLoader("rules_export", os.path.join(_here, "rules-export.py"))
+RULES_EXPORT = importlib.util.module_from_spec(importlib.util.spec_from_loader("rules_export", _xl))
+_xl.exec_module(RULES_EXPORT)
 
 STANDING_TITLE = "Reconciler findings"
 LABEL = "reconciler"
@@ -155,6 +159,9 @@ def main():
     a = ap.parse_args()
     try:
         reconcile(a.dry_run, a.behind_task, a.max_tasks)
+        if not a.dry_run:
+            for p in RULES_EXPORT.export(do_commit=True):
+                print(f"rules export updated {p}")
     except (RuntimeError, ValueError, OSError, KeyError) as e:
         print(f"Dibs unreachable or unreadable, nothing written: {e}", file=sys.stderr)
         return 2
