@@ -379,6 +379,7 @@ parent issue, the way a human would, never a catch-all bucket. **Ask if genuinel
 unsure about any of them.** A project gets a lightweight parent issue (repo path, stack,
 purpose) when its first item is filed, not speculatively. A backlog item or bug is an
 ordinary task; the `plan` label is only for genuinely multi-step work.
+Priority runs 1 (highest) to 5 (lowest); leave it unset when there is no reason to rank it.
 
 **`Todo:` / `add to Todo:` / `next:` / "after X, do Y"** are backlog notes: file them
 and keep working the current item. Implement right away only when told to ("do this
