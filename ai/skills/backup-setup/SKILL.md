@@ -86,6 +86,19 @@ Insights docker volume) need sudo there and are a documented manual step in the
 private repo's `backup/README.md`. If the key changes, compare the fingerprint
 before refreshing `known_hosts` on the backups machine.
 
+## VPS-hosted site (pull, nightly)
+
+One Laravel site runs on its own VPS, not the cPanel server (host and site
+names are in the private repo's `backup/README.md`). Its own cron
+(`rpc-backup.sh`, 03:15 UTC) dumps the database and tars `storage/app` into
+`/bulk/backups` there (7 kept). The backups laptop copies those files into
+its folder under `~/backups/` at 04:15 under `flock` (a script in the
+private repo's `backup/`, 30 days kept, log in `~/backups/logs/`). It uses a
+laptop-only key (not the `id_rsa` the laptop shares with the main machine,
+which would then hit the same forced command) that the server locks to
+`rrsync -ro /bulk/backups`, so it can read that folder and nothing else.
+Its large game media and download folders are not backed up.
+
 ## Older per-site scripts (`backup.conf`)
 
 `~/dotfiles/backup-tools/` (`mysqlbk`, `pull`, `full-backup`, `check-backup`)
