@@ -1,6 +1,7 @@
 """ai/scripts/rules-export.py: public/private split, stable output, git commit of just the export."""
 import importlib.machinery
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -78,7 +79,9 @@ class ExportTest(unittest.TestCase):
         g('init', '-q')
         (repo / 'other.txt').write_text('x')
         g('add', 'other.txt')
-        self.run_export(do_commit=True)
+        ident = {'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t', 'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t'}
+        with unittest.mock.patch.dict(os.environ, ident):
+            self.run_export(do_commit=True)
         self.assertEqual(g('show', '--name-only', '--format=%s', 'HEAD').split(), ['Rules', 'export:', 'refresh', 'from', 'the', 'rule', 'records', 'rules.md'])
         self.assertIn('A  other.txt', g('status', '--short'))
 
