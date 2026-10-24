@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install test shells
-        run: apt-get update -qq && apt-get install -y -qq fish
+        run: apt-get update -qq && apt-get install -y -qq fish jq
       - name: Test installer failures and data preservation offline
         env:
           DOTFILES_TEST_CONTAINER: "1"
