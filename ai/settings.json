@@ -337,6 +337,15 @@
             "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/stop.php"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/stop-gate.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [

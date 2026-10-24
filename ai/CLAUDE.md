@@ -36,6 +36,12 @@ full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine
   asks Dibs (`todo:agent:claims`, via `docker exec dibs-app`) whether the file lies inside the
   claimed `paths` of another live claim and, if so, adds a warning to the context; never blocks,
   and says so when Dibs is unreachable. Claims list their paths through `todo_claim`'s `paths`.
+- Stop gate (`hooks/stop-gate.sh`, Stop): blocks ending the session while it still holds a live
+  Dibs claim (`todo:agent:claims --held-by=<session id>`, via `docker exec dibs-app`), telling
+  Claude to complete or release it. Blocks at most twice per session (`STOP_GATE_CAP`, counter
+  in a private `dibs-stop-gate/` dir under `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;
+  `DIBS_STOP_GATE=off` in the environment skips it; Dibs unreachable allows with a warning.
+  Subagent stops are not gated; a user interrupt or API error never reaches a Stop hook.
 - Context budget (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default
   250k, `CLAUDE_CTX_BUDGET`) it shows a warning and tells Claude to offer `/handoff` +
   `/clear`; after an idle gap (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over
