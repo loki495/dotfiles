@@ -346,6 +346,10 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/push-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/commit-gate.sh"
           }
         ]
       },

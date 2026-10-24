@@ -23,7 +23,15 @@ full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine
 **All projects:**
 - Push guard (`hooks/push-guard.sh`, PreToolUse on Bash): any command containing
   `git push` (including `rtk git push` and chained commands) forces a permission prompt
-  showing the exact command, whatever the permission mode or allow rules.
+  showing the exact command, whatever the permission mode or allow rules. In a repo with a
+  feature atlas it first denies the push when a subsystem's owned files changed since that
+  subsystem's `Verified at` (or its stamp is no longer on the branch), naming the subsystems;
+  Dibs unreachable skips only that check (`hooks/atlas-helper.py`, atlas cached 5 min).
+- Commit gate (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message
+  that says `Docs: updated` when no doc or test file is in the commit; otherwise it only adds
+  context: a code-only commit without docs/tests (add them or say `Docs: n/a (reason)`) and the
+  atlas subsystems the commit touches (update and stamp them after committing). Commit messages
+  never mention Dibs or the atlas.
 - Claim overlap (`hooks/claim-overlap.sh`, PreToolUse on Edit/Write/MultiEdit/NotebookEdit):
   asks Dibs (`todo:agent:claims`, via `docker exec dibs-app`) whether the file lies inside the
   claimed `paths` of another live claim and, if so, adds a warning to the context; never blocks,

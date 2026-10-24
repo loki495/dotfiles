@@ -125,6 +125,12 @@ atlas's branch) with the atlas's Verified at and refresh if GitHub is ahead. The
 its branch (default: `main`/`master`). Details: the `feature-atlas` command's "Where the atlas
 lives".
 
+Two hooks back this up in Claude Code: the commit gate reminds you of the atlas subsystems a
+commit touches and refuses a false `Docs: updated` line, and the push guard denies a push while
+a subsystem's owned files changed since its `Verified at`. Fix a denied push by refreshing and
+re-stamping those subsystems, not by retrying. Other agents get no hook; the reconciler reports
+the same drift.
+
 ## After a merge: delete the temporary branch, locally and on the remote
 
 For any merge from a temporary branch (a PR, or a worktree branch merged locally), once it has
