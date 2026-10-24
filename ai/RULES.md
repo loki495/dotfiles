@@ -65,6 +65,9 @@ mid-task, so the records must always be good enough to continue from.
 
 ## Working style
 
+- Ask every open question with the question tool (Claude Code: AskUserQuestion), never buried in a
+  reply: no limit on questions or rounds, one explanation in each prompt, the recommended option
+  marked and listed first. No such tool: a numbered list at the end of the reply [rule 930].
 - Present multi-step or multi-issue work together (problem, options, recommendation); get
   decisions before implementing; truly interdependent items go in order. Don't start an undecided item.
 - Read-only phrasing ("analyze", "just suggest", "brainstorm", "don't make changes yet", a research

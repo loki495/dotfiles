@@ -23,7 +23,7 @@ Do these now even if they "should already be done"; report in one line what was 
 
 ## 3. Ask before assuming
 
-Collect every question that stops the next step from being done without assumptions: leftovers from this session (undecided items, unconfirmed behaviour, anything uncommitted that is not clearly yours) and anything the next step's work order leaves open (read it with `todo_next` / `todo_show` first, without claiming). Ask them all at once, as many as there are, and repeat rounds until nothing is left to assume. Do not continue or launch until the answers are in.
+Collect every question that stops the next step from being done without assumptions: leftovers from this session (undecided items, unconfirmed behaviour, anything uncommitted that is not clearly yours) and anything the next step's work order leaves open (read it with `todo_next` / `todo_show` first, without claiming). Ask them all at once with the question tool (AskUserQuestion; one explanation per question, the recommended answer marked), as many as there are, and repeat rounds until nothing is left to assume. Do not continue or launch until the answers are in.
 
 ## 4. Decide where the next step runs
 
