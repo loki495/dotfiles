@@ -57,3 +57,17 @@ tasks only).
 
 Tests: `python3 -I tests/test_dibs_reconcile.py` (fixture git repo, fake Dibs: violation present,
 second run, violation cleared, dry run, Dibs unreachable).
+
+## token-usage.py
+
+Report-only token usage from Claude transcripts under `~/.claude/projects` (stdlib Python 3):
+
+```bash
+python3 ~/dotfiles/ai/scripts/token-usage.py [--days 28] [--ctx-limit 250000] [--projects-dir DIR]
+```
+
+Per day and per ISO week: sessions, API turns (deduped by message id, subagent transcripts
+included), total tokens, tokens per session, cache-read share, the share of turns whose context
+was over `--ctx-limit` (the context-budget target), a change-vs-previous-week column on the weekly table, and a bar scaled to the busiest bucket.
+
+Tests: `python3 -I tests/test_token_usage.py`.
