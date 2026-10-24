@@ -2,7 +2,8 @@
 # PreToolUse(Bash): checks at `git commit`.
 #  - deny a message that says "Docs: updated" when the commit touches no doc or test file
 #  - otherwise add context: code-only commit with no docs/tests, and atlas subsystems the commit touches
-# Silent when nothing applies. Dibs trouble only drops the atlas note. HELPER overrides the helper (tests).
+# A message claims docs were updated when it says so in a `Docs: updated` line or in prose (docs/documentation/README
+# near updated/updates). Silent when nothing applies. Dibs trouble only drops the atlas note. HELPER overrides the helper (tests).
 input=$(cat)
 cmd=$(jq -r '.tool_input.command // ""' <<<"$input")
 grep -Eq '(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+commit([[:space:]]|$)' <<<"$cmd" || exit 0
@@ -22,7 +23,8 @@ emit() { jq -n --arg d "$1" --arg r "$2" --arg c "$3" \
   'if $d=="deny" then {hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}
    else {hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$c}} end'; exit 0; }
 
-if [ "$has_docs" = 0 ] && grep -Eqi 'docs:[[:space:]]*updated' <<<"$cmd"; then
+claim='docs:[[:space:]]*updated|(docs?|documentation|readme)[^.[:space:]]*[[:space:]]+(\w+[[:space:]]+){0,2}updated|updated?[[:space:]]+(the[[:space:]]+)?(docs?|documentation|readme)'
+if [ "$has_docs" = 0 ] && ! grep -Eqi 'docs:[[:space:]]*n/a' <<<"$cmd" && grep -Eqi "$claim" <<<"$cmd"; then
   emit deny "The commit message says docs were updated, but no doc or test file is staged. Stage the docs/tests, or drop that line."
 fi
 

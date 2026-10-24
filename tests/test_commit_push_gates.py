@@ -68,6 +68,17 @@ class GateTests(unittest.TestCase):
         self.assertEqual(o['permissionDecision'], 'deny')
         self.assertIn('no doc or test file', o['permissionDecisionReason'])
 
+    def test_prose_docs_claim_without_doc_files_is_denied(self):
+        self.change('src/a.py')
+        for msg in ('Fix parser; README updated', 'Updated the docs for the parser', 'docs were updated'):
+            o = self.hook('commit-gate.sh', f'git commit -m "{msg}"')
+            self.assertEqual(o['permissionDecision'], 'deny', msg)
+
+    def test_unrelated_wording_is_not_a_docs_claim(self):
+        self.change('src/a.py')
+        o = self.hook('commit-gate.sh', 'git commit -m "Fix parser, updated lockfile"')
+        self.assertNotIn('permissionDecision', o)
+
     def test_true_docs_claim_passes_and_atlas_touch_is_noted(self):
         self.change('src/a.py'); self.change('README.md')
         o = self.hook('commit-gate.sh', 'git commit -m "x\n\nDocs: updated"')

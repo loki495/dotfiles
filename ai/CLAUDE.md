@@ -28,7 +28,7 @@ full cache rewrite); under ~50k tokens the rewrite is small and a switch is fine
   subsystem's `Verified at` (or its stamp is no longer on the branch), naming the subsystems;
   Dibs unreachable skips only that check (`hooks/atlas-helper.py`, atlas cached 5 min).
 - Commit gate (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message
-  that says `Docs: updated` when no doc or test file is in the commit; otherwise it only adds
+  that says docs were updated (a `Docs: updated` line, or prose such as "README updated") when no doc or test file is in the commit; otherwise it only adds
   context: a code-only commit without docs/tests (add them or say `Docs: n/a (reason)`) and the
   atlas subsystems the commit touches (update and stamp them after committing). Commit messages
   never mention Dibs or the atlas.
