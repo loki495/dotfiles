@@ -66,13 +66,19 @@ class GateTests(unittest.TestCase):
         self.change('src/a.py')
         o = self.hook('commit-gate.sh', 'git commit -m "x\n\nDocs: updated"')
         self.assertEqual(o['permissionDecision'], 'deny')
-        self.assertIn('no doc or test file', o['permissionDecisionReason'])
+        self.assertIn('no documentation file', o['permissionDecisionReason'])
 
     def test_prose_docs_claim_without_doc_files_is_denied(self):
         self.change('src/a.py')
         for msg in ('Fix parser; README updated', 'Updated the docs for the parser', 'docs were updated'):
             o = self.hook('commit-gate.sh', f'git commit -m "{msg}"')
             self.assertEqual(o['permissionDecision'], 'deny', msg)
+
+    def test_test_file_alone_does_not_back_a_docs_claim(self):
+        self.change('src/a.py'); self.change('tests/test_a.py')
+        o = self.hook('commit-gate.sh', 'git commit -m "Fix parser\n\nDocs: updated"')
+        self.assertEqual(o['permissionDecision'], 'deny')
+        self.assertIn('no documentation file', o['permissionDecisionReason'])
 
     def test_unrelated_wording_is_not_a_docs_claim(self):
         self.change('src/a.py')
