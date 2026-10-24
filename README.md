@@ -433,7 +433,8 @@ than per tool.
   pattern for multi-agent runs.
 - `commands/` — `cherry-pick-to`, `commits`, `dibs`, `job-search-audit`, `project-bootstrap`, `ship`
   (commit and ship using each repo's own flow), `handoff` (current-state hand-off
-  for a fresh session), and the three-command `feature-atlas` toolchain (full
+  for a fresh session), `next` (checks context and quota, cleans up, asks every open question, then
+  continues the plan here or launches a Sonnet/Opus continuation in the right account profile), and the three-command `feature-atlas` toolchain (full
   scan, single subsystem, audit report), which keeps each project's feature
   inventory as a Dibs issue plus one comment per subsystem (`.ai/feature-atlas/`
   files when Dibs is unreachable).
