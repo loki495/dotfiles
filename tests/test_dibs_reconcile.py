@@ -108,6 +108,19 @@ class ReconcileTests(unittest.TestCase):
         cmds = [w[0] for w in fake.writes]
         self.assertEqual(cmds, ['todo:agent:update', 'todo:agent:claim', 'todo:agent:complete'])
 
+    def test_cap_keeps_violations_out_of_tasks_but_in_the_standing_issue(self):
+        fake = FakeDibs(self.atlas(self.first))
+        self.run_with(fake, max_tasks=0)
+        creates = [w for w in fake.writes if w[0] == 'todo:agent:create']
+        self.assertEqual(len(creates), 1)
+        self.assertIn('1 more violations not filed as tasks (cap 0)', creates[0][creates[0].index('--body') + 1])
+
+    def test_existing_task_keeps_its_slot_under_the_cap(self):
+        key = f'reconciler:atlas:T:{self.first[:9]}'
+        fake = FakeDibs(self.atlas(self.first), standing='old', children=[(60, f'Key: {key}\nx')])
+        self.run_with(fake, max_tasks=1)
+        self.assertEqual([w[0] for w in fake.writes], ['todo:agent:update'])
+
     def test_dry_run_writes_nothing(self):
         fake = FakeDibs(self.atlas(self.first))
         self.run_with(fake, dry_run=True)

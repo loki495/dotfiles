@@ -49,7 +49,7 @@ Output: one standing issue `Reconciler findings` (Personal Projects, group `AI w
 label `reconciler`), whose body is rewritten only when the findings changed. An unverifiable atlas
 stamp, or an atlas at least `RECONCILER_BEHIND_TASK` (default 3) commits behind, also gets one
 child task with a `Key:` line and idempotency key `reconciler:atlas:<name>:<stamp>`; the task is
-closed when the stamp is current or changed. `--dry-run` prints the findings and writes nothing.
+closed when the stamp is current or changed. At most `RECONCILER_MAX_TASKS` (default 10, `--max-tasks`) violation tasks are open at once; an existing task keeps its slot, and violations past the cap are only listed in the standing issue ("N more violations not filed as tasks"), which bounds the damage of a bad read (for example every atlas looking unverifiable). `--dry-run` prints the findings and writes nothing.
 If Dibs is unreachable it writes nothing and exits 2.
 
 It does not launch repair workers. Closed tasks outside plans are not checked (the CLI lists open
