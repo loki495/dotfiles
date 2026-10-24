@@ -64,3 +64,4 @@ git/.git-completion.bash
 # The Jacker AI bridge unit belongs to the jacker repo, which links it in.
 /.config/systemd/user/jacker-ai-bridge.service
 /.config/systemd/user/*.wants/jacker-ai-bridge.service
+__pycache__/

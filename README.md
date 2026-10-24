@@ -256,6 +256,7 @@ to run on the host:
 
 ```bash
 python3 tests/test_backup_tools.py
+python3 tests/test_dibs_measure.py
 ```
 
 The full install/highlighting suite below also requires a throwaway container:
@@ -439,6 +440,8 @@ than per tool.
 - `ponytail/` — ponytail plugin config (default `lite` mode), linked to
   `~/.config/ponytail/`.
 - `lessons/` — an accumulated store of findings carried between sessions.
+- `scripts/` — helper scripts, run by hand, not linked anywhere. `dibs-measure.py` is the repeatable
+  workflow measurement (atlas drift, push-vs-atlas, dead claims); see `ai/scripts/README.md`.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout).
   `settings.local.json.example` is a copyable template for personal hooks (it assumes
