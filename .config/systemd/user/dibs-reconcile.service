@@ -1,0 +1,6 @@
+[Unit]
+Description=Check Dibs invariants (atlas stamps, dead claims, plan status) and update the standing findings issue
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/dotfiles/ai/scripts/dibs-reconcile.py

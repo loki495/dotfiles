@@ -61,9 +61,9 @@ def parse_atlas(body):
 def atlas_drift(title, body):
     repo, branch, sha = parse_atlas(body)
     row = {"atlas": re.sub(r"^Feature atlas:\s*", "", title), "stamp": (sha or "-")[:9],
-           "status": "", "behind": "-", "files": "-"}
+           "status": "", "behind": "-", "files": "-", "problem": None, "max_behind": 0}
     if not repo or not sha or not os.path.isdir(repo):
-        row["status"] = "no repo/stamp"
+        row["status"], row["problem"] = "no repo/stamp", "unverifiable"
         return row
     if not branch:
         _, branch = git(repo, "symbolic-ref", "--short", "HEAD")
@@ -72,10 +72,10 @@ def atlas_drift(title, body):
             for ref in (branch, "origin/" + branch)]
     tips = [(r, o[1]) for r, o in tips if o[0] == 0]
     if not tips:
-        row["status"] = f"branch {branch} missing"
+        row["status"], row["problem"] = f"branch {branch} missing", "unverifiable"
         return row
     if git(repo, "cat-file", "-e", sha + "^{commit}")[0] != 0:
-        row["status"] = "stamp unknown to repo"
+        row["status"], row["problem"] = "stamp unknown to repo", "unverifiable"
         return row
     parts = []
     for ref, tip in tips:
@@ -83,11 +83,15 @@ def atlas_drift(title, body):
             parts.append(f"{ref}: stamp NOT on branch")
             continue
         behind = git(repo, "rev-list", "--count", f"{sha}..{tip}")[1]
+        row["max_behind"] = max(row["max_behind"], int(behind))
         files = len(git(repo, "diff", "--name-only", sha, tip)[1].splitlines())
         parts.append(f"{ref}: {behind} behind, {files} files")
         if ref == branch:
             row["behind"], row["files"] = behind, files
     row["status"] = "; ".join(parts)
+    # A stale local ref next to a good origin/ ref is not a rewrite: only flag when no tip has the stamp.
+    if all("NOT on branch" in x for x in parts):
+        row["problem"] = "unverifiable"
     return row
 
 

@@ -306,7 +306,8 @@ setup has been removed (see "Removed" below).
   `cloudcli` (Claude Code UI) unit, the codex remote-control check and
   `claude-changelog-review.timer` (Wed and Sat 12:00, `Persistent=true`), which starts a
   Sessioneer session from `ai/scheduled/changelog-review.md` to review the Claude Code
-  changelog and file Sessioneer follow-ups in Dibs. The units
+  changelog and file Sessioneer follow-ups in Dibs, and `dibs-reconcile.timer` (hourly), which runs
+  `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). The units
   Sessioneer generates (its socket-activated host agent, the push-check and
   quota timers, the Codex, OpenCode-events and Claude headless services, and
   `opencode-serve.service`) carry one machine's absolute paths, so they are not
@@ -441,7 +442,8 @@ than per tool.
   `~/.config/ponytail/`.
 - `lessons/` — an accumulated store of findings carried between sessions.
 - `scripts/` — helper scripts, run by hand, not linked anywhere. `dibs-measure.py` is the repeatable
-  workflow measurement (atlas drift, push-vs-atlas, dead claims); see `ai/scripts/README.md`.
+  workflow measurement (atlas drift, push-vs-atlas, dead claims); `dibs-reconcile.py` is the hourly
+  invariant check that keeps a standing findings issue in Dibs; see `ai/scripts/README.md`.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout).
   `settings.local.json.example` is a copyable template for personal hooks (it assumes

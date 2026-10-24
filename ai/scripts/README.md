@@ -31,3 +31,29 @@ it can. For offline runs and tests, `--atlas-json` / `--claims-json` take saved 
 `--projects-dir` points at other transcripts, `--skip-dibs` skips Dibs.
 
 Tests: `python3 tests/test_dibs_measure.py` (fixture transcripts, a throwaway git repo).
+
+## dibs-reconcile.py
+
+Mechanical invariant check, run hourly by `dibs-reconcile.timer` (no model session; never pushes
+and never leaves the host). It lives in dotfiles, not Sessioneer, because it is a Dibs/git
+hygiene job that must work whichever agent ran last and needs only git, docker and the Dibs CLI.
+Reuses `dibs-measure.py` for atlas drift and dead claims.
+
+Checks: atlas `Verified at` vs the branch tip (the freshest of the local and `origin/` refs, so a
+stale local ref is not a rewrite; a stamp no tip has is `unverifiable`), claims whose owner is
+dead, plans whose body never mentions a closed step (`S<n>` or `#id`), and closed plan steps whose
+closing note has no commit SHA (only steps closed since `RECONCILER_SINCE`, default `2026-10-24`,
+when the completion guards landed).
+
+Output: one standing issue `Reconciler findings` (Personal Projects, group `AI workflows`,
+label `reconciler`), whose body is rewritten only when the findings changed. An unverifiable atlas
+stamp, or an atlas at least `RECONCILER_BEHIND_TASK` (default 3) commits behind, also gets one
+child task with a `Key:` line and idempotency key `reconciler:atlas:<name>:<stamp>`; the task is
+closed when the stamp is current or changed. `--dry-run` prints the findings and writes nothing.
+If Dibs is unreachable it writes nothing and exits 2.
+
+It does not launch repair workers. Closed tasks outside plans are not checked (the CLI lists open
+tasks only).
+
+Tests: `python3 -I tests/test_dibs_reconcile.py` (fixture git repo, fake Dibs: violation present,
+second run, violation cleared, dry run, Dibs unreachable).
