@@ -81,7 +81,9 @@ mid-task, so the records must always be good enough to continue from.
   or ask, never go around it with direct DB/ORM writes. Report broken Dibs tooling with
   `todo_report_bug`.
 - Name the agent type and model of any subagent or worker before launching it, cheapest capable one
-  [rule 746]; delegation cost gates in [rule 926].
+  [rule 746]; delegation cost gates in [rule 926]. Pick agent, model and reasoning effort by work
+  type from the tier table (mechanical, balanced, advanced, frontier; frontier only with Andres's
+  approval) [rule 1067]; skill `orchestrator-worker`, "Model routing by work type".
 - Offer a hand-off prompt for multi-session work only when context is getting full or a fresh
   session is genuinely needed. Prefer `sessioneer` continuation sessions (skill
   `orchestrator-worker`, "Continuation sessions") with `--model sonnet --mode auto`.

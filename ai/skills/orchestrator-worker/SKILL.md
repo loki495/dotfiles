@@ -737,6 +737,35 @@ and that justification as a `todo_comment` on the plan issue. Don't assume a mod
 from its name; verify with the tool's own model listing before launching
 (`opencode models`, `codex debug` / `-c model=...` docs, `agy models`, etc.).
 
+### Model routing by work type
+
+The canonical table for picking agent, model and reasoning effort; general sessions, workers
+and `sessioneer --agent/--model` all use it. Pick the tier from the work, then the first column
+that has quota and the model installed. Effort is named even where a tool has no flag yet
+(`sessioneer` has no `--effort`; until it does, set it via the agent's own setting or say it in
+the prompt). Temperature is left at each tool's default.
+
+| Tier | Work | Claude Code | Codex | opencode | agy |
+|---|---|---|---|---|---|
+| mechanical | read/search, renames, formatting, running lint/tests, bulk edits with a clear spec | `haiku` (claude-haiku-5-5), effort low | `gpt-6-luna`, low | `opencode-go/claude-haiku-5-5`, else a `*-free` model | `gemini-3.8-flash-low` |
+| balanced | the default: implementing a decided plan step, diff review, docs, discussion | `sonnet` (claude-sonnet-5-5), effort medium | `gpt-6.1-terra`, medium | `openai/gpt-6.1-terra`, medium | `gemini-3.8-flash-high` |
+| advanced | planning, architecture, audit design, subtle debugging, multi-file refactors with design choices | `opus` (claude-opus-5-5), effort high | `gpt-6.1-sol`, high | `openai/gpt-6.1-sol`, high | `claude-opus-4-6-thinking` |
+| frontier | the hardest problems only: races, security-critical design, a stuck advanced attempt | `claude-fable-5-1`, effort max | `gpt-6-astra`, max | none; use Codex | none; use Codex or Claude |
+
+- **Fallback order**: same tier in the next column above whose agent has quota (see Quota awareness) and the
+  model installed; the Claude Code column is also where an orchestrator already runs, so prefer
+  it over a cold cross-tool launch when the price is similar. If no column fits, move *up* one
+  tier, never down for advanced or frontier work; mechanical and balanced work may drop to a
+  `*-free` opencode model.
+- **Frontier needs Andres's approval first**, plus a `sessioneer --usage` check. Advanced is the
+  ceiling for an autonomous choice. Start a tier at the lowest listed effort that holds; raise it
+  (low, medium, high, xhigh, max) before raising the tier when the model is right but sloppy.
+- **Verify before launching**: model names and the luna < terra < sol ordering come from each
+  tool's own listing (`codex debug models`, `opencode models`, `agy models`) as of 2026-10-26;
+  re-check when a listing changes and edit this table, not the rule that points here.
+- State the tier, model, effort and reason as the worker launch reporting format requires and record them in the
+  plan comment.
+
 ### Cost gates and lightweight workers
 
 Decided 2026-10-07 from a 7-day transcript audit (the full numbers and the model-by-phase
