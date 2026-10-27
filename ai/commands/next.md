@@ -23,7 +23,7 @@ Do these now even if they "should already be done"; report in one line what was 
 
 ## 3. Ask before assuming
 
-Collect every question that stops the next step from being done without assumptions: leftovers from this session (undecided items, unconfirmed behaviour, anything uncommitted that is not clearly yours) and anything the next step's work order leaves open (read it with `todo_next` / `todo_show` first, without claiming). Ask them all at once with the question tool (AskUserQuestion; one explanation per question, the recommended answer marked), as many as there are, and repeat rounds until nothing is left to assume. Do not continue or launch until the answers are in.
+Collect every question that stops the next step from being done without assumptions: leftovers from this session (undecided items, unconfirmed behaviour, anything uncommitted that is not clearly yours) and anything the next step's work order leaves open (read it with `todo_next` / `todo_show` first, without claiming). Ask every one with the question tool (Claude: AskUserQuestion; Codex: its user-input tool, else a numbered list at the end of the reply), one explanation per question, the recommended answer marked. There is no limit on questions or rounds: if the tool caps a call, make several calls and keep going until nothing is left to assume. Do not continue or launch until the answers are in.
 
 ## 4. Decide where the next step runs
 
@@ -31,7 +31,7 @@ Collect every question that stops the next step from being done without assumpti
 - **Otherwise** launch a continuation. Choose:
   - **Profile:** the account the work belongs to: `work` for the Work area or a repo of the current job, else `personal`. Pass `--profile <name>` only when it differs from this shell's `CLAUDE_CONFIG_DIR`. If that profile's `session` is at 90% or more, do not launch: say when it resets and wait or ask Andres.
   - **Model:** the step's `tier` from the work order: Opus only if it says planning or judging, otherwise Sonnet. No tier: Sonnet, and say so.
-  - **Agent:** Claude through `sessioneer` (`--agent` only if Andres asks).
+  - **Agent:** the same agent as this session (Claude or Codex) through `sessioneer`; pass `--agent codex` from a Codex session (it takes no `--profile`, `--mode` other than `plan`/`full`, and only the effort levels its model lists). Another agent only if the tier list or Andres says so.
   - **Workdir:** the repo the step names (its `repos` field), else this one.
   - **Effort:** the tier's effort from the model-routing lists: `--effort medium` for Sonnet, `--effort high` for Opus.
   - **Mode:** `--mode auto`.
@@ -40,7 +40,7 @@ Collect every question that stops the next step from being done without assumpti
 ## 5. The prompt (as small as it can be while complete)
 
 - **Dibs plan:** a few lines, no handoff file:
-  `Call todo_next on plan <id>, claim the step it returns (agentName <claude>:<session name>:<conversation id>) and follow its work order. Before starting, ask Andres every question you have, in as many rounds as needed, and assume nothing. Answers already given: <only the decisions from step 3 the work order does not contain>.`
+  `Call todo_next on plan <id>, claim the step it returns (agentName <agent>:<session name>:<conversation id>) and follow its work order. Before starting, ask Andres every question you have, in as many rounds as needed, and assume nothing. Answers already given: <only the decisions from step 3 the work order does not contain>.`
 - **No Dibs plan** (small work): one self-contained prompt with the goal, the repo and branch, the decisions made, the files involved, the commands to run, what is out of scope and what to ask first. Everything the new session needs and nothing it can look up itself. Write a handoff (the `handoff` command) only if the state does not fit in the prompt.
 
 Launch: `sessioneer --workdir <dir> --model <m> --effort <level> --mode auto [--profile <p>] "<prompt>"`. Report the session name, profile, model and workdir, and what you asked or answered. Do not keep working on the same step here afterwards. Finish anything still left (answer a peer, record a last checkpoint), confirm no claim is held (`todo_claim_status`), and then say plainly, as the last line: **"Safe to archive this session."** If something is still open (a claim, an unanswered question, uncommitted work that is not yours), say instead what blocks archiving and do not print that line.
