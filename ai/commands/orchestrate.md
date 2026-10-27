@@ -27,7 +27,7 @@ Otherwise serialize. Say the graph and the first wave in a few lines before laun
 
 ## 4. Launch each worker
 
-Per task pick **agent, model, effort** from the tier table in the `orchestrator-worker` skill ("Model routing by work type"): the task's `tier` if set, else by work type. Highest-ranked entry that is installed, lists the model and has quota left in `sessioneer --usage` (re-read it before each wave; skip an agent or profile at 90% or more), regardless of which agent this session is. Frontier only with Andres's approval. Name agent, model, effort and reason before launching.
+Per task pick **agent, model, effort** using the tier table in the `orchestrator-worker` skill ("Model routing by work type"): the task's `tier` if set, else by work type. Judge each task on its own: the entry that fits the work best given each agent's remaining quota in `sessioneer --usage` (re-read it before each wave) and the models the whole wave asks for, so one agent isn't drained while another sits idle. The rank order is a preference, not a rule. Must be installed and list the model; skip an agent or profile at 90% or more; regardless of which agent this session is. Frontier only with Andres's approval. Name agent, model, effort and reason before launching.
 
 `sessioneer --workdir <repo or worktree> --agent <a> --model <m> --effort <e> --mode auto [--profile <p>] "<prompt>"`
 

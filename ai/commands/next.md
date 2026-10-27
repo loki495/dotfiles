@@ -31,7 +31,7 @@ Collect every question that stops the next step from being done without assumpti
 - **Otherwise** launch a continuation. Choose:
   - **Profile:** the account the work belongs to: `work` for the Work area or a repo of the current job, else `personal`. Pass `--profile <name>` only when it differs from this shell's `CLAUDE_CONFIG_DIR`. If that profile's `session` is at 90% or more, do not launch: say when it resets and wait or ask Andres.
   - **Model:** the step's `tier` from the work order, taken from the same list for the chosen agent (Opus-class only if it says planning or judging). No tier: balanced, and say so.
-  - **Agent:** whichever agent the tier list (`orchestrator-worker`, "Model routing by work type") ranks first among those with quota left in `sessioneer --usage`, whatever agent this session is; `--agent codex` for Codex (no `--profile`, `--mode` only `plan`/`full`, effort only a level its model lists). Re-pick down the list when an agent is at 90% or more.
+  - **Agent:** judge it from the step itself: which agent and model in the tier list (`orchestrator-worker`, "Model routing by work type") fits this work best, given how much quota each agent has left in `sessioneer --usage` and how heavy the step is on it. Any agent can launch any agent; rank order is a preference, not a rule, so pick a lower entry when it fits better or spreads load off a nearly spent quota. Skip an agent at 90% or more. `--agent codex` for Codex (no `--profile`, `--mode` only `plan`/`full`, effort only a level its model lists). Say which you chose and why.
   - **Workdir:** the repo the step names (its `repos` field), else this one.
   - **Effort:** the tier's effort from the same list (`--effort`).
   - **Mode:** `--mode auto`.

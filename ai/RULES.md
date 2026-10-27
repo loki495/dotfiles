@@ -90,6 +90,8 @@ mid-task, so the records must always be good enough to continue from.
 - Size the request first and say the size in one line (small: do it; medium: one batched question
   round and a short draft; large: Dibs plan with a running draft); Opus plans, Sonnet executes
   (skill `orchestrator-worker`, "Sizing a request").
+- Work outside the request that a rule might require: finish the requested work first, then ask at or
+  after the end with options do it anyway / file in Dibs / skip / type something else [rule 1077].
 - Simplest design that addresses the real risk; when a fix grows new services, permission schemes
   or abstractions, check its value against the actual threat model and say so if simpler is enough.
 - Comments: default none; only a concise non-obvious WHY [rule 924]. Avoid hardcoding [rule 749].
