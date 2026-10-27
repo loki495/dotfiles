@@ -6,3 +6,5 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=%h/.local/bin/codex remote-control start --json
+# The daemon is forked into this unit's cgroup; the default KillMode would kill it when the oneshot ends.
+KillMode=process
