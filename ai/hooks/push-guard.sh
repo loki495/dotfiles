@@ -12,6 +12,10 @@ if grep -Eq '(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:s
   top=$(cd "${cwd:-.}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
   if [ -n "$top" ]; then
     stale=$(timeout 20 "$helper" stale "$top" 2>/dev/null | jq -r '(.stale // []) | map("\(.id) (\(.why))") | join("; ")' 2>/dev/null)
+    # The helper caches the atlas for minutes, so a "stale" verdict may predate a refresh made by any session; confirm it uncached.
+    if [ -n "$stale" ]; then
+      stale=$(ATLAS_CACHE_TTL=0 timeout 20 "$helper" stale "$top" 2>/dev/null | jq -r '(.stale // []) | map("\(.id) (\(.why))") | join("; ")' 2>/dev/null)
+    fi
     if [ -n "$stale" ]; then
       jq -n --arg s "$stale" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
         permissionDecisionReason: ("Feature atlas is stale for this branch: " + $s + ". Update those subsystem comments and stamp Verified at with the tip, then push.")}}'
