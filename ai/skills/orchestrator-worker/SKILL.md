@@ -982,8 +982,8 @@ own orphaned children.
 When the next phase should run as its own session that Andres can watch and answer (a hand-off
 to a fresh session, a long-running worker, a follow-up that outlives this context), start it with
 `sessioneer` instead of only handing him a paste-ready prompt:
-`sessioneer --workdir <dir> --model <model> --mode auto "<prompt that points at the Dibs plan or hand-off>"`
-(default `--model sonnet` and always `--mode auto` unless Andres asks otherwise),
+`sessioneer --workdir <dir> --model <model> --effort <level> --mode auto "<prompt that points at the Dibs plan or hand-off>"`
+(default `--model sonnet --effort medium` and always `--mode auto` unless Andres asks otherwise),
 or `sessioneer --resume <conversation-id> "<message>"` to continue an existing one (it reuses the
 live session). It prints the session name; it is Claude-only and host-only. The prompt must be
 self-contained like any worker prompt (plan id, file paths, return format), and launching it

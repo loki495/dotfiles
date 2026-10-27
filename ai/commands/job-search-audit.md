@@ -285,7 +285,7 @@ the stronger model from a step where the cheaper one matches, keep it where it f
 
 **Launching workers.** Background subagents can hang forever on a permission prompt nobody sees.
 When the `sessioneer` CLI is on PATH, launch each worker and the judge as a headless session
-instead: `sessioneer --workdir <scratch dir> --model <sonnet|opus> --mode auto "<prompt>"`.
+instead: `sessioneer --workdir <scratch dir> --model <sonnet|opus> --effort <medium|high> --mode auto "<prompt>"`.
 Always pass `--mode auto`. Put the long worker prompt in a file in the scratch dir and make the
 launch prompt "read <file> and follow it" plus the per-repo parameters; have each worker write its
 report to a file there, and `sessioneer --kill <name>` each session once its report is read. Use

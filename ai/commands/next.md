@@ -33,6 +33,7 @@ Collect every question that stops the next step from being done without assumpti
   - **Model:** the step's `tier` from the work order: Opus only if it says planning or judging, otherwise Sonnet. No tier: Sonnet, and say so.
   - **Agent:** Claude through `sessioneer` (`--agent` only if Andres asks).
   - **Workdir:** the repo the step names (its `repos` field), else this one.
+  - **Effort:** the tier's effort from the model-routing lists: `--effort medium` for Sonnet, `--effort high` for Opus.
   - **Mode:** `--mode auto`.
   - A step that needs a decision (`decision needed`, a push, an Opus tier) is confirmed with Andres before launching.
 
@@ -42,4 +43,4 @@ Collect every question that stops the next step from being done without assumpti
   `Call todo_next on plan <id>, claim the step it returns (agentName <claude>:<session name>:<conversation id>) and follow its work order. Before starting, ask Andres every question you have, in as many rounds as needed, and assume nothing. Answers already given: <only the decisions from step 3 the work order does not contain>.`
 - **No Dibs plan** (small work): one self-contained prompt with the goal, the repo and branch, the decisions made, the files involved, the commands to run, what is out of scope and what to ask first. Everything the new session needs and nothing it can look up itself. Write a handoff (the `handoff` command) only if the state does not fit in the prompt.
 
-Launch: `sessioneer --workdir <dir> --model <m> --mode auto [--profile <p>] "<prompt>"`. Report the session name, profile, model and workdir, and what you asked or answered. Do not keep working on the same step here afterwards. Finish anything still left (answer a peer, record a last checkpoint), confirm no claim is held (`todo_claim_status`), and then say plainly, as the last line: **"Safe to archive this session."** If something is still open (a claim, an unanswered question, uncommitted work that is not yours), say instead what blocks archiving and do not print that line.
+Launch: `sessioneer --workdir <dir> --model <m> --effort <level> --mode auto [--profile <p>] "<prompt>"`. Report the session name, profile, model and workdir, and what you asked or answered. Do not keep working on the same step here afterwards. Finish anything still left (answer a peer, record a last checkpoint), confirm no claim is held (`todo_claim_status`), and then say plainly, as the last line: **"Safe to archive this session."** If something is still open (a claim, an unanswered question, uncommitted work that is not yours), say instead what blocks archiving and do not print that line.
