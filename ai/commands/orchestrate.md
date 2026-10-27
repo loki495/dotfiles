@@ -1,4 +1,4 @@
-Run a whole Dibs plan (works from Claude or Codex; workers may be either, per the tier table): launch a worker session per task (right agent, model, effort), in parallel where tasks don't block each other, verify each one's evidence against its done requirements, send it back until it is really done, archive it, and loop until the plan is finished. `/next` does one task; this does the plan.
+Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and remaining quota): launch a worker session per task (right agent, model, effort), in parallel where tasks don't block each other, verify each one's evidence against its done requirements, send it back until it is really done, archive it, and loop until the plan is finished. `/next` does one task; this does the plan.
 
 **Arguments:** $ARGUMENTS (a plan id; with none, the plan of a task this session holds a claim on, else ask)
 
@@ -7,9 +7,9 @@ Run a whole Dibs plan (works from Claude or Codex; workers may be either, per th
 ## 1. Read the plan and check there is room
 
 - `todo_show` the plan and every open child (`todo_list`, batch `todo_show`). Note for each task: its work order, `tier`, `repos`, dependencies/blockers, `decision needed` flags, and its **done requirements** (acceptance criteria, tests, docs, atlas, evidence expected). A task with no stated done requirements: derive them from the rules (docs and tests with the change, atlas stamp, closed tasks) and write them into the task before launching.
-- Measure like `/next` step 1: context size and `sessioneer --usage` per profile.
+- Measure like `/next` step 1: context size and `sessioneer --usage` for every agent and profile.
 - **Context too big** (over about 150k, or already past the orchestrator limit): do not start the loop here. Clean up as `/next` step 2 (claims, records, nothing pushed), then launch a new orchestrator: `sessioneer --workdir <dir> --agent <a> --model <m> --effort <e> --mode auto "/orchestrate <id>. Answers already given: <decisions>"`, picked from the **advanced** tier of the model-routing list (orchestrating means judging evidence); confirm with Andres first if that is frontier. End with **"Safe to archive this session."** only once nothing is held.
-- **Quota too tight** (the chosen profile's `session` or `week_all` at 90% or more): stop, say when it resets, do not launch.
+- **Quota too tight** (every agent that could run the work is at 90% or more of `session` or `week_all`): stop, say when it resets, do not launch.
 
 ## 2. Ask before assuming (once, up front)
 
@@ -27,7 +27,7 @@ Otherwise serialize. Say the graph and the first wave in a few lines before laun
 
 ## 4. Launch each worker
 
-Per task pick **agent, model, effort** from the tier table in the `orchestrator-worker` skill ("Model routing by work type"): the task's `tier` if set, else by work type. Highest-ranked entry that is installed, has quota and lists the model. Frontier only with Andres's approval. Name agent, model, effort and reason before launching.
+Per task pick **agent, model, effort** from the tier table in the `orchestrator-worker` skill ("Model routing by work type"): the task's `tier` if set, else by work type. Highest-ranked entry that is installed, lists the model and has quota left in `sessioneer --usage` (re-read it before each wave; skip an agent or profile at 90% or more), regardless of which agent this session is. Frontier only with Andres's approval. Name agent, model, effort and reason before launching.
 
 `sessioneer --workdir <repo or worktree> --agent <a> --model <m> --effort <e> --mode auto [--profile <p>] "<prompt>"`
 

@@ -30,10 +30,10 @@ Collect every question that stops the next step from being done without assumpti
 - **Room here** (context under about 150k, and the chosen profile's `session` under 80% and `week_all` under 80%): continue in this session. For a plan, `todo_next` on the plan, `todo_claim` the step, follow its work order.
 - **Otherwise** launch a continuation. Choose:
   - **Profile:** the account the work belongs to: `work` for the Work area or a repo of the current job, else `personal`. Pass `--profile <name>` only when it differs from this shell's `CLAUDE_CONFIG_DIR`. If that profile's `session` is at 90% or more, do not launch: say when it resets and wait or ask Andres.
-  - **Model:** the step's `tier` from the work order: Opus only if it says planning or judging, otherwise Sonnet. No tier: Sonnet, and say so.
-  - **Agent:** the same agent as this session (Claude or Codex) through `sessioneer`; pass `--agent codex` from a Codex session (it takes no `--profile`, `--mode` other than `plan`/`full`, and only the effort levels its model lists). Another agent only if the tier list or Andres says so.
+  - **Model:** the step's `tier` from the work order, taken from the same list for the chosen agent (Opus-class only if it says planning or judging). No tier: balanced, and say so.
+  - **Agent:** whichever agent the tier list (`orchestrator-worker`, "Model routing by work type") ranks first among those with quota left in `sessioneer --usage`, whatever agent this session is; `--agent codex` for Codex (no `--profile`, `--mode` only `plan`/`full`, effort only a level its model lists). Re-pick down the list when an agent is at 90% or more.
   - **Workdir:** the repo the step names (its `repos` field), else this one.
-  - **Effort:** the tier's effort from the model-routing lists: `--effort medium` for Sonnet, `--effort high` for Opus.
+  - **Effort:** the tier's effort from the same list (`--effort`).
   - **Mode:** `--mode auto`.
   - A step that needs a decision (`decision needed`, a push, an Opus tier) is confirmed with Andres before launching.
 
