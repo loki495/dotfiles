@@ -26,6 +26,15 @@ if [[ -z "$CONTAINER" ]]; then
     exit 1
 fi
 
+# PHP tools run as CONTAINER_USER (default www-data, the owner of the bind-mounted project) so they
+# don't leave root-owned files in storage/ and the tool caches. A container without that user
+# falls back to its default user.
+CONTAINER_USER="${CONTAINER_USER:-www-data}"
+USER_ARGS=()
+if docker exec "$CONTAINER" id -u "$CONTAINER_USER" >/dev/null 2>&1; then
+    USER_ARGS=(-u "$CONTAINER_USER")
+fi
+
 # Get staged PHP files only (NUL-delimited to survive spaces/leading-dashes in filenames)
 mapfile -d '' -t STAGED_PHP_FILES < <(git diff --cached --name-only -z --diff-filter=ACM -- '*.php')
 [[ ${#STAGED_PHP_FILES[@]} -gt 0 ]] || exit 0  # no PHP files staged, nothing to check
@@ -45,7 +54,7 @@ echo "=== Pre-commit: Laravel quality checks ==="
 if docker exec "$CONTAINER" test -f ./vendor/bin/pint 2>/dev/null; then
     echo "--- Pint (auto-fix) ---"
     # Pass each file; pint modifies them on the host via the volume mount
-    printf '%s\0' "${STAGED_PHP_FILES[@]}" | xargs -0 docker exec "$CONTAINER" ./vendor/bin/pint 2>&1 || true
+    printf '%s\0' "${STAGED_PHP_FILES[@]}" | xargs -0 docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/pint 2>&1 || true
     # Restage pint's fixes so they're included in the commit
     printf '%s\0' "${STAGED_PHP_FILES[@]}" | xargs -0 git add --
 fi
@@ -60,7 +69,7 @@ fi
 # unreliable, not just for Blade-embedded PHP but for framework-magic test helpers too.
 if [[ ${#STAGED_PURE_PHP_FILES[@]} -gt 0 ]] && docker exec "$CONTAINER" test -f ./vendor/bin/phpstan 2>/dev/null; then
     echo "--- PHPStan (full project scan) ---"
-    if ! docker exec "$CONTAINER" ./vendor/bin/phpstan analyse --no-progress; then
+    if ! docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/phpstan analyse --no-progress; then
         echo ""
         echo "PHPStan errors found. Fix them before committing."
         exit 1
@@ -70,7 +79,7 @@ fi
 # --- 3. Rector dry-run (blocks commit if changes would be made) ---
 if docker exec "$CONTAINER" test -f ./vendor/bin/rector 2>/dev/null; then
     echo "--- Rector (dry-run) ---"
-    if ! docker exec "$CONTAINER" ./vendor/bin/rector process --dry-run --no-progress-bar 2>&1; then
+    if ! docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/rector process --dry-run --no-progress-bar 2>&1; then
         echo ""
         echo "Rector found suggested changes. Review them (composer rector) and apply"
         echo "before committing. Never auto-apply without reviewing the diff."
@@ -81,7 +90,7 @@ fi
 # --- 4. Pest (blocks commit on failure) ---
 if docker exec "$CONTAINER" test -f ./vendor/bin/pest 2>/dev/null; then
     echo "--- Pest ---"
-    if ! docker exec "$CONTAINER" ./vendor/bin/pest; then
+    if ! docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/pest; then
         echo ""
         echo "Tests failed. Fix the underlying code before committing."
         echo "Do not modify or skip tests to force a pass without explicit confirmation."

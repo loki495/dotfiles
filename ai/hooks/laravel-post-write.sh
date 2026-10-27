@@ -29,19 +29,28 @@ COMPOSE="$PROJECT_ROOT/docker-compose.yml"
 CONTAINER=$(grep -o 'container_name: [^[:space:]]*' "$COMPOSE" | grep -v vite | head -1 | awk '{print $2}')
 [[ -n "$CONTAINER" ]] || exit 0
 
+# PHP tools run as CONTAINER_USER (default www-data, the owner of the bind-mounted project) so they
+# don't leave root-owned files in storage/ and the tool caches. A container without that user
+# falls back to its default user.
+CONTAINER_USER="${CONTAINER_USER:-www-data}"
+USER_ARGS=()
+if docker exec "$CONTAINER" id -u "$CONTAINER_USER" >/dev/null 2>&1; then
+    USER_ARGS=(-u "$CONTAINER_USER")
+fi
+
 # Relative path inside the container (container root = project root)
 REL_PATH="${FILE_PATH#$PROJECT_ROOT/}"
 
 # --- Pint (auto-fix, always succeeds) ---
 if docker exec "$CONTAINER" test -f ./vendor/bin/pint 2>/dev/null; then
     echo "==> Pint: $REL_PATH"
-    docker exec "$CONTAINER" ./vendor/bin/pint "$REL_PATH" 2>&1 || true
+    docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/pint "$REL_PATH" 2>&1 || true
 fi
 
 # --- PHPStan (report only — don't block on write, block at commit) ---
 if docker exec "$CONTAINER" test -f ./vendor/bin/phpstan 2>/dev/null; then
     echo "==> PHPStan: $REL_PATH"
-    docker exec "$CONTAINER" ./vendor/bin/phpstan analyse "$REL_PATH" --no-progress 2>&1 || true
+    docker exec "${USER_ARGS[@]}" "$CONTAINER" ./vendor/bin/phpstan analyse "$REL_PATH" --no-progress 2>&1 || true
     echo "(PHPStan errors must be addressed before committing)"
 fi
 
