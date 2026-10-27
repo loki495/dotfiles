@@ -985,7 +985,7 @@ to a fresh session, a long-running worker, a follow-up that outlives this contex
 `sessioneer --workdir <dir> --model <model> --effort <level> --mode auto "<prompt that points at the Dibs plan or hand-off>"`
 (default `--model sonnet --effort medium` and always `--mode auto` unless Andres asks otherwise),
 or `sessioneer --resume <conversation-id> "<message>"` to continue an existing one (it reuses the
-live session). It prints the session name; it is Claude-only and host-only. The prompt must be
+live session). It prints the session name; it launches Claude by default and Codex with `--agent codex` (Codex takes no `--profile`, `--no-tools` or `--mode` other than `plan`/`full`), and is host-only. The prompt must be
 self-contained like any worker prompt (plan id, file paths, return format), and launching it
 counts as a worker launch for the reporting rules below. Bounded workers that return a result
 to the orchestrator still use `Agent`; this is for sessions whose output is the human's to steer.
