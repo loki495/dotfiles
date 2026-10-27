@@ -67,12 +67,15 @@ second run, violation cleared, dry run, Dibs unreachable).
 Report-only token usage from Claude transcripts under `~/.claude/projects` (stdlib Python 3):
 
 ```bash
-python3 ~/dotfiles/ai/scripts/token-usage.py [--days 28] [--ctx-limit 250000] [--projects-dir DIR]
+python3 ~/dotfiles/ai/scripts/token-usage.py [--days 28] [--ctx-limit 250000] [--projects-dir DIR] [--budget 10 20]
 ```
 
 Per day and per ISO week: sessions, API turns (deduped by message id, subagent transcripts
 included), total tokens, tokens per session, cache-read share, the share of turns whose context
-was over `--ctx-limit` (the context-budget target), a change-vs-previous-week column on the weekly table, and a bar scaled to the busiest bucket.
+was over `--ctx-limit` (the context-budget target), a change-vs-previous-week column on the weekly table, and a bar scaled to the busiest bucket. A `cost$` column estimates the API-list-price equivalent
+(per-model rates in `PRICES`, 5 minute cache writes at 1.25x, unknown models cost 0), and a footer
+estimates how long each `--budget` (USD, default 10 and 20) of prepaid API credit would last at the
+average spend per active day.
 
 Tests: `python3 -I tests/test_token_usage.py`.
 
