@@ -284,6 +284,16 @@ finish someone else's in-progress edit.
 
 ### Scratch work
 
+Session hand-offs use `todo_create(temporary: true)` in the project's area and Group,
+parented to its permanent plan when one exists. Keep durable decisions and progress
+on the plan; put transient resume state in the temporary task instead of a plan-body
+rewrite or a committed hand-off file. The receiving session reads and claims it,
+preserves any durable findings, then completes it to delete it permanently. Consume
+temporary children first. Ordinary release retains it; `reason: NOT_PLANNED` discards
+it. Completion summaries copied to a permanent parent follow that parent's mirroring
+policy, so omit private details. Temporary tasks are excluded from durable plan and
+atlas accounting and reconciler evidence checks. See the `handoff` command.
+
 Exploration notes, one-off scripts, and temp diffs that support a plan but aren't
 meant to become permanent records still don't belong in Dibs — keep them in the
 session's own scratchpad directory, same as any other throwaway working file. Dibs

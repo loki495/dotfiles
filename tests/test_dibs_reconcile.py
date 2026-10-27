@@ -144,6 +144,24 @@ class ReconcileTests(unittest.TestCase):
         self.assertIn('not in the plan body', f[0])
         self.assertIn('without a commit SHA', f[1])
 
+    def test_temporary_plans_and_steps_do_not_need_durable_evidence(self):
+        step = {'id': 7, 'title': 'S2 handoff', 'state': 'CLOSED', 'temporary': True}
+        closing = {7: {'closedAt': '2026-10-25', 'result': {}}}
+        self.assertEqual(dr.plan_findings([({'id': 5, 'body': '', 'children': [step]}, closing)]), [])
+        step = dict(step, temporary=False)
+        self.assertEqual(dr.plan_findings([({'id': 5, 'temporary': True, 'children': [step]}, closing)]), [])
+
+    def test_gather_ignores_temporary_tasks_and_atlases(self):
+        calls = []
+        def fake(*args):
+            calls.append(args)
+            if args[0] == 'todo:agent:list':
+                return {'tasks': [{'id': 1, 'temporary': True, 'state': 'OPEN',
+                                   'labels': ['plan', 'feature atlas']}]}
+            self.fail('temporary records must not be fetched as durable plans or atlases')
+        dr.M.dibs_json = fake
+        self.assertEqual(dr.gather(), ([], [], [], None))
+
 
 if __name__ == '__main__':
     import unittest.mock  # noqa: F401

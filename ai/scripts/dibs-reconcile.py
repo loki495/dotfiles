@@ -3,7 +3,7 @@
 
 Also refreshes the rule export (ai/rules.md and the private file; committed, never pushed).
 Checks: atlas Verified at vs branch tip, dead-owner claims, plans whose Status misses a closed
-step, closed plan steps without a commit. Findings go into ONE standing issue (body rewritten
+step, closed plan steps without a commit. Temporary records are excluded. Findings go into ONE standing issue (body rewritten
 only when it changed); an atlas violation also gets one task under it, keyed by an idempotency
 key, and that task is closed once the violation clears.
 
@@ -55,7 +55,11 @@ def plan_findings(plans):
     """plans: [show-json]. Closed steps missing from the plan body, closed steps with no commit."""
     out = []
     for p, steps_closing in plans:
+        if p.get("temporary"):
+            continue
         for c in p.get("children", []):
+            if c.get("temporary"):
+                continue
             closing = steps_closing.get(c["id"]) or {}
             if c.get("state") != "CLOSED" or str(closing.get("closedAt", ""))[:10] < SINCE:
                 continue
@@ -71,8 +75,8 @@ def plan_findings(plans):
 
 def gather():
     """Read Dibs; raises RuntimeError/ValueError if unreachable."""
-    tasks = M.dibs_json("todo:agent:list")["tasks"]
-    listed = M.dibs_json("todo:agent:list", "--knowledge")["tasks"]
+    tasks = [t for t in M.dibs_json("todo:agent:list")["tasks"] if not t.get("temporary")]
+    listed = [t for t in M.dibs_json("todo:agent:list", "--knowledge")["tasks"] if not t.get("temporary")]
     atlases = [M.dibs_json("todo:agent:show", str(t["id"])) for t in listed
                if M.ATLAS_LABEL in t.get("labels", []) and t.get("state") == "OPEN"]
     plans = []
@@ -80,7 +84,7 @@ def gather():
         if "plan" in t.get("labels", []) and t.get("state") == "OPEN":
             p = M.dibs_json("todo:agent:show", str(t["id"]))
             closing = {c["id"]: M.dibs_json("todo:agent:show", str(c["id"])).get("closing")
-                       for c in p.get("children", []) if c.get("state") == "CLOSED"}
+                       for c in p.get("children", []) if c.get("state") == "CLOSED" and not c.get("temporary")}
             plans.append((p, closing))
     standing = next((t for t in tasks if t.get("title") == STANDING_TITLE and t.get("state") == "OPEN"), None)
     return tasks, atlases, plans, standing
