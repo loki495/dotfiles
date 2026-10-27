@@ -257,6 +257,7 @@ to run on the host:
 ```bash
 python3 tests/test_backup_tools.py
 python3 tests/test_dibs_measure.py
+python3 tests/test_token_usage.py
 python3 tests/test_rules_export.py
 python3 tests/test_rule_inject_hook.py
 ```
