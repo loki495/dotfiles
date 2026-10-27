@@ -742,8 +742,9 @@ from its name; verify with the tool's own model listing before launching
 The canonical list for picking agent, model and reasoning effort; general sessions, workers and
 `sessioneer --agent/--model` all use it. Pick the tier from the work, then take the
 highest-ranked entry whose agent is installed, has quota, and lists the model. Entries are
-`agent model, effort`. Effort is named even where a tool has no flag yet (`sessioneer` has no
-`--effort`; until it does, set it via the agent's own setting or say it in the prompt).
+`agent model, effort`. Effort is named even where a tool has no flag: `sessioneer --effort <level>` sets it on a
+Claude launch (low, medium, high, xhigh, max; fixed at spawn) and a Codex launch (a level the model
+lists; needs a prompt), other agents take it via their own setting or the prompt.
 Temperature is left at each tool's default.
 
 **mechanical**: read/search, renames, formatting, running lint/tests, bulk edits with a clear spec.
