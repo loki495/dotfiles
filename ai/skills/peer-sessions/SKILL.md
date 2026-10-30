@@ -38,12 +38,11 @@ sessioneer --send <name-or-conv-id> "msg"
   `todo_claim.overlaps`, or a sibling branch/worktree), message them before editing to split
   ownership or sequence the work. Share upcoming features or interface changes that affect them so
   long-term plans line up. Record any agreed plan or decision in Dibs; a message is not a record.
-- `sessioneer --send` reaches only sessions Sessioneer tracks (Claude, Codex, Ollama). To message
-  any other session of those agents (idle, or started outside Sessioneer), use
-  `sessioneer --agent <agent> --resume <conversation id> "msg"`; that message is not peer-stamped,
-  so identify yourself. OpenCode is not supported by the CLI yet; until the separate Sessioneer
-  task adds it, give Andres the text to paste. Never `--kill` or force a session another agent is
-  working in.
+- `sessioneer --send` reaches only sessions Sessioneer tracks (Claude, Codex, Ollama,
+  OpenCode). To message any other session of those agents (idle, or started outside Sessioneer),
+  use `sessioneer --agent <agent> --resume <conversation id> "msg"`; for OpenCode the id is its
+  `ses_*` id. That message is not peer-stamped, so identify yourself. Never `--kill` or force a
+  session another agent is working in.
 - A shared worktree is a shared index: commit only your own paths (`git commit -- <paths>`).
   Never `git add -A`, `stash`, `reset` or `checkout .`.
 - Amend or rebase only commits you made. For a peer's commit, ask its owner. A history rewrite
