@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "opencode/deepseek-v4.1-flash-free",
   "instructions": [
     "{env:HOME}/.claude/RULES.md",
     "{env:HOME}/.claude/CLAUDE.private.md",
