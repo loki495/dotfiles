@@ -23,7 +23,8 @@ Work is built on **Dibs** (tasks, plans, bugs, knowledge) and **Sessioneer** (li
 between sessions) so any session of any agent can pick up another's work cold. Quota can run out
 mid-task, so the records must always be good enough to continue from.
 
-1. **Claim before working** [rule 727]; never end a session holding a claim [rule 728]. Identity
+1. **Claim before working** [rule 727]; never end a session holding a claim [rule 728]. Unfinished
+   work is parked with a handoff, never just abandoned [rules 728, 747]. Identity
    `<agent>:<session name>:<conversation id>`, first comment with workdir and branch.
 2. **Dibs for what lasts, Sessioneer for what is short-lived.** Plans, backlog, bugs, decisions and
    lessons go in Dibs; sessions are encouraged to coordinate proactively and plan long-term
@@ -40,12 +41,16 @@ mid-task, so the records must always be good enough to continue from.
 6. **Know the repo's delivery mode** (local-only, direct push, PR) and branch layout before
    committing or merging [rule 731]; skill `git-workflow`.
 7. **Quota-aware** [rule 747]. Before long work check `sessioneer --usage`; at ~90% of the session or weekly
-   quota stop starting new steps, park the work, record exact state, release claims, tell Andres.
+   quota stop starting new steps, park the work: file the handoff task, record exact state, release
+   claims, tell Andres with its id.
    Keep Dibs lean [rule 757]; never reveal Dibs items in public docs [rule 737].
 
 ## Hard rules — always / never
 
 - **NEVER** start work on a task unclaimed or alongside another session's live claim [727].
+- **NEVER** end a session with unfinished work — near quota, waiting on a decision, a real-world
+  action, a blocker — without filing a handoff [rules 728, 747]: one temporary Dibs task labelled
+  `handoff`, body from skill `session-handoff`, its id given to Andres.
 - **NEVER** push without stating the exact remote + branch and getting explicit confirmation [734];
   **NEVER** force-push or rewrite a pushed commit without it [735].
 - **NEVER** delete, weaken or skip a test to force a pass without Andres's confirmation [741]; tests
@@ -126,5 +131,6 @@ mid-task, so the records must always be good enough to continue from.
 Read the skill when it applies: C/C++ or embedded/SBC hardware → `c-cpp`; anything under
 `~/dotfiles/ai/` or opencode/Codex/agy config → `ai-config`; git beyond a plain commit →
 `git-workflow`; concurrent sessions → `peer-sessions`; plans, workers, model tiering →
-`orchestrator-worker`; a feature inventory → `/feature-atlas`. Skills, agents and commands are
-listed by each tool's own discovery.
+`orchestrator-worker`; stopping with work unfinished or parking at quota → `session-handoff`; a
+feature inventory → `/feature-atlas`. Skills, agents and commands are listed by each tool's own
+discovery.

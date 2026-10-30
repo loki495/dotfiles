@@ -28,8 +28,8 @@ file="$dir/${session//[^A-Za-z0-9_-]/_}"
 blocks=$(cat "$file" 2>/dev/null || echo 0)
 [[ $blocks =~ ^[0-9]+$ ]] || blocks=0
 if [ "$blocks" -ge "$cap" ]; then
-  warn "Stopped while holding a Dibs claim ($held); the stop gate's block cap ($cap) was reached. Release or complete it from the next session."
+  warn "Stopped while holding a Dibs claim ($held); the stop gate's block cap ($cap) was reached. Release or complete it from the next session, and file a handoff task for any unfinished work."
 fi
 echo $((blocks + 1)) >"$file"
-jq -n --arg r "This session still holds a live Dibs claim ($held). Complete it (todo_complete) or release it (todo_release, with a comment on what is left and the next step) before ending. Block $((blocks + 1)) of $cap; set DIBS_STOP_GATE=off to skip this gate." \
+jq -n --arg r "This session still holds a live Dibs claim ($held). Complete it (todo_complete) or release it (todo_release, with a comment on what is left and the next step) before ending. If the work is unfinished, file the handoff first: one temporary Dibs task labelled handoff, body from skill session-handoff, and give Andres its id. Block $((blocks + 1)) of $cap; set DIBS_STOP_GATE=off to skip this gate." \
   '{decision: "block", reason: $r}'

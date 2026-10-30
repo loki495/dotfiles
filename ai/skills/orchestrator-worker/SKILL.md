@@ -285,14 +285,17 @@ finish someone else's in-progress edit.
 ### Scratch work
 
 Session hand-offs use `todo_create(temporary: true)` in the project's area and Group,
-parented to its permanent plan when one exists. Keep durable decisions and progress
-on the plan; put transient resume state in the temporary task instead of a plan-body
+labelled `handoff`, parented to its permanent plan when one exists. Keep durable decisions and
+progress on the plan; put transient resume state in the temporary task instead of a plan-body
 rewrite or a committed hand-off file. The receiving session reads and claims it,
 preserves any durable findings, then completes it to delete it permanently. Consume
 temporary children first. Ordinary release retains it; `reason: NOT_PLANNED` discards
 it. Completion summaries copied to a permanent parent follow that parent's mirroring
 policy, so omit private details. Temporary tasks are excluded from durable plan and
-atlas accounting and reconciler evidence checks. See the `handoff` command.
+atlas accounting and reconciler evidence checks. The body template, the receiver
+protocol and the discovery query (`todo_list label=handoff state=OPEN`) live in skill
+`session-handoff`; the `/handoff` command runs the same procedure and prints the
+paste-ready prompt.
 
 Exploration notes, one-off scripts, and temp diffs that support a plan but aren't
 meant to become permanent records still don't belong in Dibs — keep them in the
@@ -407,7 +410,8 @@ and starts a fresh Opus session from it. Create a `plan`-labelled issue automati
 explicitly multi-phase or an audit expected to span sessions; when resuming cold, look for an
 in-progress plan on the objective (`todo_list` / `todo_context`, `label=plan`) and ask which to
 resume. Check `sessioneer --usage` before long work; near 90% of the session or weekly quota, park
-the work, record the exact state in the plan and release claims.
+the work: file the handoff task (skill `session-handoff`), record the exact state in the plan and
+release claims.
 
 ## Planning
 
