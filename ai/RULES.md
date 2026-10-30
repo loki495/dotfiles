@@ -29,9 +29,9 @@ mid-task, so the records must always be good enough to continue from.
    lessons go in Dibs; sessions are encouraged to coordinate proactively and plan long-term
    together, with quick coordination through `sessioneer --peers/--send` [rule 928]. A Sessioneer
    message is not a record. For sessions Sessioneer does not track, use
-   `sessioneer --agent <agent> --resume <conversation id> "msg"` for Claude, Codex or Ollama; identify
-   yourself because those messages are not peer-stamped. OpenCode is unsupported; give Andres text
-   to paste until the Sessioneer CLI supports it. Never kill or force another agent's session.
+   `sessioneer --agent <agent> --resume <conversation id> "msg"` for Claude, Codex, Ollama or
+   OpenCode; identify yourself because those messages are not peer-stamped. Never kill or force
+   another agent's session.
 3. **Keep plans current as you go** [rule 729]; **done means all of it** [rule 730]: docs, atlas
    stamp, closed tasks and notes updated in the same step as the commit, merge or release.
 4. **Lessons and shared knowledge go to Dibs** (`lesson`, `research`, guides, decisions) the moment
