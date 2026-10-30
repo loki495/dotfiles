@@ -26,8 +26,12 @@ mid-task, so the records must always be good enough to continue from.
 1. **Claim before working** [rule 727]; never end a session holding a claim [rule 728]. Identity
    `<agent>:<session name>:<conversation id>`, first comment with workdir and branch.
 2. **Dibs for what lasts, Sessioneer for what is short-lived.** Plans, backlog, bugs, decisions and
-   lessons go in Dibs; quick coordination between live sessions goes through `sessioneer
-   --peers/--send` [rule 928]. A Sessioneer message is not a record.
+   lessons go in Dibs; sessions are encouraged to coordinate proactively and plan long-term
+   together, with quick coordination through `sessioneer --peers/--send` [rule 928]. A Sessioneer
+   message is not a record. For sessions Sessioneer does not track, use
+   `sessioneer --agent <agent> --resume <conversation id> "msg"` for Claude, Codex or Ollama; identify
+   yourself because those messages are not peer-stamped. OpenCode is unsupported; give Andres text
+   to paste until the Sessioneer CLI supports it. Never kill or force another agent's session.
 3. **Keep plans current as you go** [rule 729]; **done means all of it** [rule 730]: docs, atlas
    stamp, closed tasks and notes updated in the same step as the commit, merge or release.
 4. **Lessons and shared knowledge go to Dibs** (`lesson`, `research`, guides, decisions) the moment
