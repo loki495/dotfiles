@@ -466,6 +466,9 @@ than per tool.
   not linked: `scripts/install/codex-merge-config.sh` merges `codex/config.managed.toml` (plus
   `~/.dotfiles-private/ai/codex/config.managed.toml` when that repo is cloned) into it as one
   `# BEGIN/END dotfiles-managed` block, replacing any hand-made table of the same name, and leaves the rest alone.
+  The managed fragment also sets `sandbox_workspace_write.network_access = true`: Codex's Linux
+  sandbox otherwise denies `connect()` for every socket family, including Sessioneer's host-agent
+  socket, so `sessioneer --peers/--send/--usage` cannot run from a workspace-write session.
 
 This repo's own root-level `.claude/settings.local.json` is separate again from both
 of the above — Claude Code's project-scoped local permission allowlist, applying only
