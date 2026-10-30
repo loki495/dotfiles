@@ -51,6 +51,9 @@ mid-task, so the records must always be good enough to continue from.
 - **NEVER** end a session with unfinished work — near quota, waiting on a decision, a real-world
   action, a blocker — without filing a handoff [rules 728, 747]: one temporary Dibs task labelled
   `handoff`, body from skill `session-handoff`, its id given to Andres.
+- **ALWAYS** clean up what you created only to test — throwaway sessions, temp branches and
+  worktrees, containers, background processes, scratch data — in the same step as the work
+  [1209]; name anything kept as evidence.
 - **NEVER** push without stating the exact remote + branch and getting explicit confirmation [734];
   **NEVER** force-push or rewrite a pushed commit without it [735].
 - **NEVER** delete, weaken or skip a test to force a pass without Andres's confirmation [741]; tests
