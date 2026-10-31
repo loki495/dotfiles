@@ -424,7 +424,10 @@ than per tool.
   pointers (about 2k tokens). The detailed rules are Dibs `rule` records exported by
   `scripts/rules-export.py` to `rules.md` (public) and `~/.dotfiles-private/ai/rules.private.md`
   (private); the `rule-inject` hook delivers the relevant ones at the moment they apply, other agents
-  read the exports (see "Hooks" below). `CLAUDE.md` is the Claude Code
+  read the exports (see "Hooks" below). Scheduled checks and wake-ups use `at`
+  (package `at`, `sudo systemctl enable --now atd`); the job runs `sessioneer --resume <conversation id>`
+  under `env -i`, because `at` copies the scheduling session's environment and Sessioneer would treat
+  the job as that session. `CLAUDE.md` is the Claude Code
   entrypoint (imports `RULES.md`, adds the context-window note). `AGENTS.md` is the
   vendor-neutral entrypoint, linked to `~/AGENTS.md` and read natively by Codex and
   Antigravity's `agy`; opencode lists `~/.claude/RULES.md` in its `instructions`.
