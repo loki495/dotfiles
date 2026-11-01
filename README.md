@@ -500,8 +500,8 @@ All projects:
   `paths` of another live claim and, if so, adds a warning; never blocks, and says so when Dibs is
   unreachable. Claims list their paths through `todo_claim`'s `paths`.
 - **Stop gate** (`hooks/stop-gate.sh`, Stop): first blocks (once per turn, via `stop_hook_active`) a final
-  message without the rule-131 status line ("Safe to archive this session." / "Continue in this session:" /
-  "Continue in a different session:" / "All planned work is done."); fails open when the message is absent. Then blocks ending the session while it still holds a live
+  message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
+  "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent. Then blocks ending the session while it still holds a live
   Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
   Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
   `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;

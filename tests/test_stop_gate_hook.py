@@ -27,13 +27,13 @@ class StopGateTest(unittest.TestCase):
     def test_blocks_a_final_message_without_the_status_line_once_per_turn(self):
         out = json.loads(self.run_hook('echo "[]"', extra={'last_assistant_message': 'Done.'}).stdout)
         self.assertEqual(out['decision'], 'block')
-        self.assertIn('Rule 131', out['reason'])
+        self.assertIn('Rule 1226', out['reason'])
         again = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Done.', 'stop_hook_active': True})
         self.assertEqual(again.stdout.strip(), '')
 
     def test_allows_each_status_line(self):
         for line in ('Safe to archive this session.', 'Continue in this session: x.',
-                     'Continue in a different session: y.', 'All planned work is done.'):
+                     'Continue in a different session: y.', 'Waiting on Andres: a decision.', 'Waiting on other work: job 8.', 'All planned work is done.'):
             proc = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Report.\n' + line})
             self.assertEqual(proc.stdout.strip(), '', line)
 
