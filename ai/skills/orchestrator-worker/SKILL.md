@@ -762,11 +762,11 @@ lists; needs a prompt), other agents take it via their own setting or the prompt
 Temperature is left at each tool's default.
 
 **mechanical**: read/search, renames, formatting, running lint/tests, bulk edits with a clear spec.
-1. claude `claude-haiku-5-5`, low
+1. opencode `opencode/deepseek-v4.1-flash-free` (saves Claude and Codex quota for planning and important work)
 2. codex `gpt-6-luna`, low
-3. opencode `opencode-go/claude-haiku-5-5`, low
-4. agy `gemini-3.8-flash-low`
-5. opencode `opencode/deepseek-v4.1-flash-free`
+3. claude `claude-haiku-5-5`, low
+4. opencode `opencode-go/claude-haiku-5-5`, low
+5. agy `gemini-3.8-flash-low`
 
 **balanced**: the default; implementing a decided plan step, diff review, docs, discussion.
 1. claude `claude-sonnet-5-5`, medium
@@ -790,6 +790,12 @@ Temperature is left at each tool's default.
   quota (see Quota awareness), a missing install or a model missing from the tool's listing. A
   fallback keeps the tier's listed effort. If the list runs out, move *up* one tier, never down
   for advanced or frontier work.
+- **Launching without a prompt**: mechanical sessions and workers (the list above) are launched
+  as needed without asking Andres, with the agent, model and reason stated. Planning, advanced
+  work and any larger or longer session still need his go-ahead before launching.
+- **Coordinate**: sessions talk to each other. When you see changes, claims or branches that are
+  not yours, run `sessioneer --peers` and `--send` the owner to split or sequence the work
+  (skill `peer-sessions`) rather than editing around them silently.
 - **Frontier needs Andres's approval first**, plus a `sessioneer --usage` check. Advanced is the
   ceiling for an autonomous choice. Start at the listed effort; raise it (low, medium, high,
   xhigh, max) before raising the tier when the model is right but sloppy.
