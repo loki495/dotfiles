@@ -15,14 +15,27 @@ class StopGateTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
 
-    def run_hook(self, stub_body, session='sess-1', env=None):
+    def run_hook(self, stub_body, session='sess-1', env=None, extra=None):
         stub = Path(self.tmp.name) / 'claims'
         stub.write_text('#!/usr/bin/env bash\n' + stub_body + '\n')
         stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
-        return subprocess.run([str(HOOK)], input=json.dumps({'session_id': session, 'hook_event_name': 'Stop'}),
+        return subprocess.run([str(HOOK)], input=json.dumps({'session_id': session, 'hook_event_name': 'Stop', **(extra or {})}),
                               capture_output=True, text=True,
                               env={**os.environ, 'DIBS_CLAIMS_CMD': str(stub),
                                    'STOP_GATE_STATE_DIR': str(Path(self.tmp.name) / 'state'), **(env or {})})
+
+    def test_blocks_a_final_message_without_the_status_line_once_per_turn(self):
+        out = json.loads(self.run_hook('echo "[]"', extra={'last_assistant_message': 'Done.'}).stdout)
+        self.assertEqual(out['decision'], 'block')
+        self.assertIn('Rule 131', out['reason'])
+        again = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Done.', 'stop_hook_active': True})
+        self.assertEqual(again.stdout.strip(), '')
+
+    def test_allows_each_status_line(self):
+        for line in ('Safe to archive this session.', 'Continue in this session: x.',
+                     'Continue in a different session: y.', 'All planned work is done.'):
+            proc = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Report.\n' + line})
+            self.assertEqual(proc.stdout.strip(), '', line)
 
     HELD = 'echo \'[{"issueId":7,"agentName":"claude:a:sess-1","paths":[]}]\''
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Stop: block ending the session while it still holds a live Dibs claim. Blocks at most
+# Stop: block ending a turn whose final message lacks the rule-131 status line (one of four fixed
+# phrases), once per turn (stop_hook_active), failing open when the message is absent.
+# Also block ending the session while it still holds a live Dibs claim. Blocks at most
 # STOP_GATE_CAP times per session (a counter file), then allows with a visible warning, so it can
 # never loop. DIBS_STOP_GATE=off skips the gate. Dibs unreachable allows with a warning.
 # DIBS_CLAIMS_CMD overrides the command (tests); it receives --held-by=<session id> appended.
@@ -7,6 +9,13 @@ input=$(cat)
 [ "${DIBS_STOP_GATE:-}" = off ] && exit 0
 session=$(jq -r '.session_id // empty' <<<"$input")
 [ -n "$session" ] || exit 0
+
+msg=$(jq -r '.last_assistant_message // empty' <<<"$input")
+if [ -n "$msg" ] && [ "$(jq -r '.stop_hook_active // false' <<<"$input")" != true ] \
+  && ! grep -q -E 'Safe to archive this session\.|Continue in this session:|Continue in a different session:|All planned work is done\.' <<<"$msg"; then
+  jq -n '{decision: "block", reason: "Rule 131: end your message with one status line, exactly one of: \"Safe to archive this session.\" / \"Continue in this session: <what and why>.\" / \"Continue in a different session: <which session or agent, and why>.\" / \"All planned work is done.\" (archive only after claims are released and records updated). Resend your final message with that line added."}'
+  exit 0
+fi
 
 warn() {
   jq -n --arg m "$1" '{systemMessage: $m}'
