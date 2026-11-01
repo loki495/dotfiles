@@ -39,6 +39,13 @@ if test -d ~/.local/bin
     end
 end
 
+# Add bun to PATH
+if test -d ~/.bun/bin
+    if not contains -- ~/.bun/bin $PATH
+        set -p PATH ~/.bun/bin
+    end
+end
+
 # Add depot_tools to PATH
 if test -d ~/Applications/depot_tools
     if not contains -- ~/Applications/depot_tools $PATH
