@@ -105,7 +105,7 @@ def own_commits_only(repo):
     def git(*a):
         return subprocess.run(["git", "-C", repo, *a], capture_output=True, text=True)
     me = git("config", "user.email").stdout.strip()
-    log = git("log", "--no-merges", "--format=%ae", "ORIG_HEAD..HEAD")
+    log = git("log", "--format=%ae", "ORIG_HEAD..HEAD")
     return bool(me) and log.returncode == 0 and set(log.stdout.split()) <= {me}
 
 

@@ -49,3 +49,23 @@ sessioneer --send <name-or-conv-id> "msg"
   on a shared branch needs a "hold commits" message and an ack from every peer on that branch.
 - One session owns each push; others message the owner. This is agreement between sessions;
   Andres's push confirmation still applies on top.
+
+## Scheduling a clock-time action with `at` (moved from the scheduling rule)
+
+`at` copies the scheduling shell's whole environment (SESSIONEER_SELF, CLAUDE_CODE_SESSION_ID,
+CLAUDECODE, messaging tokens), which makes Sessioneer treat the job as the scheduling session: start
+every job command with `env -i HOME=/home/andres PATH=/home/andres/.local/bin:/usr/local/bin:/usr/bin`
+and use absolute paths. Send output to a log file, give the job id (from `atq`) in the reply, and note
+its id and time in the related Dibs task. Remove jobs no longer needed (`atrm`).
+
+- Under about an hour away (the prompt cache is warm): wake the existing session by conversation id
+  (`--send` needs a live sender session and refuses self-messages): `echo 'env -i HOME=/home/andres
+  PATH=/home/andres/.local/bin:/usr/local/bin:/usr/bin /home/andres/.local/bin/sessioneer --resume
+  <conversation id> "<msg>" >> /tmp/at-<name>.log 2>&1' | at <time>`. Tested 2026-10-30: the message
+  arrives as a prompt in the running session.
+- Later than that (cold cache, so resuming means a full re-read): file a temporary `handoff` task and
+  schedule a NEW session to pick it up: `env -i HOME=... PATH=... /home/andres/.local/bin/sessioneer
+  --workdir <dir> --model sonnet --mode auto "Claim and do handoff #N"`.
+
+For waits under an hour inside the current session use the agent's own tools (Monitor,
+ScheduleWakeup, background Bash) instead.

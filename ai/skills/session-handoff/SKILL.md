@@ -85,3 +85,20 @@ moved on, and the plan is the authority, not the handoff.
 - Not a plan replacement, and not a place for durable findings.
 - Not a file: no hand-off markdown in the repo, nothing to delete later.
 - Not a claim: the parked session's claim is released, and the receiver's claim is on this task.
+
+## Hand-off records (moved from the plan-currency rule)
+
+Put transient session hand-off state in a temporary Dibs task (`todo_create temporary: true`), one per
+parked session, labelled `handoff`, parented to the permanent task or plan when available, rather
+than rewriting durable plan bodies or committing hand-off files. Discovery: `todo_list label=handoff
+state=OPEN`. The receiver claims it, preserves durable findings on permanent records, and completes it
+after consuming it (consume temporary children first). Normal release retains it, NOT_PLANNED discards
+it, and a completion summary copied to a permanent parent follows that parent's mirroring policy, so
+keep it public-safe or omit it. Temporary records do not count toward durable plan or atlas accounting
+and are excluded from reconciler evidence checks.
+
+When you replace a session (a parked or finished coordinator or worker, one superseded by a new
+session, one whose quota ran out), archive the old one yourself with `sessioneer --kill <name or id>`
+(`--agent <agent>` for Codex and OpenCode) once it holds no claims, is idle, and a cold session can
+continue from Dibs alone. A killed session stays resumable. Say which sessions you archived and which
+record replaces them.

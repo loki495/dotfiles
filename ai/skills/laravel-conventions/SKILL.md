@@ -71,3 +71,9 @@ Distinguish between **expected** failure modes and **real** bugs:
 
 Don't wrap everything in a blanket try/catch "just in case" — that hides real bugs.
 Be deliberate about what's expected-and-handled vs unexpected-and-should-throw.
+
+## New projects
+
+Default to the latest stable Laravel, Livewire and Flux for a new project, even when a spec or
+prompt names an older major (for example "Livewire 3"); say so in the plan instead of asking. Pin an
+older major only when Andres asks for it or an existing project requires it.
