@@ -14,7 +14,7 @@ it. Avoid `/model` switches and plugin reloads in a big session (each forces a f
 
 ## Hooks
 
-The hooks (push guard, commit gate, claim overlap, read guard, stop gate, context budget, rule inject, Laravel
+The hooks (push guard, commit gate, claim overlap, read guard, dibs block, stop gate, context budget, rule inject, Laravel
 tooling) are documented in `~/dotfiles/README.md`, section "Hooks". The rule-inject hook delivers
 the Dibs rules relevant to an action; a denied `git commit`/`git push` carries them, re-run to proceed.
 

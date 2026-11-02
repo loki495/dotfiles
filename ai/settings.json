@@ -408,11 +408,20 @@
         ]
       },
       {
-        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release",
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release|mcp__dibs__todo_comment|mcp__dibs__todo_heartbeat",
         "hooks": [
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/rule-inject.py"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py heartbeat"
           }
         ]
       }
@@ -473,6 +482,15 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/rule-inject.py"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py prompt"
           }
         ]
       }

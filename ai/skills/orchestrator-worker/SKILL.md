@@ -249,6 +249,13 @@ actually does.
 
 ### Task claims
 
+**Claude Code with the dotfiles hooks: use the ```` ```dibs ```` block [rule 1307].** Write
+`dibs <id>` in the prompt or reply to claim before editing; put `note`, `append`, `done` and
+`atlas` lines in a block at the end of the reply. The hook validates and applies them at Stop,
+renews the claim on its own, and reports results on the next prompt, so none of the calls below
+cost a turn. The MCP calls described in the rest of this section remain the path for other agents,
+for workers without the hooks, and for anything the block refuses.
+
 A worker claims its assigned task with `todo_claim` before starting — this replaces
 marking a task `in_progress` in `PLAN.md`. Unlike a plain status field, a live claim
 is bound to the worker's actual OS process and independently verified (host, pid,

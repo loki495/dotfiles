@@ -260,6 +260,8 @@ python3 tests/test_dibs_measure.py
 python3 tests/test_token_usage.py
 python3 tests/test_rules_export.py
 python3 tests/test_rule_inject_hook.py
+python3 tests/test_dibs_block_hook.py   # stub Dibs CLI, throwaway git repo
+python3 tests/test_read_guard_hook.py
 ```
 
 The full install/highlighting suite below also requires a throwaway container:
@@ -507,7 +509,18 @@ All projects:
   over `READ_GUARD_LINES` lines (default 400), telling Claude to grep/LSP first and read with
   `offset`/`limit`; a Read with `offset`, `limit`, `pages` or `allow_large` passes, as do images, PDFs
   and notebooks. `READ_GUARD=off` disables it.
-- **Stop gate** (`hooks/stop-gate.sh`, Stop): first blocks (once per turn, via `stop_hook_active`) a final
+- **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every
+  tool): applies the ```` ```dibs ```` block at the end of Claude's final message (`claim <id>`,
+  `note <id>: …` as the claim's one checkpoint comment, `append <id> ## Section` with indented text,
+  `done <id> sha=… [tests=…] [docs=…] :: summary`, `atlas <subsystem>: …` queued in
+  `~/.local/state/dibs-atlas-hints.jsonl`) through the `todo:agent:*` CLI. It claims a task an incoming
+  prompt names as `dibs <id>` (not `/dibs`), renews this session's claims at most every 15 minutes
+  (`DIBS_BLOCK_BEAT_SECONDS`), and reports results on the next prompt. Validation: claim only an open
+  task, note/append/done only on a task this session holds, done only with a commit that exists and is
+  on the current branch (or `sha="none: …"`) and a summary. Each line applies once, so a re-sent block
+  is safe; a refused line blocks the stop once with the reason. `DIBS_BLOCK_DRY_RUN=1` reports without
+  writing; `DIBS_CLI` overrides the CLI (tests).
+- **Stop gate** (`hooks/stop-gate.sh`, Stop): first runs the Dibs block, then blocks (once per turn, via `stop_hook_active`) a final
   message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
   "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent. Then blocks ending the session while it still holds a live
   Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.

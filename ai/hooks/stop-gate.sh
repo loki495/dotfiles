@@ -6,7 +6,15 @@
 # never loop. DIBS_STOP_GATE=off skips the gate. Dibs unreachable allows with a warning.
 # DIBS_CLAIMS_CMD overrides the command (tests); it receives --held-by=<session id> appended.
 input=$(cat)
-[ "${DIBS_STOP_GATE:-}" = off ] && exit 0
+# The ```dibs block is applied first (idempotent), so a done line closes its claim before the
+# claim check below, and a block re-sent after a status-line block is not lost or doubled.
+block=$("${DIBS_BLOCK_CMD:-$(dirname "$0")/dibs-block.py}" stop <<<"$input" 2>/dev/null)
+if [ "$(jq -r '.decision // empty' <<<"$block" 2>/dev/null)" = block ]; then
+  printf '%s\n' "$block"
+  exit 0
+fi
+block_msg=$(jq -r '.systemMessage // empty' <<<"$block" 2>/dev/null)
+[ "${DIBS_STOP_GATE:-}" = off ] && { [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'; exit 0; }
 session=$(jq -r '.session_id // empty' <<<"$input")
 [ -n "$session" ] || exit 0
 
@@ -18,7 +26,7 @@ if [ -n "$msg" ] && [ "$(jq -r '.stop_hook_active // false' <<<"$input")" != tru
 fi
 
 warn() {
-  jq -n --arg m "$1" '{systemMessage: $m}'
+  jq -n --arg m "${block_msg:+$block_msg | }$1" '{systemMessage: $m}'
   exit 0
 }
 
@@ -27,7 +35,7 @@ out=$(timeout 8 "${cmd[@]}" --held-by="$session" 2>/dev/null) \
   || warn "Stop gate skipped: Dibs unreachable or errored, so open claims were not checked."
 count=$(jq 'length' <<<"$out" 2>/dev/null) \
   || warn "Stop gate skipped: unreadable answer from Dibs, so open claims were not checked."
-[ "$count" -gt 0 ] || exit 0
+[ "$count" -gt 0 ] || { [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'; exit 0; }
 
 held=$(jq -r 'map("task \(.issueId)") | join(", ")' <<<"$out")
 cap=${STOP_GATE_CAP:-2}
