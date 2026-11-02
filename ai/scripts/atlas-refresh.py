@@ -96,8 +96,24 @@ def quota_pct():
         return 100  # unknown quota: defer to the nightly batch
 
 
+def own_commits_only(repo):
+    """True when every commit the merge brought in (ORIG_HEAD..HEAD) is by this repo's configured user.
+
+    The refresh runs an unattended auto-mode session over the repo, so code that arrived from someone
+    else's pull or merge is never allowed to start one.
+    """
+    def git(*a):
+        return subprocess.run(["git", "-C", repo, *a], capture_output=True, text=True)
+    me = git("config", "user.email").stdout.strip()
+    log = git("log", "--no-merges", "--format=%ae", "ORIG_HEAD..HEAD")
+    return bool(me) and log.returncode == 0 and set(log.stdout.split()) <= {me}
+
+
 def queue(repo):
     repo = os.path.realpath(repo)
+    if not own_commits_only(repo):
+        print(f"atlas-refresh: {repo}: merge brought in commits by others (or no ORIG_HEAD), not queued", file=sys.stderr)
+        return
     head = subprocess.run(["git", "-C", repo, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     append_jsonl(QUEUE, {"ts": int(time.time()), "repo": repo, "head": head})
     if quota_pct() <= QUOTA_MAX:

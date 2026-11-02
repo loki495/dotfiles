@@ -50,13 +50,38 @@ class AtlasRefreshTest(unittest.TestCase):
                 self.hint(4, 'core'), self.hint(1, 'core', '/other')]
         self.assertEqual([(h['subsystem'], h['ts']) for h in self.ar.pending(recs, '/r')], [('ui', 2), ('core', 4)])
 
+    def merged_repo(self, author):
+        repo = self.tmp / 'repo'
+        env = {**os.environ, 'GIT_CONFIG_GLOBAL': '/dev/null', 'GIT_CONFIG_SYSTEM': '/dev/null'}
+        def git(*a, **kw):
+            subprocess.run(['git', '-C', str(repo), *a], check=True, capture_output=True, env={**env, **kw})
+        subprocess.run(['git', 'init', '-q', '-b', 'main', str(repo)], check=True, env=env)
+        git('config', 'user.email', 'me@x.test'); git('config', 'user.name', 'Me')
+        (repo / 'a').write_text('1'); git('add', 'a'); git('commit', '-qm', 'one')
+        git('tag', 'before')
+        (repo / 'a').write_text('2')
+        git('-c', f'user.email={author}', 'commit', '-qam', 'two')
+        git('update-ref', 'ORIG_HEAD', 'before')
+        return str(repo)
+
+    def test_only_own_commits_may_start_a_refresh(self):
+        self.assertTrue(self.ar.own_commits_only(self.merged_repo('me@x.test')))
+
+    def test_queue_ignores_a_merge_with_foreign_commits(self):
+        repo = self.merged_repo('other@x.test')
+        self.assertFalse(self.ar.own_commits_only(repo))
+        with mock.patch.object(self.ar, 'quota_pct', return_value=0) as quota:
+            self.ar.queue(repo)
+            quota.assert_not_called()
+        self.assertFalse(os.path.exists(self.ar.QUEUE))
+
     def test_queue_defers_above_quota_and_runs_below(self):
-        with mock.patch.object(self.ar.subprocess, 'Popen') as popen, mock.patch.object(self.ar, 'quota_pct', return_value=71), \
+        with mock.patch.object(self.ar, 'own_commits_only', return_value=True), mock.patch.object(self.ar.subprocess, 'Popen') as popen, mock.patch.object(self.ar, 'quota_pct', return_value=71), \
                 mock.patch.object(self.ar.subprocess, 'run', return_value=mock.Mock(stdout='h\n')):
             self.ar.queue(str(self.tmp))
             popen.assert_not_called()
             self.assertEqual(len(self.ar.read_jsonl(self.ar.QUEUE)), 1)
-        with mock.patch.object(self.ar.subprocess, 'Popen') as popen, mock.patch.object(self.ar, 'quota_pct', return_value=70), \
+        with mock.patch.object(self.ar, 'own_commits_only', return_value=True), mock.patch.object(self.ar.subprocess, 'Popen') as popen, mock.patch.object(self.ar, 'quota_pct', return_value=70), \
                 mock.patch.object(self.ar.subprocess, 'run', return_value=mock.Mock(stdout='h\n')):
             self.ar.queue(str(self.tmp))
             popen.assert_called_once()

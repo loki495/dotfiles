@@ -524,7 +524,8 @@ All projects:
   `## Pending since last refresh` (`sync-hints`). A git `post-merge` hook in each atlas repo (`install-hooks`)
   queues the repo; `run` refreshes its stale subsystems with one headless Sonnet `/feature-atlas-subsystem`
   session each, straight away if the Claude 5h quota is at most `ATLAS_QUOTA_MAX` (70), otherwise in the
-  nightly batch (which stops at 90). Sessions never refresh a stale atlas themselves, so the push guard
+  nightly batch (which stops at 90). A merge that brought in commits by anyone but the repo's configured
+  user is not queued, since the refresh runs an unattended auto-mode session over the repo. Sessions never refresh a stale atlas themselves, so the push guard
   only mentions staleness in its confirmation prompt.
 - **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every
   tool): applies the ```` ```dibs ```` block at the end of Claude's final message (`claim <id>`,
