@@ -368,6 +368,15 @@
         ]
       },
       {
+        "matcher": "mcp__dibs__todo_show|mcp__dibs__todo_claim_status",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/batch-read-warn.py"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -408,7 +417,7 @@
         ]
       },
       {
-        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release|mcp__dibs__todo_comment|mcp__dibs__todo_heartbeat",
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release|mcp__dibs__todo_comment|mcp__dibs__todo_heartbeat|mcp__playwright__browser_take_screenshot",
         "hooks": [
           {
             "type": "command",

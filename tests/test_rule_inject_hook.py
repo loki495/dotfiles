@@ -27,6 +27,8 @@ TEXT-740
 TEXT-928
 ## 929@1 Rule: stale
 TEXT-929
+## 1310@1 Rule: screenshots
+TEXT-1310
 """
 PRIVATE = "## 745@2 Rule: home\nTEXT-745-PRIVATE\n"
 
@@ -121,6 +123,10 @@ class RuleInjectTest(unittest.TestCase):
         out = self.run_hook(hook_event_name='UserPromptSubmit', prompt='[sessioneer peer: a · /x · master] hi')
         self.assertIn('TEXT-928', out['additionalContext'])
         self.assertIsNone(self.run_hook(hook_event_name='PreToolUse', tool_name='Read', tool_input={}))
+
+    def test_browser_screenshot_injects_the_screenshot_rule(self):
+        out = self.run_hook(hook_event_name='PreToolUse', tool_name='mcp__playwright__browser_take_screenshot', tool_input={})
+        self.assertIn('TEXT-1310', out['additionalContext'])
 
     # sad paths: never a crash, never output
     def test_missing_export_is_silent(self):

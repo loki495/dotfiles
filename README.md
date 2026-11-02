@@ -509,6 +509,9 @@ All projects:
   over `READ_GUARD_LINES` lines (default 400), telling Claude to grep/LSP first and read with
   `offset`/`limit`; a Read with `offset`, `limit`, `pages` or `allow_large` passes, as do images, PDFs
   and notebooks. `READ_GUARD=off` disables it.
+- **Batch read warn** (`hooks/batch-read-warn.py`, PreToolUse on `todo_show`/`todo_claim_status`): when a
+  single-id call follows another one with no user turn between (read from the transcript), adds a
+  reminder to use `ids`/`issueIds`; never blocks. `BATCH_READ_WARN=off` disables it.
 - **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every
   tool): applies the ```` ```dibs ```` block at the end of Claude's final message (`claim <id>`,
   `note <id>: …` as the claim's one checkpoint comment, `append <id> ## Section` with indented text,

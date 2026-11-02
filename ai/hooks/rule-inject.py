@@ -38,6 +38,7 @@ TOOLS = {  # tool name -> rule ids
     "mcp__dibs__todo_create": [927, 748, 757],
     "mcp__dibs__todo_complete": [728, 730, 1209, 1307], "mcp__dibs__todo_release": [728, 729, 730],
     "mcp__dibs__todo_comment": [757, 1307], "mcp__dibs__todo_heartbeat": [1307],
+    "mcp__playwright__browser_take_screenshot": [1310],
 }
 
 
