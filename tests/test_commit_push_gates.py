@@ -113,21 +113,22 @@ class GateTests(unittest.TestCase):
         self.change(path)
         git(self.repo, 'commit', '-qm', 'c')
 
-    def test_push_with_stale_stamp_is_denied(self):
+    def test_push_with_stale_stamp_asks_and_names_the_stale_subsystem(self):
         self.commit('src/a.py')
         o = self.hook('push-guard.sh', 'git push origin main')
-        self.assertEqual(o['permissionDecision'], 'deny')
-        self.assertIn('core (1 owned file(s) changed', o['permissionDecisionReason'])
+        self.assertEqual(o['permissionDecision'], 'ask')
+        self.assertIn('Feature atlas stale for: core (1 owned file(s) changed', o['permissionDecisionReason'])
 
     def test_push_after_restamp_asks_as_before(self):
         self.commit('src/a.py')
         o = self.hook('push-guard.sh', 'git push origin main', FAKE_STAMP=git(self.repo, 'rev-parse', 'HEAD'))
         self.assertEqual(o['permissionDecision'], 'ask')
 
-    def test_push_with_stamp_at_a_rewritten_sha_is_denied(self):
+    def test_push_with_stamp_at_a_rewritten_sha_asks_with_the_stale_note(self):
         self.commit('src/a.py')
         o = self.hook('push-guard.sh', 'git push origin main', FAKE_STAMP='deadbeef' * 5)
-        self.assertEqual(o['permissionDecision'], 'deny')
+        self.assertEqual(o['permissionDecision'], 'ask')
+        self.assertIn('atlas stale', o['permissionDecisionReason'])
 
     def test_push_after_docs_only_commit_asks(self):
         self.commit('README.md')
@@ -146,7 +147,8 @@ class GateTests(unittest.TestCase):
             f.unlink()
             f.symlink_to('/etc/passwd')
         o = self.hook('push-guard.sh', 'git push origin main')
-        self.assertEqual(o['permissionDecision'], 'deny')
+        self.assertEqual(o['permissionDecision'], 'ask')
+        self.assertIn('atlas stale', o['permissionDecisionReason'])
 
     def test_non_push_is_ignored(self):
         self.assertIsNone(self.hook('push-guard.sh', 'git log'))

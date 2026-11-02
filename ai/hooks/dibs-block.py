@@ -188,6 +188,9 @@ class Session:
         with HINTS.open('a') as f:
             f.write(json.dumps({'ts': int(time.time()), 'session': self.id, 'repo': root, 'head': head,
                                 'subsystem': subsystem, 'change': text.strip()}) + '\n')
+        if os.environ.get('DIBS_ATLAS_SYNC') != 'off':
+            subprocess.Popen([sys.executable, str(Path(__file__).resolve().parents[1] / 'scripts' / 'atlas-refresh.py'), 'sync-hints'],
+                             start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return f'atlas {subsystem}: hint queued'
 
     def run(self, action):

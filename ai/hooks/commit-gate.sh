@@ -37,6 +37,6 @@ if [ "$has_real_docs" = 0 ] && ! grep -Eqi 'docs:[[:space:]]*(updated|n/a)' <<<"
 fi
 helper=${HELPER:-$(dirname "$(readlink -f "$0")")/atlas-helper.py}
 touched=$(timeout 20 "$helper" touched "$top" $files 2>/dev/null | jq -r '(.subsystems // []) | join(", ")' 2>/dev/null)
-[ -n "$touched" ] && notes+=("This commit touches feature-atlas subsystems: $touched. Update those atlas comments and stamp them with this commit's SHA (the push gate checks it). Do not mention the atlas in the commit message.")
+[ -n "$touched" ] && notes+=("This commit touches feature-atlas subsystems: $touched. Do not refresh them here: add one `atlas <subsystem>: <change>` line per subsystem to your dibs block (a background job refreshes the atlas). Do not mention the atlas in the commit message.")
 [ ${#notes[@]} -gt 0 ] && emit ctx "" "$(printf '%s ' "${notes[@]}")"
 exit 0

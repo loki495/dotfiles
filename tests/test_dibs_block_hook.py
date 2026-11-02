@@ -78,7 +78,7 @@ class DibsBlockHookTest(unittest.TestCase):
         self.side = subprocess.run(git + ['rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
         subprocess.run(git + ['checkout', '-q', '-'], check=True)
         self.env = {**os.environ, 'DIBS_CLI': f'{sys.executable} {t / "stub.py"} {self.db}',
-                    'DIBS_BLOCK_STATE_DIR': str(t / 'state'), 'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'),
+                    'DIBS_BLOCK_STATE_DIR': str(t / 'state'), 'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'), 'DIBS_ATLAS_SYNC': 'off',
                     'DIBS_AGENT_PID': '4242', 'SESSIONEER_SELF': 'tester'}
 
     def hook(self, mode, env=None, **data):

@@ -1,0 +1,9 @@
+[Unit]
+Description=Run the job search audit on the first of each month
+
+[Timer]
+OnCalendar=*-*-01 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

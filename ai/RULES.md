@@ -35,11 +35,11 @@ mid-task, so the records must always be good enough to continue from.
    `sessioneer --agent <agent> --resume <conversation id> "msg"` for Claude, Codex, Ollama or
    OpenCode; identify yourself because those messages are not peer-stamped. Never kill or force
    another agent's session.
-3. **Keep plans current as you go** [rule 729]; **done means all of it** [rule 730]: docs, atlas
-   stamp, closed tasks and notes updated in the same step as the commit, merge or release.
+3. **Keep plans current as you go** [rule 729]; **done means all of it** [rule 730]: docs, atlas hint,
+   closed tasks and notes updated in the same step as the commit, merge or release.
 4. **Lessons and shared knowledge go to Dibs** (`lesson`, `research`, guides, decisions) the moment
    you learn them; check them before researching. Filing rules: [rule 927].
-5. **Docs, tests and the feature atlas travel with the change** [rules 732, 733, 924, 925].
+5. **Docs, tests and the atlas hint travel with the change** [rules 732, 733, 924, 925].
 6. **Know the repo's delivery mode** (local-only, direct push, PR) and branch layout before
    committing or merging [rule 731]; skill `git-workflow`.
 7. **Quota-aware** [rule 747]. Before long work check `sessioneer --usage`; at ~90% of the session or weekly

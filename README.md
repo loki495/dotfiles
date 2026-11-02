@@ -312,7 +312,9 @@ setup has been removed (see "Removed" below).
   `claude-changelog-review.timer` (Wed and Sat 12:00, `Persistent=true`), which starts a
   Sessioneer session from `ai/scheduled/changelog-review.md` to review the Claude Code
   changelog and file Sessioneer follow-ups in Dibs, and `dibs-reconcile.timer` (hourly), which runs
-  `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). The units
+  `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). `atlas-refresh-nightly.timer` (03:50) runs `ai/scripts/atlas-refresh.py run --nightly`, and
+  `claude-job-search-audit.timer` (the 1st of the month, 04:30) starts a Sessioneer session from
+  `ai/scheduled/job-search-audit.md`. The units
   Sessioneer generates (its socket-activated host agent, the push-check and
   quota timers, the Codex, OpenCode-events and Claude headless services, and
   `opencode-serve.service`) carry one machine's absolute paths, so they are not
@@ -517,6 +519,13 @@ All projects:
 - **Batch read warn** (`hooks/batch-read-warn.py`, PreToolUse on `todo_show`/`todo_claim_status`): when a
   single-id call follows another one with no user turn between (read from the transcript), adds a
   reminder to use `ids`/`issueIds`; never blocks. `BATCH_READ_WARN=off` disables it.
+- **Atlas off the interactive path** (`scripts/atlas-refresh.py`): `atlas <subsystem>: <change>` lines from the
+  dibs block land in `~/.local/state/dibs-atlas-hints.jsonl` and are written into the atlas parent under
+  `## Pending since last refresh` (`sync-hints`). A git `post-merge` hook in each atlas repo (`install-hooks`)
+  queues the repo; `run` refreshes its stale subsystems with one headless Sonnet `/feature-atlas-subsystem`
+  session each, straight away if the Claude 5h quota is at most `ATLAS_QUOTA_MAX` (70), otherwise in the
+  nightly batch (which stops at 90). Sessions never refresh a stale atlas themselves, so the push guard
+  only mentions staleness in its confirmation prompt.
 - **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every
   tool): applies the ```` ```dibs ```` block at the end of Claude's final message (`claim <id>`,
   `note <id>: …` as the claim's one checkpoint comment, `append <id> ## Section` with indented text,

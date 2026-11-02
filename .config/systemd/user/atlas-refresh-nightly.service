@@ -1,0 +1,6 @@
+[Unit]
+Description=Refresh the feature atlas subsystems that merged work made stale (headless Sonnet sessions)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/dotfiles/ai/scripts/atlas-refresh.py run --nightly

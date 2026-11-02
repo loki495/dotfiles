@@ -1,0 +1,6 @@
+[Unit]
+Description=Start a Sessioneer session that runs the job search audit
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'exec %h/.local/bin/sessioneer --workdir %h/dotfiles --model sonnet --mode auto - < %h/dotfiles/ai/scheduled/job-search-audit.md'

@@ -53,7 +53,7 @@ cadence once committing, not permission to commit unprompted.
 - **Cherry-pick to production, rebasing `local`** (repos with `local`; `/cherry-pick-to`) →
   `production-cherry-pick.md`. Order: cherry-pick to `master` first, push (confirmed), rebase `local` onto it.
 - **Work merged into the default branch and the project has a feature atlas** → `atlas.md`
-  (rule 733; being changed to hint lines, see the atlas parent in Dibs).
+  (rule 733: write a hint line, never refresh by hand).
 - **Mid-operation state** (`rebase in progress`): describe it and ask before doing anything else.
 - **Another session may be in the same repo / uncommitted changes you didn't make**: stage only
   your own paths, touch nothing else, ask before reshaping history (`history-surgery.md`).
