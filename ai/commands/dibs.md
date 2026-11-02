@@ -7,7 +7,7 @@ The argument is what to add (a task, bug, follow-up or idea), in the user's own 
 **Steps:**
 
 1. If the argument is empty, ask what to add and stop.
-2. Orient with the `dibs` MCP server (`todo_context`, `todo_metadata`, and `todo_search` for the topic and for likely duplicates). If MCP is unreachable, say so and use the `todo:agent:*` CLI fallback from the `orchestrator-worker` skill (Project State section); never write to the DB directly.
+2. Orient with the `dibs` MCP server (`todo_context`, `todo_metadata`, and `todo_search` for the topic and for likely duplicates). If MCP is unreachable, say so and use the `todo:agent:*` CLI fallback from the `orchestrator-worker` skill (`plans-and-state.md`, Project State); never write to the DB directly.
 3. Work out from the prompt, the current repo/path, and that metadata:
    - **Project area** (Work, Personal Projects, Learning & Self-Improvement, Random Tasks)
    - **Group** (one per project/website/topic; reuse an existing one, create by name only if none fits)

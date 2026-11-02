@@ -464,6 +464,11 @@ than per tool.
   `settings.local.json.example` is a copyable template for personal hooks (it assumes
   a Sessioneer checkout at `~/www/personal/sessioneer`); see Post-install. Sessioneer's
   own hook entries in `settings.json` assume that checkout at `$HOME/www/personal/sessioneer`.
+- Large skills and commands are a small core (`SKILL.md` or the command file, about 5 KB, with a decision
+  tree) plus reference files read on demand: next to the skill (`skills/git-workflow/`,
+  `skills/orchestrator-worker/`) or, for commands, under `ai/reference/<command>/`
+  (`project-bootstrap`, `job-search-audit`), since `commands/` entries all become commands. Rule text
+  lives in Dibs rule records, not in these files.
 - Per-tool adapters over the same content: `agents-opencode/` (opencode's own
   agent format), `codex-skills/` (wrappers importing the shared skills into
   Codex), `gemini-config-skills.json` (points `agy`'s global skill discovery at

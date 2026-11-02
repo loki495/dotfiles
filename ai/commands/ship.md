@@ -18,7 +18,7 @@ Once confirmed, write the flow into a `## Shipping` section of the project's `CL
 
 **2. Commit.**
 
-Run `git status`. Stage only this session's changes. If there are uncommitted changes that aren't yours, stop and ask (see the `git-workflow` skill's Concurrent sessions section). Follow the global commit rules: feature-scoped commits, docs and tests in the same commit, and no `Claude-Session:` trailer. Review `git log origin/<branch>..HEAD` and fold fix-ups into the commit they belong to before shipping.
+Run `git status`. Stage only this session's changes. If there are uncommitted changes that aren't yours, stop and ask (see the `git-workflow` skill, `history-surgery.md`, Concurrent sessions). Follow the global commit rules: feature-scoped commits, docs and tests in the same commit, and no `Claude-Session:` trailer. Review `git log origin/<branch>..HEAD` and fold fix-ups into the commit they belong to before shipping.
 
 **3. Confirm once.**
 
