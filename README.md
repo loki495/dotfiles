@@ -454,7 +454,11 @@ than per tool.
   invariant check that keeps a standing findings issue in Dibs and refreshes the rule export;
   `rules-export.py` writes the rule records to `rules.md`; see `ai/scripts/README.md`.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
-  Code settings and a custom statusline, portable (`$HOME` throughout).
+  Code settings and a custom statusline, portable (`$HOME` throughout). The default model is
+  `opusplan` (Opus in plan mode, Sonnet otherwise) and `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` keeps
+  subagents off Opus unless a launch names a model. The installer links the same files into
+  `~/.claude-work` (a second account profile via `CLAUDE_CONFIG_DIR`) when that directory exists;
+  profile-only settings go in that profile's `settings.local.json`.
   `settings.local.json.example` is a copyable template for personal hooks (it assumes
   a Sessioneer checkout at `~/www/personal/sessioneer`); see Post-install. Sessioneer's
   own hook entries in `settings.json` assume that checkout at `$HOME/www/personal/sessioneer`.
@@ -499,6 +503,10 @@ All projects:
   Dibs (`todo:agent:claims`, via `docker exec dibs-app`) whether the file lies inside the claimed
   `paths` of another live claim and, if so, adds a warning; never blocks, and says so when Dibs is
   unreachable. Claims list their paths through `todo_claim`'s `paths`.
+- **Read guard** (`hooks/read-guard.sh`, PreToolUse on Read): denies a whole-file Read of a text file
+  over `READ_GUARD_LINES` lines (default 400), telling Claude to grep/LSP first and read with
+  `offset`/`limit`; a Read with `offset`, `limit`, `pages` or `allow_large` passes, as do images, PDFs
+  and notebooks. `READ_GUARD=off` disables it.
 - **Stop gate** (`hooks/stop-gate.sh`, Stop): first blocks (once per turn, via `stop_hook_active`) a final
   message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
   "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent. Then blocks ending the session while it still holds a live

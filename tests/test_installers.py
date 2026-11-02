@@ -689,6 +689,21 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         self.install_sections(checkout)
         self.assertEqual((checkout / 'ai/CLAUDE.private.md').read_text(), 'via the default run')
 
+    def test_ai_tools_links_an_existing_claude_work_profile_too(self):
+        (self.home / '.claude-work').mkdir()
+        result = subprocess.run(['bash', str(REPO / 'scripts/install/50-ai-tools.sh')],
+                                env=self.env | {'DOTFILES_ROOT': str(REPO)}, text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for profile in ('.claude', '.claude-work'):
+            self.assertEqual(os.readlink(self.home / profile / 'settings.json'), str(REPO / 'ai/settings.json'))
+            self.assertEqual(os.readlink(self.home / profile / 'hooks'), str(REPO / 'ai/hooks'))
+
+    def test_ai_tools_does_not_create_a_claude_work_profile(self):
+        result = subprocess.run(['bash', str(REPO / 'scripts/install/50-ai-tools.sh')],
+                                env=self.env | {'DOTFILES_ROOT': str(REPO)}, text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse((self.home / '.claude-work').exists())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

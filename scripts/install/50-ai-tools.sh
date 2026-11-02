@@ -8,13 +8,18 @@ echo_success "AGENTS.md linked (read natively by Codex and Antigravity's agy)."
 
 section_header "Setting up Claude Code config..."
 mkdir -p ~/.claude
-for f in CLAUDE.md RULES.md RTK.md settings.json statusline-command.sh; do
-  backup_and_link ~/.claude/"$f" "$DOTFILES_ROOT/ai/$f"
+# Extra account profiles (CLAUDE_CONFIG_DIR, e.g. ~/.claude-work) get the same links when they exist;
+# profile-only settings go in that profile's settings.local.json.
+for profile in ~/.claude ~/.claude-work; do
+  [ -d "$profile" ] || continue
+  for f in CLAUDE.md RULES.md RTK.md settings.json statusline-command.sh; do
+    backup_and_link "$profile/$f" "$DOTFILES_ROOT/ai/$f"
+  done
+  for d in skills commands agents hooks lessons; do
+    backup_and_link "$profile/$d" "$DOTFILES_ROOT/ai/$d"
+  done
 done
-for d in skills commands agents hooks lessons; do
-  backup_and_link ~/.claude/"$d" "$DOTFILES_ROOT/ai/$d"
-done
-echo_success "Claude Code config linked to ~/.claude."
+echo_success "Claude Code config linked to ~/.claude (and ~/.claude-work when present)."
 echo_info "  - settings.json's own hook commands use \$HOME, portable to any username. Sessioneer's"
 echo_info "    hooks (committed as \$HOME/www/personal/sessioneer/...; its Install hooks may rewrite them"
 echo_info "    with that checkout's absolute path) assume that checkout: delete them where Sessioneer"

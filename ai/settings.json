@@ -294,7 +294,7 @@
       "~/.dotfiles-private"
     ]
   },
-  "model": "claude-sonnet-5-5",
+  "model": "opusplan",
   "disableClaudeAiConnectors": true,
   "hooks": {
     "PostToolUse": [
@@ -358,6 +358,15 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/read-guard.sh"
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -504,5 +513,8 @@
   "verbose": true,
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  }
 }
