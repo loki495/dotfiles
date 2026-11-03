@@ -21,7 +21,7 @@ session=$(jq -r '.session_id // empty' <<<"$input")
 msg=$(jq -r '.last_assistant_message // empty' <<<"$input")
 if [ -n "$msg" ] && [ "$(jq -r '.stop_hook_active // false' <<<"$input")" != true ] \
   && ! grep -q -E 'Safe to archive this session\.|Continue in this session:|Continue in a different session:|Waiting on (Andres|other work):|All planned work is done\.' <<<"$msg"; then
-  jq -n '{decision: "block", reason: "Rule 1226: end your message with one status line, exactly one of: \"Safe to archive this session.\" / \"Continue in this session: <what and why>.\" / \"Continue in a different session: <which session or agent, and why>.\" / \"Waiting on Andres: <input needed>.\" / \"Waiting on other work: <what>.\" / \"All planned work is done.\" (archive only after claims are released and records updated). Ask questions with AskUserQuestion. Resend your final message with that line added."}'
+  jq -n '{decision: "block", reason: "Rule 1226: end your message with one status line, exactly one of: \"Safe to archive this session.\" / \"Continue in this session: <what and why>.\" / \"Continue in a different session: <which session or agent, and why>.\" / \"Waiting on Andres: <input needed>.\" / \"Waiting on other work: <what>.\" / \"All planned work is done.\" (archive only after claims are released and records updated). Ask questions with AskUserQuestion. You need not repeat the whole message: if nothing else changed, output only the missing status line; resend the full message only if something else changed."}'
   exit 0
 fi
 
