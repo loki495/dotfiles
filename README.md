@@ -447,8 +447,10 @@ than per tool.
   inventory as a Dibs issue plus one comment per subsystem (`.ai/feature-atlas/`
   files when Dibs is unreachable).
 - `agents/` — `code-reviewer`, `git-helper`, `legacy-auditor`, `test-writer`,
-  and the four `feature-atlas-*` roles (scout, mapper, auditor, synthesizer)
-  those commands drive.
+  the four `feature-atlas-*` roles (scout, mapper, auditor, synthesizer)
+  those commands drive, and the six `persona-*` agents (designer, test-builder,
+  implementer, runner, interpreter, closer), thin pointers into the prompts in
+  `skills/orchestrator-worker/personas.md`.
 - `hooks/` — Claude Code hooks, listed under "Hooks" below.
 - `ponytail/` — ponytail plugin config (default `lite` mode), linked to
   `~/.config/ponytail/`.
