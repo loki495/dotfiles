@@ -43,8 +43,9 @@ Without a way to tell them apart, a worker launched for a 30-second bounded task
 identical to a session someone's actively driving. Tag every cross-tool worker so it
 can be identified and, by default, hidden:
 
-**Put this as the literal first line of every worker's prompt** (before the actual
-task text), regardless of tool:
+**Put this as the literal first lines of every worker's prompt** (before the actual
+task text), regardless of tool; the first line is `Session name: [worker] <task name>`
+(see [message-templates.md](message-templates.md)) and, once it exists, also pass `--name`:
 
     [WORKER session=<plan-issue-id>/<task-issue-id> parent=<parent-session-id>]
 

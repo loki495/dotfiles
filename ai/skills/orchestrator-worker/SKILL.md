@@ -37,6 +37,8 @@ orchestrator listens.
      `roles-and-workers.md`.
    - Launch, tag, verify the launch, cross-tool or continuation sessions, parallel vs sequential →
      `launching-workers.md`.
+   - Prompt, result, peer-message and Dibs-block shapes, session naming and the `[worker]` tag →
+     `message-templates.md`.
 6. **You are a worker:** read `roles-and-workers.md` ("Role: Worker", completion protocol); claim
    your task, stay in scope, ask rather than guess, report cost and evidence.
 7. **Finishing:** review, tests, docs, atlas, closed tasks, claims released →
