@@ -57,7 +57,7 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
 - **ALWAYS** clean up what you created only to test, in the same step [1209].
 - **NEVER** push without stating the exact remote + branch and getting explicit confirmation [734];
   **NEVER** force-push or rewrite a pushed commit without it [735].
-- **NEVER** delete, weaken or skip a test to force a pass without Andres's confirmation [741]; tests
+- **NEVER** delete, weaken or skip a test to force a pass without Andres's confirmation [741] (in a persona split only the test builder may, with a recorded reason); tests
   never touch a real database [742].
 - **NEVER** suppress an unexpected exception in a local/debug environment [744].
 - **NEVER** take a real-world-visible action (real email/SMS, charging a card, a third-party write,

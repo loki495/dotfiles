@@ -44,8 +44,8 @@ Rule: Stage and commit only your own paths (never `git add -A`, stash, reset, `c
 ## 740@1 Rule: Tests cover happy and sad paths
 Rule: Never stop at the happy path. Every test target also needs sad-path coverage (invalid input, failed validation, unauthorized access, failing dependencies) asserting the specific handled outcome (422 + field errors, exception type, error flash/redirect, graceful fallback) and ruling out a 500 / uncaught exception / raw trace. When auditing, flag happy-path-only suites as incomplete. Applies to any stack and any test kind.
 
-## 741@1 Rule: Never weaken tests to force a pass
-Rule: NEVER delete, weaken, or skip/bypass a test to force a passing state without explicit confirmation from Andres first. Fix the code, or ask. Applies when a pre-commit test run fails too.
+## 741@2 Rule: Never weaken tests to force a pass
+Rule: NEVER delete, weaken, or skip/bypass a test to force a passing state without explicit confirmation from Andres first. Fix the code, or ask. Applies when a pre-commit test run fails too. When work is split across personas (skill orchestrator-worker, personas.md) the test builder persona owns the test files: on a change request from the designer, reviewer, interpreter, runner or implementer it may change or remove an assertion if it judges the reason valid, records the reason in a Dibs comment, and the orchestrator reports it to Andres; if it declines and the requester insists, it asks Andres. No other persona edits a test to get a pass.
 
 ## 742@1 Rule: Tests never touch a real database
 Rule: NEVER let a test suite touch a real or production database, in any stack. Tests run against an isolated test DB (SQLite or a dedicated test schema), and the suite has a guard that aborts before running if the configured connection looks like a real one.
