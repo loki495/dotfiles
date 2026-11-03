@@ -49,33 +49,27 @@ mid-task, so the records must always be good enough to continue from.
 
 ## Hard rules — always / never
 
-- **NEVER** start work on a task unclaimed or alongside another session's live claim [727].
-- **NEVER** end a session with unfinished work — near quota, waiting on a decision, a real-world
-  action, a blocker — without filing a handoff [rules 728, 747]: one temporary Dibs task labelled
-  `handoff`, body from skill `session-handoff`, its id given to Andres.
-- **ALWAYS** clean up what you created only to test — throwaway sessions, temp branches and
-  worktrees, containers, background processes, scratch data — in the same step as the work
-  [1209]; name anything kept as evidence.
+Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook when it applies.
+
+- **NEVER** start work unclaimed or alongside another session's live claim [727]; never end a session
+  holding a claim, and never with unfinished work and no handoff task (labelled `handoff`, body from
+  skill `session-handoff`, id given to Andres) [728, 747].
+- **ALWAYS** clean up what you created only to test, in the same step [1209].
 - **NEVER** push without stating the exact remote + branch and getting explicit confirmation [734];
   **NEVER** force-push or rewrite a pushed commit without it [735].
 - **NEVER** delete, weaken or skip a test to force a pass without Andres's confirmation [741]; tests
-  never touch a real or production database, the suite aborts if the connection looks real [742].
-- **NEVER** suppress an unexpected exception or error in a local/debug environment; let it surface
-  with the runtime's normal diagnostics. A graceful production fallback rethrows in debug mode and
-  reports before handling otherwise. Expected validation failures are exempt [744].
-- **NEVER** take a real-world-visible action (real email/SMS, charging a card, a third-party write
-  endpoint, a user-visible notification) without confirming first, even inside test code or a
-  one-off script; when in doubt, ask [743].
+  never touch a real database [742].
+- **NEVER** suppress an unexpected exception in a local/debug environment [744].
+- **NEVER** take a real-world-visible action (real email/SMS, charging a card, a third-party write,
+  a user-visible notification) without confirming first, even in test code [743].
 - **ALWAYS** ask rather than assume when project type, branch/worktree layout or intent is ambiguous.
 - **ALWAYS** get an explicit decision on multi-issue or audit work before implementing: explain
-  each item, give options with a recommendation, collect the decisions in one batched round.
-  Mechanical steps within an agreed plan are exempt.
-- **ALWAYS** keep a live site loading: a checkout that serves a site (bind-mounted container,
-  master/main of a deployed project) gets what the new code expects first (env, config, migrations,
-  dependencies, built assets, permissions, container recreate), then the code, then a check of the
-  real routes' body content; no safe order means a separate git worktree [745].
+  each item, options with a recommendation, decisions collected in one batched round. Mechanical
+  steps within an agreed plan are exempt.
+- **ALWAYS** keep a live site loading: new code's prerequisites first, then the code, then a check of
+  the real routes' body content; no safe order means a separate git worktree [745].
 - **ALWAYS** commit docs and tests with the code [732]; delete temporary branches after a merge [736];
-  commit only your own paths and leave others' uncommitted work alone [739].
+  commit only your own paths [739].
 
 ## Working style
 
@@ -95,7 +89,7 @@ mid-task, so the records must always be good enough to continue from.
   or ask, never go around it with direct DB/ORM writes. Report broken Dibs tooling with
   `todo_report_bug`.
 - Name the agent type and model of any subagent or worker before launching it, cheapest capable one
-  [rule 746]; delegation cost gates in [rule 926]. Pick agent, model and reasoning effort by work
+  [rule 926]. Pick agent, model and reasoning effort by work
   type from the tier table (mechanical, balanced, advanced, frontier; frontier only with Andres's
   approval) [rule 1067]; skill `orchestrator-worker`, "Model routing by work type".
 - Offer a hand-off prompt for multi-session work only when context is getting full or a fresh

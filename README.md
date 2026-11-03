@@ -519,6 +519,10 @@ All projects:
 - **Batch read warn** (`hooks/batch-read-warn.py`, PreToolUse on `todo_show`/`todo_claim_status`): when a
   single-id call follows another one with no user turn between (read from the transcript), adds a
   reminder to use `ids`/`issueIds`; never blocks. `BATCH_READ_WARN=off` disables it.
+- **Rule regression scenarios** (`scripts/rule-eval.py`): 13 one-line prompts sent to headless `claude -p` (no file or shell
+  tools, Haiku by default), each checked by regex for the behaviour its rule requires. Run it after changing rules or
+  `RULES.md`; a FAIL means read the reply. Baseline 2026-11-02: 11/13; rule 737 (the reply looked up the Dibs task instead
+  of refusing to cite it) and rule 1310 (it only fires at a screenshot tool call, not on a stated plan) failed.
 - **Atlas off the interactive path** (`scripts/atlas-refresh.py`): `atlas <subsystem>: <change>` lines from the
   dibs block land in `~/.local/state/dibs-atlas-hints.jsonl` and are written into the atlas parent under
   `## Pending since last refresh` (`sync-hints`). A git `post-merge` hook in each atlas repo (`install-hooks`)

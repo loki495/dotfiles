@@ -9,8 +9,8 @@ Tool-agnostic: Claude Code, opencode, Codex and agy can each be orchestrator or 
 default way multi-step work happens, not something to invoke on request. Hard rules live in Dibs
 rules (injected by the rule-inject hook; other agents grep `ai/rules.md`): claim before working
 [727], never end holding a claim [728], keep plans current [729], done means all of it [730],
-name agent and model before launching [746], quota [747], keep Dibs lean [757], filing [927],
-delegation cost gates [926], model tiers [1067].
+name agent and model before launching and delegation cost [926], quota [747], keep Dibs lean [757], filing [927],
+model tiers [1067].
 
 The loop: investigate, plan, delegate if warranted (cheapest capable model, one bounded task per
 worker), workers complete or block and ask, the orchestrator answers or re-plans, then review,
