@@ -35,6 +35,9 @@ orchestrator listens.
    - Pick agent, model and effort by work type → `model-routing.md` (tier table, cost gates).
    - Write the worker prompt and handle completion, cost reporting, questions and blockers →
      `roles-and-workers.md`.
+   - Feature, bugfix or refactor big enough that one session should not design, test, implement
+     and judge it: split it across personas (designer, test builder, implementer, runner,
+     interpreter, reviewer, closer) → `personas.md` (matrix, prompts, profiles, test ownership).
    - Launch, tag, verify the launch, cross-tool or continuation sessions, parallel vs sequential →
      `launching-workers.md`.
    - Prompt, result, peer-message and Dibs-block shapes, session naming and the `[worker]` tag →

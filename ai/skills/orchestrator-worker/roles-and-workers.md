@@ -29,7 +29,16 @@ itself — its job shifts to directing, reviewing, and making architectural
 decisions. See [Model Tiering](model-routing.md#model-tiering) for why this split exists, not just
 as a division of labor.
 
+When work is split across personas (`personas.md`), the orchestrator is a balanced-tier router
+with minimal context: it reads each persona's result block, picks the next step from the profile,
+sets each step's done requirements, allocates agent, model and effort, watches quota, and keeps
+the user informed. Reviewing and validating moves to the interpreter and reviewer personas, and
+design stays with the designer, so the orchestrator neither judges code nor holds design detail.
+
 ## Role: Worker
+
+A persona (`personas.md`) is a worker with a fixed expertise, information scope and lifetime; the
+protocol below applies to every persona.
 
 A worker is an implementation agent responsible for:
 

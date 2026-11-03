@@ -89,6 +89,10 @@ Temperature is left at each tool's default.
 2. claude `claude-fable-5-1`, max
 3. claude `claude-opus-5-5`, max
 
+- **Personas**: the tier and effort for each persona (orchestrator balanced; designer and
+  interpreter advanced; test builder balanced at high effort; implementer balanced or mechanical;
+  runner and closer mechanical; reviewer advanced) are in the `personas.md` matrix; pick agent
+  and model from the tier lists here.
 - **Choosing**: rank 1 is the preferred model for the tier; lower ranks are fallbacks for no
   quota (see Quota awareness), a missing install or a model missing from the tool's listing. A
   fallback keeps the tier's listed effort. If the list runs out, move *up* one tier, never down

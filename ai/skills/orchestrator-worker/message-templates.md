@@ -35,6 +35,34 @@ Self-contained, about 400 words (rule 926). Keep the existing `[WORKER session=.
     Dibs ids touched: <ids>
     Open questions: <list or none>
 
+## Persona step
+
+A persona step is a temporary child task of the plan, label `persona <name>`. Its body:
+
+    Persona: <designer | test builder | implementer | runner | interpreter | reviewer | closer>
+    Inputs: <brief sections it may read, test paths, diff, command>
+    Done-when: <observable checks>
+    Return: result block below.
+
+The result block is the worker result block plus two lines:
+
+    Verdict: <one line>
+    Evidence: <Dibs comment id or file path>
+
+A persona session is named like a worker (`[worker] test builder: <feature>`), except the
+designer, a direct session the user talks to, which uses a plain name.
+
+## Test change request
+
+From the designer, reviewer, interpreter, runner or implementer to the test builder, which decides:
+
+    From: <session name> (persona <name>)
+    Test: <path or group>
+    Change: <what should be added, fixed or removed>
+    Reason: <input, observed and expected result, or the Contract line it contradicts>
+
+The test builder answers `accepted` or `declined: <reason>` and records it in a Dibs comment.
+
 ## Peer message (`sessioneer --send`)
 
     From: <your session name> (task <id>)
