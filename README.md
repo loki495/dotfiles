@@ -546,7 +546,7 @@ All projects:
   writing; `DIBS_CLI` overrides the CLI (tests).
 - **Stop gate** (`hooks/stop-gate.sh`, Stop): first runs the Dibs block, then blocks (once per turn, via `stop_hook_active`) a final
   message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
-  "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent; the block tells the session it need not repeat the message, only output the missing status line unless something else changed. Then blocks ending the session while it still holds a live
+  "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent; the block tells the session it need not repeat the message, only output the missing status line unless something else changed. It also tells a session waiting on the user to ask the pending question with the question tool first, keeping "Waiting on Andres" for what a question cannot carry. Then blocks ending the session while it still holds a live
   Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
   Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
   `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;
