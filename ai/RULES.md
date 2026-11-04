@@ -25,7 +25,9 @@ mid-task, so the records must always be good enough to continue from.
 
 1. **Claim before working** [rule 727]; never end a session holding a claim [rule 728]. Unfinished
    work is parked with a handoff, never just abandoned [rules 728, 747]. Identity
-   `<agent>:<session name>:<conversation id>`, first comment with workdir and branch. Claude Code
+   `<agent>:<session name>:<conversation id>`, first comment with workdir and branch. Everywhere else refer to
+   sessions by conversation id (name only as a label) and to Dibs records by local Dibs id, never
+   the GitHub number [rule 727]. Claude Code
    does routine claim/note/append/done/atlas bookkeeping in a ```` ```dibs ```` block at the end of a
    reply, applied by a hook, instead of tool calls [rule 1307].
 2. **Dibs for what lasts, Sessioneer for what is short-lived.** Plans, backlog, bugs, decisions and

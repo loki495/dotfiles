@@ -3,6 +3,8 @@
 Fixed shapes for the messages sessions send each other, so they are parseable and cold-readable.
 Rule: every launch, reassignment, peer message and Dibs-bookkeeping request uses these.
 Add a new recurring shape here instead of improvising it in a prompt.
+References: a session is named by its conversation id (the name follows as a label), a Dibs record by
+its local Dibs id, never the GitHub number (rule 727).
 
 ## Session name
 
@@ -56,7 +58,7 @@ designer, a direct session the user talks to, which uses a plain name.
 
 From the designer, reviewer, interpreter, runner or implementer to the test builder, which decides:
 
-    From: <session name> (persona <name>)
+    From: <conversation id> (<session name>, persona <name>)
     Test: <path or group>
     Change: <what should be added, fixed or removed>
     Reason: <input, observed and expected result, or the Contract line it contradicts>
@@ -65,10 +67,10 @@ The test builder answers `accepted` or `declined: <reason>` and records it in a 
 
 ## Peer message (`sessioneer --send`)
 
-    From: <your session name> (task <id>)
+    From: <your conversation id> (<session name>), task <Dibs id>
     Ask: <information or request, never approval>
     Why it matters: <one line>
-    Reply by: <`--send` back to my name | not needed>
+    Reply by: <`--send` back to my conversation id | not needed>
 
 ## Dibs bookkeeping request (for the dibs-block hook, rule 1307)
 
