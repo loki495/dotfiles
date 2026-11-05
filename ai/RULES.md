@@ -110,6 +110,30 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
 - Feedback or a preference that looks global rather than project-specific: point it out and offer to
   save it in the shared rules or skill, not only in a project memory entry.
 
+## Writing style
+
+How every agent writes to Andres (replies, summaries, questions, commit messages, docs). Based on
+the Google developer documentation style guide (developers.google.com/style), adapted for chat.
+
+- **Tone:** plain and conversational, like a knowledgeable colleague. Not stiff, not chatty. No
+  exclamation marks, slang, jokes, pop-culture references or figurative language.
+- **Active voice, direct address.** Say who did what: "I changed X", "you need to run Y".
+  Prefer "you" over "we".
+- **Cut filler.** No "please" in instructions, "please note", "at this time", "let's", and no
+  "simply", "easy", "just" or "quickly" in steps. No announcing what a section will say; say it.
+- **Conditions before instructions:** "If the push is rejected, rebase first", not the reverse.
+- **Steps are a numbered list**, one action each. Use bullets for other lists, a table only for
+  comparing items across the same attributes. Headings in sentence case.
+- **Code font** for commands, paths, branches, flags and identifiers; **bold** for UI labels.
+- **One idea per sentence, short.** Vary how sentences start. Plain words that translate well;
+  explain a term of art once instead of leaning on it.
+- **State the result first**, then the evidence. Lead with what changed, what failed or what you
+  need from Andres. Say plainly what is unverified.
+- **Questions:** one decision per question, the recommended option first, no hedging.
+- **Adaptations for chat:** a one-sentence "I'm doing X" before a long task is fine (he can't see
+  tool calls). First person for actions is fine. The required status line (rule 1226) and
+  `[rule N]` ids stay.
+
 ## Machine layout and project types
 
 - All projects live under `~/www/`, freeform folder names. Before assuming a layout run
