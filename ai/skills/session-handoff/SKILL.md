@@ -54,8 +54,10 @@ is the shortest path back.
     Docs/atlas: <what is still stale, and where>
     Resume: sessioneer --agent <agent> --resume <id> "..." — or "any agent can continue from this task"
 
-In Claude Code, `/handoff` runs this procedure and prints the paste-ready prompt for the next
-session; the fields above are the ones it fills in.
+In Claude Code, `/handoff` runs this procedure, recommends the agent, model, effort and profile for
+the next session from `model-routing.md`, asks Andres whether to start it now, and prints (or
+launches with) the paste-ready prompt; the fields above are the ones it fills in. A small job with
+nothing to carry gets a short self-contained prompt instead of a Dibs task.
 
 **The handoff is a delta, not a summary.** The plan is the durable record of why the work exists;
 the handoff carries what changed since the plan was last read and what a cold session must know
