@@ -6,7 +6,8 @@
   atlas-refresh.py queue --repo PATH     a merge landed in PATH (git post-merge hook): queue it and, unless
                                          the Claude 5h quota is above ATLAS_QUOTA_MAX (default 70), start `run`
   atlas-refresh.py run [--nightly]       refresh the stale subsystems of every queued repo in a headless
-                                         Sonnet session each; --nightly ignores the quota threshold (not 90)
+                                         Sonnet session each, that session stopped as soon as its turn ends;
+                                         --nightly ignores the quota threshold (not 90)
   atlas-refresh.py install-hooks         add the post-merge hook to every atlas repo that has none
 
 Interactive sessions only write hint lines; they never refresh a stale atlas. Exit 0 always for queue
@@ -127,11 +128,36 @@ def stale_subsystems(repo):
     return [s["id"] for s in json.loads(p.stdout or "{}").get("stale", [])]
 
 
+def stop_session(repo, session):
+    """Stops the session this run created; a timeout leaves it working, which needs --force."""
+    for extra in ([], ["--force"]):
+        k = subprocess.run(["sessioneer", "--kill", session, *extra], capture_output=True, text=True)
+        if k.returncode == 0:
+            return True
+    print(f"atlas-refresh: {repo}: could not stop {session}: {(k.stderr or k.stdout).strip()}", file=sys.stderr)
+    return False
+
+
 def refresh(repo, subsystem):
+    """Runs one refresh turn and stops the session it started, whether the turn worked or not.
+
+    sessioneer --wait documents that whoever starts the turn must --kill it: the turn
+    ends idle and the session keeps a slot and a dashboard row until then. The --json
+    envelope carries the session name even on a timeout, so the kill always names the
+    exact session this call created. Netting that out leaves an unattended refresh with
+    nothing of its own to clean up later.
+    """
     prompt = (f"Headless atlas refresh. Run /feature-atlas-subsystem {subsystem} for this repo's atlas: refresh that one "
               "subsystem in place, stamp it at HEAD, patch the parent. Edit no source file and nothing else.")
-    return subprocess.run(["sessioneer", "--wait", "--timeout", "1800", "--workdir", repo, "--model", "sonnet",
-                           "--effort", "medium", "--mode", "auto", prompt]).returncode == 0
+    p = subprocess.run(["sessioneer", "--wait", "--json", "--timeout", "1800", "--workdir", repo, "--model", "sonnet",
+                        "--effort", "medium", "--mode", "auto", prompt], capture_output=True, text=True)
+    try:
+        session = (json.loads(p.stdout or "{}") or {}).get("session")
+    except ValueError:
+        session = None
+    if session:
+        stop_session(repo, session)
+    return p.returncode == 0
 
 
 def run(nightly):
@@ -142,14 +168,21 @@ def run(nightly):
         if quota_pct() > limit:
             left.append({"repo": repo})
             continue
-        done = [s for s in stale_subsystems(repo) if refresh(repo, s)]
+        stale = stale_subsystems(repo)
+        done = [s for s in stale if refresh(repo, s)]
         if done:
             append_jsonl(HINTS, {"ts": int(time.time()) + 1, "repo": repo, "refreshed": done})
             print(f"{repo}: refreshed {', '.join(done)}")
+        if len(done) < len(stale):
+            # A refresh that timed out or errored stays queued for the next run instead of
+            # vanishing with the queue file; the next merge or the nightly batch retries it.
+            left.append({"repo": repo})
+            print(f"atlas-refresh: {repo}: {len(stale) - len(done)} of {len(stale)} refreshes did not finish, queued again",
+                  file=sys.stderr)
     if os.path.exists(QUEUE):
         os.remove(QUEUE)
     for q in left:
-        append_jsonl(QUEUE, {"ts": int(time.time()), "repo": q["repo"], "head": ""})
+        append_jsonl(QUEUE, {"ts": int(time.time()), "repo": q["repo"], "head": q.get("head", "")})
     sync_hints()
 
 
