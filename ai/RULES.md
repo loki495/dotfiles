@@ -150,6 +150,10 @@ the Google developer documentation style guide (developers.google.com/style), ad
   no tooling unless the project opts in). Detect the type first; ask when unsure.
 - Local DBs of projects with a production target are stale; production SQL is stated separately
   [rule 929].
+- **Work repos only:** the team's shared record of credentials and key info (new domains, cPanel
+  users, email accounts, SMTP/Mailgun, how to connect) is the prod Teambuilder app, "Podio" board.
+  Update the matching card in place in the same step as the change, current values only, via its
+  REST API; token in `~/.dotfiles-private/ai/secrets/teambuilder-api.env`, never printed [rule 1417].
 
 ## On-demand context
 
