@@ -30,6 +30,14 @@ cPanel server it writes `~/backups/inmotion2/<acct>/`:
 Accounts it can't SSH into are skipped and listed as `skipped`, not failed.
 Read-only from the server's side: nothing on the live site is changed.
 
+One account cannot hold up the rest: every network step is bounded (60 s
+reachability probe, 2 h per account, 10 min rsync inactivity, 1 h per dump) and
+a failing account is recorded while the loop moves on. A run that fails or skips
+anything, or that refuses to start because the laptop has under 5 GB free, mails
+`andres@ac495.net` (override with `MAIL_TO`, `MAIL_FROM`, `MAIL_ACCOUNT`). The
+message goes over the existing SSH access into the server's Exim, so no mail
+password is stored on the laptop.
+
 Databases are dumped as a read-only MySQL user `<acct>_bk` (SELECT, LOCK
 TABLES, SHOW VIEW, TRIGGER, EVENT), whose credentials live only in
 `~/backups/inmotion2/<acct>/db.cnf` (chmod 600) and travel to the server over
@@ -41,15 +49,27 @@ writes `db.cnf` and grants them on every DB the account has. It is idempotent:
 
 ### Adding an account
 
-1. Shell access on: WHM `modifyacct shell=/usr/local/cpanel/bin/jailshell`
-   (`whm-api.sh` in the same scripts folder).
-2. The backups machine's `~/.ssh/id_rsa.pub` authorized on the account
-   (cPanel → SSH Access → Import Key; the API has no route for it).
+1. Shell access on: WHM `modifyacct user=<acct> shell=/bin/bash` (or
+   `/usr/local/cpanel/bin/jailshell`); `whm-api.sh` in the same scripts folder.
+   Note the account may accept a key and still refuse login until this is done.
+2. Authorize the key on the account. The API route works: API2 `SSH::importkey`
+   with `name=<label>` and the key, then `SSH::authkey` with `key=<label>.pub`
+   (not `name=`, which answers "Invalid filename").
 3. `setup-backup-db-users.py <acct>`, add the account to `ACCOUNTS` in
    `backup-inmotion2.sh` if it isn't there, commit, push and pull it on the
    backups machine, then run
    `~/backups/bin/backup-inmotion2 <acct>` once and check the log, the
    snapshot and that each dump ends with `-- Dump completed`.
+
+## Cloudflare DNS (push, nightly)
+
+`backup-dns.py` (systemd user timer `backup-dns`, 03:45) dumps every zone the
+Cloudflare token can see to `~/backups/dns/<date>/` on the backups machine: one
+JSON file per zone holding the zone metadata and all of its records, plus an
+`index.txt` with one line per zone (status, record count, nameservers). Snapshots
+are hard-linked, 30 kept, published by `.partial` rename. The token stays on the
+main machine at `~/.config/cloudflare/add-zone-edit-dns`; override the path with
+`CLOUDFLARE_TOKEN_FILE`. The registrar's own nameservers are not captured.
 
 ## Personal projects (push, nightly)
 

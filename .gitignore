@@ -47,11 +47,13 @@ git/.git-completion.bash
 /.config/systemd/user/*.wants/opencode-serve.service
 /.config/systemd/user/*.wants/sessioneer-*
 # Same for the private backup timers (backup-personal pushes ~/www/personal, backup-dibs
-# snapshots the Dibs database, both to the backups host).
+# snapshots the Dibs database, backup-dns dumps Cloudflare records, all to the backups host).
 /.config/systemd/user/backup-personal.*
 /.config/systemd/user/*.wants/backup-personal.*
 /.config/systemd/user/backup-dibs.*
 /.config/systemd/user/*.wants/backup-dibs.*
+/.config/systemd/user/backup-dns.*
+/.config/systemd/user/*.wants/backup-dns.*
 
 # Claude Code writes the skills your claude.ai account syncs into ~/.claude/skills
 # (a link into this repo): proprietary content in directories named after your
