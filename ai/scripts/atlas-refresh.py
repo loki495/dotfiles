@@ -91,7 +91,7 @@ def sync_hints():
 def quota_pct():
     try:
         p = subprocess.run(["sessioneer", "--usage"], capture_output=True, text=True, timeout=60)
-        return int(json.loads(p.stdout)["agents"]["claude"]["quota"]["session"]["pct"])
+        return int(json.loads(p.stdout)["agents"]["claude"]["profiles"]["personal"]["quota"]["session"]["pct"])
     except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
         return 100  # unknown quota: defer to the nightly batch
 
