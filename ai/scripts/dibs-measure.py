@@ -11,6 +11,8 @@ See ai/scripts/README.md.
 """
 import argparse
 import collections
+import contextlib
+import fcntl
 import datetime
 import glob
 import json
@@ -38,7 +40,23 @@ def dibs_json(*args):
     p = subprocess.run(cmd, capture_output=True, text=True, cwd=DIBS_DIR)
     if p.returncode != 0:
         raise RuntimeError(p.stderr.strip() or "dibs CLI failed")
-    return json.loads(p.stdout)
+    value, end = json.JSONDecoder().raw_decode(p.stdout.lstrip())
+    trailing = p.stdout.lstrip()[end:].strip()
+    if trailing and trailing != "Note: process liveness could not be verified in this environment (weaker-assurance claim).":
+        raise ValueError("unexpected output after Dibs JSON")
+    return value
+
+
+@contextlib.contextmanager
+def reconciler_lock():
+    path = os.environ.get("ATLAS_RECONCILE_LOCK") or os.path.expanduser("~/.local/state/dibs-atlas-reconcile.lock")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def parse_atlas(body):

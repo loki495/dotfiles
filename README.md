@@ -537,7 +537,8 @@ All projects:
   ends, since a session nobody kills keeps a dashboard row and a live-session slot, and a refresh that
   did not finish stays queued for the next run. After a successful turn, a fresh atlas check must
   confirm the same subsystem is current and retains its owned paths; unverifiable results stay queued.
-  A merge that brought in commits by anyone but the repo's configured
+  The job claims matching reconciler drift tasks while refreshing and releases them afterward; a claim
+  conflict or release failure leaves the repo queued for retry. A merge that brought in commits by anyone but the repo's configured
   user is not queued, since the refresh runs an unattended auto-mode session over the repo. Sessions never refresh a stale atlas themselves, so the push guard
   only mentions staleness in its confirmation prompt.
 - **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every

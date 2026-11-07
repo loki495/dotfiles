@@ -57,7 +57,7 @@ class FakeDibs:
             return {'id': i, 'body': dict(self.children)[i]}
         if cmd == 'todo:agent:claim':
             self.writes.append(a)
-            return {'capabilityToken': 'tok'}
+            return {'capability_token': 'tok'}
         self.writes.append(a)
         return {'id': 50}
 
@@ -66,6 +66,9 @@ class ReconcileTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.repo = self.tmp.name
+        environment = unittest.mock.patch.dict(os.environ, {'ATLAS_RECONCILE_LOCK': str(Path(self.repo, 'reconcile.lock'))})
+        environment.start()
+        self.addCleanup(environment.stop)
         git(self.repo, 'init', '-q', '-b', 'main')
         for n in range(4):
             Path(self.repo, 'f').write_text(str(n))
@@ -107,6 +110,8 @@ class ReconcileTests(unittest.TestCase):
         self.run_with(fake)
         cmds = [w[0] for w in fake.writes]
         self.assertEqual(cmds, ['todo:agent:update', 'todo:agent:claim', 'todo:agent:complete'])
+        complete = fake.writes[-1]
+        self.assertEqual(complete[complete.index('--token') + 1], 'tok')
 
     def test_cap_keeps_violations_out_of_tasks_but_in_the_standing_issue(self):
         fake = FakeDibs(self.atlas(self.first))
@@ -120,6 +125,16 @@ class ReconcileTests(unittest.TestCase):
         fake = FakeDibs(self.atlas(self.first), standing='old', children=[(60, f'Key: {key}\nx')])
         self.run_with(fake, max_tasks=1)
         self.assertEqual([w[0] for w in fake.writes], ['todo:agent:update'])
+
+    def test_open_finding_key_with_spaces_is_not_recreated_or_closed(self):
+        key = 'reconciler:atlas:Sessioneer Plus:abcdef0'
+        fake = FakeDibs(self.atlas(self.first), standing='old', children=[(60, f'Key: {key}\nx')])
+        dr.M.dibs_json = fake
+        self.assertEqual(dr.open_violation_tasks({'id': 50}), {key: 60})
+        with unittest.mock.patch.object(dr, 'atlas_findings', return_value=[(key, 'atlas drift', True)]):
+            self.run_with(fake)
+        self.assertNotIn('todo:agent:create', [w[0] for w in fake.writes])
+        self.assertNotIn('todo:agent:complete', [w[0] for w in fake.writes])
 
     def test_dry_run_writes_nothing(self):
         fake = FakeDibs(self.atlas(self.first))

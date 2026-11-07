@@ -33,7 +33,7 @@ BEHIND_TASK = int(os.environ.get("RECONCILER_BEHIND_TASK", "3"))  # commits behi
 # Steps closed before the completion guards landed carry no structured evidence; not violations.
 SINCE = os.environ.get("RECONCILER_SINCE", "2026-10-24")
 MAX_TASKS = int(os.environ.get("RECONCILER_MAX_TASKS", "10"))  # open violation tasks; the rest only appear in the standing issue
-KEY_RE = re.compile(r"^Key: (\S+)", re.M)
+KEY_RE = re.compile(r"^Key: ([^\r\n]+?)[ \t]*$", re.M)
 
 
 def atlas_findings(atlases, behind_task):
@@ -111,6 +111,11 @@ def render(atlas, dead, plan, unfiled=0, cap=MAX_TASKS):
 
 
 def reconcile(dry_run=False, behind_task=BEHIND_TASK, max_tasks=MAX_TASKS, out=print):
+    with M.reconciler_lock():
+        return reconcile_locked(dry_run, behind_task, max_tasks, out)
+
+
+def reconcile_locked(dry_run=False, behind_task=BEHIND_TASK, max_tasks=MAX_TASKS, out=print):
     tasks, atlases, plans, standing = gather()
     atlas = atlas_findings(atlases, behind_task)
     dead = [f"#{t['id']} {str(t.get('title', ''))[:60]} - {t['claim'].get('agentName')}"
@@ -150,7 +155,7 @@ def reconcile(dry_run=False, behind_task=BEHIND_TASK, max_tasks=MAX_TASKS, out=p
             claim = M.dibs_json("todo:agent:claim", str(tid), "--agent", "reconciler:script:none",
                                 "--pid", str(os.getpid()), "--minutes", "5")
             M.dibs_json("todo:agent:complete", str(tid), "--pid", str(os.getpid()),
-                        "--token", claim["capabilityToken"], "--reason", "COMPLETED",
+                        "--token", claim["capability_token"], "--reason", "COMPLETED",
                         "--summary", "Violation cleared (atlas stamp current or stamp changed).",
                         "--force", "--force-reason", "closed by the reconciler: the violation cleared")
 

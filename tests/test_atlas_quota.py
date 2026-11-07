@@ -20,7 +20,8 @@ class AtlasQuotaTest(unittest.TestCase):
 
     def load(self, profile=None, threshold=None):
         env = {'ATLAS_QUEUE': str(Path(self.tmp.name) / 'queue'),
-               'DIBS_ATLAS_HINTS': str(Path(self.tmp.name) / 'hints')}
+               'DIBS_ATLAS_HINTS': str(Path(self.tmp.name) / 'hints'),
+               'ATLAS_RECONCILE_LOCK': str(Path(self.tmp.name) / 'reconcile.lock')}
         if profile is not None:
             env['ATLAS_CLAUDE_PROFILE'] = profile
         if threshold is not None:
@@ -35,6 +36,9 @@ class AtlasQuotaTest(unittest.TestCase):
         loader = importlib.machinery.SourceFileLoader('quota_ar', str(SCRIPT))
         module = importlib.util.module_from_spec(importlib.util.spec_from_loader('quota_ar', loader))
         loader.exec_module(module)
+        claims = mock.patch.object(module, 'reconciler_claims', create=True)
+        claims.start()
+        self.addCleanup(claims.stop)
         return module
 
     @staticmethod

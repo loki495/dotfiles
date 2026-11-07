@@ -212,8 +212,67 @@ def refresh(repo, subsystem):
     return p.returncode == 0
 
 
+class ReconcilerClaims:
+    """Own matching drift tasks while the refresh is active."""
+    def __init__(self, atlas):
+        self.atlas = atlas
+        self.claims = []
+
+    def release(self):
+        failures = []
+        for task, token in reversed(self.claims):
+            try:
+                DM.dibs_json("todo:agent:release", str(task), "--pid", str(os.getpid()),
+                             "--token", token, "--left", "Atlas refresh finished; reconciler will reassess drift.")
+            except (RuntimeError, ValueError, OSError) as e:
+                failures.append(str(e))
+        self.claims = []
+        if failures:
+            raise RuntimeError("could not release reconciler claims: " + "; ".join(failures))
+
+    def __enter__(self):
+        try:
+            atlas = DM.dibs_json("todo:agent:show", str(self.atlas))
+            title = atlas.get("title", "")
+            if not title.startswith("Feature atlas: ") or not title.removeprefix("Feature atlas: ").strip():
+                raise RuntimeError("invalid atlas title")
+            name = title.removeprefix("Feature atlas: ").strip()
+            tasks = DM.dibs_json("todo:agent:list")["tasks"]
+            standing = [t for t in tasks if t.get("title") == "Reconciler findings" and t.get("state") == "OPEN"]
+            if len(standing) > 1:
+                raise RuntimeError("ambiguous reconciler standing task")
+            if not standing:
+                return self
+            parent = DM.dibs_json("todo:agent:show", str(standing[0]["id"]))
+            for child in parent["children"]:
+                if child.get("state") != "OPEN":
+                    continue
+                item = DM.dibs_json("todo:agent:show", str(child["id"]))
+                key = re.search(r"^Key: reconciler:atlas:(.+):([0-9a-f]{7,40}|-)[ \t]*$", item.get("body") or "", re.M)
+                if key and key.group(1) == name:
+                    claim = DM.dibs_json("todo:agent:claim", str(child["id"]), "--agent", "atlas-refresh:script:none",
+                                         "--pid", str(os.getpid()), "--minutes", "60")
+                    self.claims.append((child["id"], claim["capability_token"]))
+            return self
+        except Exception:
+            self.release()
+            raise
+
+    def heartbeat(self):
+        for task, token in self.claims:
+            DM.dibs_json("todo:agent:heartbeat", str(task), "--pid", str(os.getpid()),
+                         "--token", token, "--minutes", "60")
+
+    def __exit__(self, exc_type, exc, tb):
+        self.release()
+
+
+def reconciler_claims(atlas):
+    return ReconcilerClaims(atlas)
+
+
 def run(nightly):
-    with queue_lock(".run"):
+    with queue_lock(".run"), DM.reconciler_lock():
         run_locked(nightly)
 
 
@@ -229,16 +288,19 @@ def run_locked(nightly):
         try:
             atlas, before, stale = stale_subsystems(repo)
             done = []
-            for subsystem in stale:
-                if quota_pct() > limit:
-                    break
-                cutoff = int(time.time()) - 1
-                if not refresh(repo, subsystem):
-                    continue
-                verified_atlas, subsystems, remaining = stale_subsystems(repo)
-                if (verified_atlas == atlas and subsystem in subsystems and subsystem not in remaining
-                        and set(before[subsystem]).issubset(subsystems[subsystem])):
-                    done.append((subsystem, cutoff))
+            if stale:
+                with reconciler_claims(atlas) as claims:
+                    for subsystem in stale:
+                        if quota_pct() > limit:
+                            break
+                        claims.heartbeat()
+                        cutoff = int(time.time()) - 1
+                        if not refresh(repo, subsystem):
+                            continue
+                        verified_atlas, subsystems, remaining = stale_subsystems(repo)
+                        if (verified_atlas == atlas and subsystem in subsystems and subsystem not in remaining
+                                and set(before[subsystem]).issubset(subsystems[subsystem])):
+                            done.append((subsystem, cutoff))
         except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as e:
             left.append({"repo": repo})
             print(f"atlas-refresh: {repo}: verification failed: {e}", file=sys.stderr)

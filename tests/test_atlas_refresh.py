@@ -15,6 +15,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / 'ai' / 'scripts' / 'atlas-refresh
 def load(tmp):
     os.environ['DIBS_ATLAS_HINTS'] = str(tmp / 'hints.jsonl')
     os.environ['ATLAS_QUEUE'] = str(tmp / 'queue.jsonl')
+    os.environ['ATLAS_RECONCILE_LOCK'] = str(tmp / 'reconcile.lock')
     loader = importlib.machinery.SourceFileLoader('ar', str(SCRIPT))
     mod = importlib.util.module_from_spec(importlib.util.spec_from_loader('ar', loader))
     loader.exec_module(mod)
@@ -25,7 +26,13 @@ class AtlasRefreshTest(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(lambda: subprocess.run(['rm', '-rf', str(self.tmp)]))
+        environment = mock.patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
         self.ar = load(self.tmp)
+        claims = mock.patch.object(self.ar, 'reconciler_claims', create=True)
+        claims.start()
+        self.addCleanup(claims.stop)
 
     def hint(self, ts, sub, repo='/r'):
         return {'ts': ts, 'repo': repo, 'head': 'a' * 40, 'subsystem': sub, 'change': 'did x'}
