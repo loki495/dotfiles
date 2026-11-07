@@ -1,0 +1,401 @@
+#!/usr/bin/env bash
+# work-repo-sync: daily, local-only sync of work repos with their production remote.
+#
+# Per repo (config line: path|remote|remote_branch|mirror_branch|dev_branch, '-' = none):
+#   1. fetch only that production branch, never forced (read-only on production)
+#   2. fast-forward the mirror branch to it (diverged = fail closed, nothing changed)
+#   3. rebase the local dev branch onto the mirror (stash -u around it when dirty)
+# Nothing is pushed, reset, cleaned or force-updated. Before any ref moves, the old tips
+# and every stash get a permanent ref under refs/work-sync/<run-id>/ (never auto-deleted).
+# Logs: $STATE/runs/<run-id>/<repo>.log, $STATE/runs/<run-id>/summary.txt, $STATE/history.log.
+# Problems: $STATE/ATTENTION.md (rewritten each run; previous copy kept as ATTENTION.prev.md).
+# Opt-in (set by the cron line, never by tests): WORK_SYNC_DISCOVER_ROOT scans for new repos and auto-imports
+# only safe ones into repos.auto.conf; WORK_SYNC_NOTIFY_CMD (e.g. notify-email) is called once with subject+body
+# when ATTENTION has content.
+# Exit: 0 = nothing needs attention, 1 = at least one FAIL, 2 = usage/lock.
+set -u -o pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: work-repo-sync [--config FILE] [--state-dir DIR] [--only SUBSTRING] [--dry-run] [--no-fetch]
+Env:   WORK_SYNC_CONFIG, WORK_SYNC_STATE, WORK_SYNC_QUIET_MIN (default 15: dirty files touched
+       more recently than this mark the worktree active and it is skipped), WORK_SYNC_BUSY_CMD
+       (command run with the repo path; exit 0 means busy, e.g. a claim check), WORK_SYNC_TZ.
+EOF
+}
+
+CONFIG=${WORK_SYNC_CONFIG:-$HOME/.dotfiles-private/work-repo-sync/repos.conf}
+STATE=${WORK_SYNC_STATE:-$HOME/.local/state/work-repo-sync}
+QUIET_MIN=${WORK_SYNC_QUIET_MIN:-15}
+BUSY_CMD=${WORK_SYNC_BUSY_CMD:-}
+DISCOVER_ROOT=${WORK_SYNC_DISCOVER_ROOT:-}
+NOTIFY_CMD=${WORK_SYNC_NOTIFY_CMD:-}
+RECENT_DAYS=${WORK_SYNC_RECENT_DAYS:-180}
+FORGE_RE=${WORK_SYNC_FORGE_RE:-'github\.com|gitlab|bitbucket'}
+DRY=0 NOFETCH=0 ONLY=""
+while [ $# -gt 0 ]; do
+    case $1 in
+        --config) CONFIG=$2; shift 2 ;;
+        --state-dir) STATE=$2; shift 2 ;;
+        --only) ONLY=$2; shift 2 ;;
+        --dry-run) DRY=1; shift ;;
+        --no-fetch) NOFETCH=1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; exit 2 ;;
+    esac
+done
+
+AUTO=${WORK_SYNC_AUTO_CONFIG:-$(dirname "$CONFIG")/repos.auto.conf}
+IGNORE=${WORK_SYNC_IGNORE:-$(dirname "$CONFIG")/repos.ignore}
+export TZ=${WORK_SYNC_TZ:-America/Los_Angeles} LC_ALL=C
+export PATH=/usr/local/bin:/usr/bin:/bin:$PATH
+export GIT_TERMINAL_PROMPT=0 GIT_EDITOR=true GIT_MERGE_AUTOEDIT=no GIT_OPTIONAL_LOCKS=0
+export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -o BatchMode=yes -o ConnectTimeout=20"}
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+# a detached 'gc --auto' would inherit the repo lock fd and keep the repo 'busy'
+export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=gc.auto GIT_CONFIG_VALUE_0=0 GIT_CONFIG_KEY_1=maintenance.auto GIT_CONFIG_VALUE_1=false
+
+[ -r "$CONFIG" ] || { echo "work-repo-sync: config not readable: $CONFIG" >&2; exit 2; }
+RUN_ID=$(date +%Y%m%dT%H%M%S)-$$
+RUN_DIR=$STATE/runs/$RUN_ID
+mkdir -p "$RUN_DIR" || exit 2
+exec 9>"$STATE/run.lock"
+flock -n 9 || { echo "work-repo-sync: another run holds $STATE/run.lock" >&2; exit 2; }
+SUMMARY=$RUN_DIR/summary.txt
+ATTN=$RUN_DIR/attention.md
+: >"$SUMMARY"; : >"$ATTN"
+ln -sfn "$RUN_DIR" "$STATE/latest"
+NFAIL=0
+
+# ---- helpers ---------------------------------------------------------------
+GITBIN=$(command -v git)
+# every git call: bounded time, no tty, and without the lock fds (a detached child must not keep a repo 'busy')
+git() { timeout -k 10 "${GIT_T:-900}" "$GITBIN" "$@" </dev/null 8>&- 9>&-; }
+saferef() {                                  # saferef <repo> <name> <sha>: permanent ref refs/work-sync/<run>/<name>
+    git -C "$1" update-ref "refs/work-sync/$RUN_ID/${2//\//_}" "$3"
+}
+log() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" >>"$LOG"; }
+result() {                                   # result STATUS detail
+    printf '%-6s %s: %s\n' "$1" "$REPO" "$2" | tee -a "$SUMMARY" >>"$LOG"
+}
+attn() { printf '%s\n' "$@" >>"$ATTN"; }
+fail() {                                     # fail <detail> <recovery text>
+    NFAIL=$((NFAIL + 1))
+    result FAIL "$1"
+    attn "## FAIL: $REPO" "" "$1" "" "$2" "" "Log: $LOG" ""
+}
+
+worktree_of_branch() {                       # prints worktree path that has refs/heads/$2 checked out
+    git -C "$1" worktree list --porcelain | awk -v b="refs/heads/$2" '
+        /^worktree /{w=substr($0,10)} $1=="branch" && $2==b {print w; exit}'
+}
+
+busy_reason() {                              # busy_reason <repo-dir>: prints why git state is mid-operation
+    local w gd f
+    while IFS= read -r w; do
+        [ -d "$w" ] || continue
+        gd=$(git -C "$w" rev-parse --path-format=absolute --git-dir 2>/dev/null) || continue
+        for f in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_LOG index.lock; do
+            [ -e "$gd/$f" ] && { echo "$w has $f"; return 0; }
+        done
+        [ -n "$(git -C "$w" ls-files -u | head -1)" ] && { echo "$w has unmerged paths"; return 0; }
+    done < <(git -C "$1" worktree list --porcelain | awk '/^worktree /{w=substr($0,10)} /^bare/{w=""} /^$/{if(w!="")print w; w=""} END{if(w!="")print w}')
+    return 1
+}
+
+recent_dirty() {                             # true if a dirty path in worktree $1 changed within QUIET_MIN
+    local p now m
+    now=$(date +%s)
+    while IFS= read -r -d '' p; do
+        p=${p:3}
+        m=$(stat -c %Y "$1/$p" 2>/dev/null) || return 0
+        [ $((now - m)) -lt $((QUIET_MIN * 60)) ] && return 0
+    done < <(git -C "$1" status --porcelain -z)
+    return 1
+}
+
+is_dirty() { [ -n "$(git -C "$1" status --porcelain)" ]; }
+
+STASH_SHA="" PRE_STATUS=""
+stash_save() {                               # stash_save <worktree> <label>; sets STASH_SHA (empty = nothing stashed)
+    local after
+    STASH_SHA=""
+    PRE_STATUS=$(git -C "$1" status --porcelain)
+    [ -z "$PRE_STATUS" ] && return 0
+    git -C "$1" stash push --include-untracked -m "work-repo-sync $RUN_ID $2" >>"$LOG" 2>&1
+    after=$(git -C "$1" rev-parse -q --verify refs/stash || true)
+    if [ -z "$after" ] || [[ $(git -C "$1" log -1 --format=%s "$after") != *"work-repo-sync $RUN_ID "* ]]; then
+        return 1
+    fi
+    STASH_SHA=$after
+    saferef "$1" "stash-$2" "$STASH_SHA" || log "WARNING: could not write safety ref for stash $STASH_SHA (still in stash list)"
+    log "stashed $1 as $STASH_SHA (ref refs/work-sync/$RUN_ID/stash-$2)"
+}
+
+stash_restore() {                            # returns 0 only when restored AND verified, then drops that exact entry
+    local w=$1 i now
+    [ -z "$STASH_SHA" ] && return 0
+    if ! git -C "$w" stash apply --index "$STASH_SHA" >>"$LOG" 2>&1; then
+        log "stash apply --index failed for $STASH_SHA"
+        return 1
+    fi
+    now=$(git -C "$w" status --porcelain)
+    if [ "$now" != "$PRE_STATUS" ]; then
+        log "status after restore differs from before stash; stash kept"
+        return 2
+    fi
+    i=$(git -C "$w" stash list --format='%H %gd' | awk -v s="$STASH_SHA" '$1==s{print $2; exit}')
+    [ -n "$i" ] && git -C "$w" stash drop -q "$i" >>"$LOG" 2>&1
+    log "restored and verified $STASH_SHA; stash entry dropped (ref kept)"
+    return 0
+}
+
+restore_or_fail() {                          # restore_or_fail <worktree> <what>
+    local rc
+    stash_restore "$1"; rc=$?
+    [ $rc -eq 0 ] && return 0
+    fail "$2: uncommitted work could not be restored cleanly in $1 (rc=$rc)" \
+"Your uncommitted work is safe in stash commit $STASH_SHA (also refs/work-sync/$RUN_ID/stash-<branch>).
+The worktree may hold a partial/conflicted apply. To recover:
+  git -C $1 checkout -f HEAD -- .          # only after confirming the partial state is disposable
+  git -C $1 stash apply --index $STASH_SHA
+If the stash entry is gone: git -C $1 stash apply --index $STASH_SHA still works."
+    return 1
+}
+
+# ---- one repo ----------------------------------------------------------------
+sync_repo() {
+    local path=$1 remote=$2 rbranch=$3 mirror=$4 dev=$5
+    local rref common lockf top state m_old r_tip d_old wtm wtd n_before n_after c
+    REPO=$path; LOG=$RUN_DIR/$(printf '%s' "$path" | tr -c 'A-Za-z0-9._\n' '_').log
+    : >"$LOG"; log "start $path remote=$remote/$rbranch mirror=$mirror dev=$dev"
+
+    top=$(git -C "$path" rev-parse --show-toplevel 2>/dev/null) \
+        || { fail "not a git repository (or path missing)" "Fix the path in $CONFIG."; return; }
+    common=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir)
+    { exec 8>"$common/work-repo-sync.lock"; } 2>/dev/null \
+        || { fail "cannot open $common/work-repo-sync.lock (read-only git dir?)" "Check permissions; nothing was changed."; return; }
+    flock -n 8 || { result BUSY "another work-repo-sync holds $common/work-repo-sync.lock"; exec 8>&-; return; }
+
+    if r=$(busy_reason "$path"); then result BUSY "operation in progress: $r (skipped, nothing changed)"; exec 8>&-; return; fi
+    if [ -n "$BUSY_CMD" ] && $BUSY_CMD "$path" >>"$LOG" 2>&1; then
+        result BUSY "WORK_SYNC_BUSY_CMD reports the repo busy (skipped)"; exec 8>&-; return
+    fi
+
+    rref=refs/remotes/$remote/$rbranch
+    if [ $NOFETCH -eq 0 ]; then
+        if ! GIT_T=180 git -C "$path" fetch --no-tags "$remote" "refs/heads/$rbranch:$rref" >>"$LOG" 2>&1; then
+            fail "fetch of $remote/$rbranch failed (network, auth, missing branch, or non-fast-forward production ref); nothing changed" \
+"Read the log, then retry by hand: git -C $path fetch $remote refs/heads/$rbranch:$rref
+If production history was rewritten, decide whether to accept it; this job never forces a fetch."
+            exec 8>&-; return
+        fi
+    fi
+    r_tip=$(git -C "$path" rev-parse -q --verify "$rref") \
+        || { fail "$rref does not exist (check remote/branch mapping)" "Fix the mapping line in $CONFIG."; exec 8>&-; return; }
+    m_old=$(git -C "$path" rev-parse -q --verify "refs/heads/$mirror") \
+        || { fail "mirror branch $mirror does not exist locally" "Create it deliberately or fix the mapping in $CONFIG."; exec 8>&-; return; }
+
+    local mstate
+    if [ "$m_old" = "$r_tip" ]; then mstate=equal
+    elif git -C "$path" merge-base --is-ancestor "$m_old" "$r_tip"; then mstate=behind
+    elif git -C "$path" merge-base --is-ancestor "$r_tip" "$m_old"; then mstate=ahead
+    else mstate=diverged; fi
+    log "mirror $mirror=$m_old remote=$r_tip state=$mstate"
+
+    d_old=""
+    if [ "$dev" != "-" ]; then
+        d_old=$(git -C "$path" rev-parse -q --verify "refs/heads/$dev") \
+            || { fail "dev branch $dev does not exist locally" "Fix the mapping in $CONFIG."; exec 8>&-; return; }
+    fi
+
+    if [ "$mstate" = diverged ]; then
+        saferef "$path" "$mirror" "$m_old"; saferef "$path" "remote-$mirror" "$r_tip"
+        fail "$mirror has local commits AND production moved (diverged); nothing changed" \
+"Decision needed: local-only commits are $(git -C "$path" rev-list --count "$rref..$mirror") (git -C $path log --oneline $rref..$mirror).
+Options: cherry-pick/rebase them onto $rref by hand, or park them on a branch and reset the mirror.
+Safety refs: refs/work-sync/$RUN_ID/$mirror (old local tip), refs/work-sync/$RUN_ID/remote-$mirror."
+        exec 8>&-; return
+    fi
+
+    if [ $DRY -eq 1 ]; then
+        local dn=""
+        [ -n "$d_old" ] && dn=" dev $dev: $(git -C "$path" rev-list --count "$mirror..$dev") own commits, $(git -C "$path" rev-list --count "$dev..$rref") behind remote"
+        result DRYRUN "mirror $mirror is $mstate production ($(git -C "$path" rev-list --count "$mirror..$rref") to fast-forward, $(git -C "$path" rev-list --count "$rref..$mirror") unpublished ahead);$dn"
+        exec 8>&-; return
+    fi
+
+    # safety refs before anything moves
+    if [ "$mstate" = behind ] || [ -n "$d_old" ]; then
+        if ! saferef "$path" "$mirror" "$m_old" || { [ -n "$d_old" ] && ! saferef "$path" "$dev" "$d_old"; }; then
+            fail "could not write safety refs under refs/work-sync/$RUN_ID; nothing was changed" "Check the repo's refs directory permissions and branch-name collisions."
+            exec 8>&-; return
+        fi
+    fi
+
+    # ---- mirror ----
+    local mdone="mirror $mirror already $mstate"
+    if [ "$mstate" = behind ]; then
+        wtm=$(worktree_of_branch "$path" "$mirror")
+        if [ -z "$wtm" ]; then
+            git -C "$path" update-ref -m "work-repo-sync: ff $mirror to $remote/$rbranch" "refs/heads/$mirror" "$r_tip" "$m_old" \
+                || { fail "could not update refs/heads/$mirror (ref changed underneath?)" "Re-run; old tip is refs/work-sync/$RUN_ID/$mirror."; exec 8>&-; return; }
+            mdone="mirror $mirror fast-forwarded $m_old..$r_tip (no worktree)"
+        elif recent_dirty "$wtm"; then
+            result BUSY "worktree $wtm has dirty files touched <${QUIET_MIN}m ago; mirror not updated this run"
+            exec 8>&-; return
+        elif git -C "$wtm" merge --ff-only "$rref" >>"$LOG" 2>&1; then
+            mdone="mirror $mirror fast-forwarded $m_old..$r_tip in $wtm"
+        elif is_dirty "$wtm"; then
+            if r=$(busy_reason "$path"); then result BUSY "$r appeared before stashing; skipped"; exec 8>&-; return; fi
+            if ! stash_save "$wtm" "$mirror"; then
+                fail "ff of $mirror blocked by local changes and stashing them failed" "Nothing was changed. Resolve $wtm by hand."; exec 8>&-; return
+            fi
+            if git -C "$wtm" merge --ff-only "$rref" >>"$LOG" 2>&1; then
+                mdone="mirror $mirror fast-forwarded $m_old..$r_tip in $wtm (with stash)"
+                restore_or_fail "$wtm" "mirror update" || { exec 8>&-; return; }
+            else
+                restore_or_fail "$wtm" "mirror update (ff failed)"
+                fail "ff-only merge of $mirror failed even with a clean tree" "Old tip: refs/work-sync/$RUN_ID/$mirror. See log."; exec 8>&-; return
+            fi
+        else
+            fail "ff-only merge of $mirror failed on a clean tree" "See log; old tip refs/work-sync/$RUN_ID/$mirror."; exec 8>&-; return
+        fi
+    fi
+    log "$mdone"
+
+    # ---- dev ----
+    if [ -z "$d_old" ]; then result OK "$mdone"; exec 8>&-; return; fi
+    local mtip; mtip=$(git -C "$path" rev-parse "refs/heads/$mirror")
+    if git -C "$path" merge-base --is-ancestor "$mtip" "$d_old"; then
+        result OK "$mdone; dev $dev already on $mirror"; exec 8>&-; return
+    fi
+    if [ -n "$(git -C "$path" rev-list --merges "$mtip..$d_old" | head -1)" ]; then
+        result SKIP "$mdone; dev $dev has merge commits, not auto-rebased"
+        attn "## DECISION: $REPO" "" "$dev contains merge commits since $mirror; automatic rebase would flatten them. Rebase by hand if wanted. Old tip: refs/work-sync/$RUN_ID/$dev" ""
+        exec 8>&-; return
+    fi
+    for c in $(git -C "$path" rev-list "$mtip..$d_old"); do
+        if [ -n "$(git -C "$path" for-each-ref --count=1 --contains "$c" refs/remotes)" ]; then
+            result SKIP "$mdone; dev $dev commits are already on a remote branch; rewriting needs approval"
+            attn "## DECISION: $REPO" "" "$dev has commits that exist on a remote ($(git -C "$path" for-each-ref --contains "$c" --format='%(refname:short)' refs/remotes | head -3 | tr '\n' ' ')). Rebasing would rewrite published history, so it was skipped. Mirror is updated." ""
+            exec 8>&-; return
+        fi
+    done
+    wtd=$(worktree_of_branch "$path" "$dev")
+    if [ -z "$wtd" ]; then
+        result SKIP "$mdone; dev $dev is not checked out in any worktree, not rebased"; exec 8>&-; return
+    fi
+    if recent_dirty "$wtd"; then
+        result BUSY "$mdone; $wtd has dirty files touched <${QUIET_MIN}m ago, dev not rebased"; exec 8>&-; return
+    fi
+    n_before=$(git -C "$path" rev-list --count "$mtip..$d_old")
+    if r=$(busy_reason "$path"); then result BUSY "$mdone; $r appeared before stashing, dev not rebased"; exec 8>&-; return; fi
+    if ! stash_save "$wtd" "$dev"; then
+        fail "$mdone; but stashing $wtd failed, dev $dev not rebased" "Nothing in $wtd was changed. Old tips under refs/work-sync/$RUN_ID/."; exec 8>&-; return
+    fi
+    if git -C "$wtd" rebase "$mtip" >>"$LOG" 2>&1; then
+        n_after=$(git -C "$path" rev-list --count "$mtip..refs/heads/$dev")
+        if [ "$n_after" != "$n_before" ]; then
+            log "commit count changed $n_before -> $n_after (rebase dropped already-applied patches)"
+        fi
+        if restore_or_fail "$wtd" "dev rebase"; then
+            result OK "$mdone; dev $dev rebased onto $mirror ($n_before -> $n_after own commits)"
+        fi
+    else
+        git -C "$wtd" rebase --abort >>"$LOG" 2>&1
+        if [ "$(git -C "$wtd" rev-parse HEAD)" != "$d_old" ]; then
+            fail "$mdone; rebase conflicted AND abort did not return $dev to $d_old" \
+"Old tip of $dev: $d_old (also refs/work-sync/$RUN_ID/$dev). With the worktree clean: git -C $wtd reset --keep $d_old
+Uncommitted work (if any) is in stash commit ${STASH_SHA:-none}: git -C $wtd stash apply --index ${STASH_SHA:-<none>}"
+        else
+            restore_or_fail "$wtd" "rebase conflict" \
+                && { NFAIL=$((NFAIL + 1)); result FAIL "$mdone; rebase of $dev onto $mirror conflicted; aborted, $dev unchanged, uncommitted work restored"
+                     attn "## FAIL: $REPO" "" "Rebase of $dev onto $mirror conflicted. Mirror IS updated. $dev is unchanged." "" "Resolve manually: git -C $wtd rebase $mirror" "Old tip: refs/work-sync/$RUN_ID/$dev" "" "Log: $LOG" ""; }
+        fi
+    fi
+    exec 8>&-
+}
+
+# ---- discovery of new repos (opt-in) ---------------------------------------------
+# Auto-import only when ALL hold: a master/main branch tracks a non-forge remote branch that exists locally,
+# that remote was fetched or has a commit within RECENT_DAYS, mirror not diverged, no operation in progress.
+# Anything else is reported once in ATTENTION.md; list paths to silence in repos.ignore (one substring per line).
+discover() {
+    local gdir dir common top m r mg rb url newest fh ct now reason dev line
+    declare -A known
+    local pth
+    while IFS='|' read -r pth _; do
+        case $pth in ''|'#'*) continue ;; esac
+        common=$(git -C "$pth" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) && known[$common]=1
+    done < <({ cat "$CONFIG"; echo; cat "$AUTO" 2>/dev/null; })
+    now=$(date +%s)
+    while IFS= read -r gdir; do
+        dir=$(dirname "$gdir")
+        common=$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || continue
+        [ -n "${known[$common]:-}" ] && continue
+        known[$common]=1
+        if [ -f "$IGNORE" ] && grep -q -F -f <(grep -v '^#' "$IGNORE" | grep -v '^$') <<<"$dir"; then continue; fi
+        REPO=$dir; LOG=$RUN_DIR/discover.log; reason=""; m=""; dev=-
+        for r in master main; do
+            git -C "$dir" show-ref -q --verify "refs/heads/$r" || continue
+            mg=$(git -C "$dir" config --get "branch.$r.merge"); url=$(git -C "$dir" config --get "branch.$r.remote")
+            if [ -n "$url" ] && [ "$url" != . ] && [ -n "$mg" ]; then m=$r; break; fi
+        done
+        if [ -z "$m" ]; then reason="no master/main branch tracking a remote"
+        else
+            r=$url; rb=${mg#refs/heads/}
+            if git -C "$dir" remote get-url "$r" 2>/dev/null | grep -q -E "$FORGE_RE"; then reason="remote '$r' is a public forge, not a production target"
+            elif ! git -C "$dir" rev-parse -q --verify "refs/remotes/$r/$rb" >/dev/null; then reason="remote-tracking ref $r/$rb missing (never fetched)"
+            elif busy_reason "$dir" >/dev/null; then reason="operation in progress"
+            else
+                ct=$(git -C "$dir" log -1 --format=%ct "refs/remotes/$r/$rb"); fh=$(stat -c %Y "$common/FETCH_HEAD" 2>/dev/null || echo 0)
+                newest=$(( ct > fh ? ct : fh ))
+                if [ $(( now - newest )) -gt $(( RECENT_DAYS * 86400 )) ]; then reason="no fetch or upstream commit in $RECENT_DAYS days"
+                elif ! git -C "$dir" merge-base --is-ancestor "$m" "refs/remotes/$r/$rb" && ! git -C "$dir" merge-base --is-ancestor "refs/remotes/$r/$rb" "$m"; then reason="$m already diverged from $r/$rb"
+                fi
+            fi
+        fi
+        if [ -n "$reason" ]; then
+            grep -qxF "$dir" "$STATE/reported-unmapped.txt" 2>/dev/null && continue
+            echo "$dir" >>"$STATE/reported-unmapped.txt"
+            attn "## NEW REPO NOT SYNCED: $dir" "" "Not auto-imported: $reason. Add a line to $CONFIG, or the path to $IGNORE." ""
+            result SKIP "new repo not auto-imported: $reason"
+            continue
+        fi
+        git -C "$dir" show-ref -q --verify refs/heads/local && dev=local
+        line="$dir|$r|$rb|$m|$dev"
+        printf '# auto-imported %s\n%s\n' "$(date +%F)" "$line" >>"$AUTO"
+        attn "## AUTO-IMPORTED (please verify): $dir" "" "Mapping added to $AUTO: $line" "Remove that line if this is not a production remote." ""
+        result OK "auto-imported new repo: $line"
+    done < <(find "$DISCOVER_ROOT" -maxdepth 6 \( -name vendor -o -name node_modules -o -name '_archive*' -o -name '*backup*' -o -name '_pre-unify*' -o -name .bare \) -prune -o -name .git -print 2>/dev/null)
+}
+
+# ---- main ----------------------------------------------------------------------
+{
+    echo "work-repo-sync run $RUN_ID  $(date '+%F %T %Z')  config=$CONFIG dry=$DRY"
+} >>"$SUMMARY"
+[ -n "$DISCOVER_ROOT" ] && [ $DRY -eq 0 ] && [ -z "$ONLY" ] && discover
+while IFS='|' read -r path remote rbranch mirror dev _; do
+    case $path in ''|'#'*) continue ;; esac
+    [ -n "$ONLY" ] && [[ $path != *"$ONLY"* ]] && continue
+    sync_repo "$path" "$remote" "$rbranch" "$mirror" "${dev:--}"
+done < <({ cat "$CONFIG"; echo; cat "$AUTO" 2>/dev/null; })
+
+[ -f "$STATE/ATTENTION.md" ] && cp -f "$STATE/ATTENTION.md" "$STATE/ATTENTION.prev.md"
+if [ -s "$ATTN" ]; then
+    { echo "# work-repo-sync needs attention ($RUN_ID)"; echo; echo "Summary: $SUMMARY"; echo; cat "$ATTN"; } >"$STATE/ATTENTION.md"
+else
+    printf '# work-repo-sync: run %s needed no attention\n' "$RUN_ID" >"$STATE/ATTENTION.md"
+fi
+{ echo "== $RUN_ID"; cat "$SUMMARY"; } >>"$STATE/history.log"
+cat "$SUMMARY"
+if [ -n "$NOTIFY_CMD" ] && [ $DRY -eq 0 ] && [ -s "$ATTN" ]; then
+    if $NOTIFY_CMD "work-repo-sync: needs attention ($(hostname -s), $NFAIL failed)" "$(head -c 8000 "$STATE/ATTENTION.md")" >>"$RUN_DIR/notify.log" 2>&1; then
+        echo "notification sent" >>"$SUMMARY"
+    else
+        echo "NOTIFICATION FAILED, see $RUN_DIR/notify.log (ATTENTION.md still written)" | tee -a "$SUMMARY" >&2
+    fi
+fi
+[ $NFAIL -eq 0 ] || exit 1
+exit 0
