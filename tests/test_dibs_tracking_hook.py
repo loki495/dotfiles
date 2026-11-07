@@ -57,11 +57,11 @@ with open(path, 'r+') as f:
                 result = {'conflict': True}
             else:
                 item['body'] = opts['body']; item['revision'] += 1
-                result = {'id': int(opts['comment-id']), 'revision': item['revision']}
+                result = {'comment_id': int(opts['comment-id']), 'revision': item['revision']}
         else:
             cid = str(len(db['comments']) + 1)
             db['comments'][cid] = {'issue': pos[0], 'body': opts['body'], 'revision': 1}
-            result = {'id': int(cid), 'revision': 1}
+            result = {'comment_id': int(cid), 'revision': 1}
     elif cmd == 'dropped':
         result = db['dropped']
     else:

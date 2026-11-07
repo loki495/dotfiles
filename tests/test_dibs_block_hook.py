@@ -40,7 +40,7 @@ elif cmd == 'comment':
         print(json.dumps({'id': int(opt['comment-id']), 'revision': c['revision']}))
     else:
         cid = str(len(cs) + 1); cs[cid] = {'issue': pos[0], 'body': opt['body'], 'revision': 1}
-        print(json.dumps({'id': int(cid), 'revision': 1}))
+        print(json.dumps({'comment_id': int(cid), 'revision': 1}))
 elif cmd == 'update':
     i = db['issues'][pos[0]]
     if int(opt['expected-revision']) != i['revision']:

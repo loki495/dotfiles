@@ -163,8 +163,8 @@ class Session:
                 notes[issue] = {'id': prev['id'], 'revision': r.get('revision', prev['revision'] + 1), 'text': progress}
                 return f'note {issue}: checkpoint comment {prev["id"]} updated'
         r = cli('comment', issue, f'--body={text}', f'--idempotency-key={key}')
-        notes[issue] = {'id': r['id'], 'revision': r.get('revision', 1), 'text': progress}
-        return f'note {issue}: checkpoint comment {r["id"]} added'
+        notes[issue] = {'id': r['comment_id'], 'revision': r.get('revision', 1), 'text': progress}
+        return f'note {issue}: checkpoint comment {r["comment_id"]} added'
 
     def beat(self):
         for issue, token in list(self.state['claims'].items()):
