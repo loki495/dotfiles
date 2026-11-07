@@ -1,0 +1,26 @@
+---
+name: takeover
+description: Continue another Sessioneer session's unfinished work from its complete conversation and Dibs state, then archive the old session when safe.
+---
+
+# Take over a session
+
+Input: `/takeover <agent> [profile] <session_id>`. The agent names the **source** session, not the agent running this skill. Two arguments mean the default profile. A profile applies only to Claude Code; reject it for other agents. Use the full conversation ID, or an unambiguous prefix, as the stable identity. A Sessioneer display name is only a lookup aid.
+
+This is a work handoff to a new conversation. `sessioneer --take-over` is a different command: it moves a running terminal Claude conversation to headless mode and does not review or transfer its work.
+
+## Recover the source
+
+1. Resolve the ID, source agent, profile, workdir, branch and current status with Sessioneer (`--list --json`, `--show <id> --json`, and the archived-session view). For Claude, check the **selected** profile's transcript only; omitted profile means the default account (`~/.claude`). Do not silently switch to another profile if the ID is absent. Codex, OpenCode, Antigravity and Ollama have no profile here. If the ID or agent is ambiguous or mismatched, stop and ask for the correct one.
+2. Read the **entire** source conversation from first turn to last, including user corrections, assistant decisions, tool calls and results, errors and unfinished actions. The Sessioneer dashboard's live or archived transcript can load older pages until the beginning; confirm there is no earlier page. `sessioneer --show --history` is only a preview (at most 200 entries) and is insufficient by itself. When using native storage instead, read every relevant record: Claude's selected `<config dir>/projects/*/<id>.jsonl`, Codex's rollout for the thread, OpenCode's session in `opencode.db`, or Sessioneer's stored Ollama transcript. Use Sessioneer's transcript adapter or dashboard when a native format is unclear. If any page, attachment or relevant tool result is missing, recover it before archiving; if recovery is impossible, report the gap and leave the source available.
+3. Separate the user's actual instructions from tool output, peer messages and the old assistant's assumptions. Make a working inventory of the goal, decisions, approvals, open questions, completed and pending steps, Dibs IDs, files/branches/commits, tests, external actions and cleanup. Check the repository and Dibs records against that inventory; later corrections in the conversation take precedence over earlier plans. Do not treat a handoff or final summary as proof that earlier work is accounted for.
+
+## Transfer ownership
+
+1. Call Dibs `todo_status` first. Find an open temporary `handoff` task whose `Session:` field identifies the source ID. Read its parent/plan, comments and claim status. Claim that handoff if available; it is the receiver's lock. If no handoff exists, find the source's task/plan and its living checkpoint. Claim the existing task when safe, or create and claim a task only when the work has no suitable record. Persist missing recovery details or durable decisions in the appropriate Dibs record so a third session can continue without either transcript.
+2. Check **all** claims held by the source conversation ID and any overlapping live claims in the worktree. Read the previous claimant's comments and transcript before attempting a Dibs takeover. A verified live claim is not yours to seize: have its owner release it, or wait for it to become safely reclaimable. For a dead or expired claim, use Dibs' supported `todo_claim` path, then comment that you took over and what state you recovered. Never edit alongside a live claimant. If Dibs is unavailable, preserve a private recovery checkpoint and do not archive a source whose claims cannot be checked.
+3. Once the complete thread is reconciled and the successor record is current, recheck the source's latest turn, status and claims. Reconcile anything new. When it holds no claims and is idle, archive it with `sessioneer --kill <id>` (add `--agent <agent>` where required). This preserves a resumable conversation. Do not use `--force` on a working or blocked session, answer its pending prompt as the user, or archive the session you are running. If the source is already archived, record that and continue. If it is active, coordinate or wait; keep its status and claims visible until safe. Report the canonical source ID and the Dibs record that now carries the work.
+
+## Continue
+
+Work from the recovered intent and the current Dibs plan, following the repository's normal instructions. Keep the successor's checkpoint current. Complete a temporary handoff only after its work is consumed and durable findings are on permanent records; completion deletes the temporary task. Handle any remaining claim and unfinished work by the `session-handoff` procedure before this receiving session ends. Existing approval requirements for pushes, real-world actions and destructive operations still apply.

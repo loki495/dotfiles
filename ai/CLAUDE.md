@@ -9,8 +9,9 @@ file only adds what is specific to Claude Code. Read the shared rules first.
 ## Context window management
 
 Every call re-reads the whole context. Past **~250k tokens**, tell Andres and offer `/handoff`
-then `/clear` before new work (finish the current step first); the context-budget hook enforces
-it. Avoid `/model` switches and plugin reloads in a big session (each forces a full cache rewrite).
+then a fresh session with `/takeover claude [profile] <session_id>` before new work (finish the
+current step first); `/clear` is another option after the handoff. The context-budget hook enforces
+the warning. Avoid `/model` switches and plugin reloads in a big session (each forces a full cache rewrite).
 
 ## Hooks
 
