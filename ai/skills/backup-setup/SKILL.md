@@ -45,7 +45,9 @@ stdin into a temp file. `~/.dotfiles-private/inmotion/setup-backup-db-users.py`
 (run on the main machine, which holds the WHM API token) creates the users,
 writes `db.cnf` and grants them on every DB the account has. It is idempotent:
 **re-run it after an account gets a new database**, or that DB is not dumped
-(the dump lists databases at run time but only sees those granted).
+(the dump lists databases at run time but only sees those granted). An account
+that has databases (per its own `uapi Mysql list_databases`) but no `db.cnf` is
+counted as failed and mails the alert, so a missing dump is never logged as ok.
 
 ### Adding an account
 
