@@ -4,13 +4,17 @@
 # Also block ending the session while it still holds a live Dibs claim. Blocks at most
 # STOP_GATE_CAP times per session (a counter file), then allows with a visible warning, so it can
 # never loop. DIBS_STOP_GATE=off skips the gate. Dibs unreachable allows with a warning.
-# A session whose cwd holds a .no-stop-gate file is skipped entirely.
+# A session whose exact cwd is registered in STOP_GATE_SKIP_DIR (fresh, user-owned entry) is skipped entirely.
 # DIBS_CLAIMS_CMD overrides the command (tests); it receives --held-by=<session id> appended.
 input=$(cat)
-# One-off sessions that must return exactly what they were asked (e.g. a bridge extraction) opt out
-# with an empty .no-stop-gate file in their working directory.
+# One-off sessions that must return exactly what they were asked (e.g. a bridge extraction) opt out by
+# registering their exact working directory in a private runtime dir, never inside the directory itself
+# (a repo cannot ship the opt-out). The entry must be owned by this user and touched in the last 30 minutes.
 cwd=$(jq -r '.cwd // empty' <<<"$input")
-[ -n "$cwd" ] && [ -e "$cwd/.no-stop-gate" ] && exit 0
+if [ -n "$cwd" ]; then
+  skip="${STOP_GATE_SKIP_DIR:-${XDG_RUNTIME_DIR:-$HOME/.cache}/dibs-stop-gate-skip}/$(printf %s "$cwd" | sha256sum | cut -c1-32)"
+  [ -f "$skip" ] && [ -O "$skip" ] && [ -n "$(find "$skip" -mmin -30 2>/dev/null)" ] && exit 0
+fi
 # The ```dibs block is applied first (idempotent), so a done line closes its claim before the
 # claim check below, and a block re-sent after a status-line block is not lost or doubled.
 block=$("${DIBS_BLOCK_CMD:-$(dirname "$0")/dibs-block.py}" stop <<<"$input" 2>/dev/null)
