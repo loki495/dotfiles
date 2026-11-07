@@ -58,6 +58,13 @@ handoff unless the session holds state a handoff cannot carry.
 
 ## Profiles
 
+Rule 1468 makes the applicable profile mandatory for substantial coding work. Before implementation,
+record the task classification, selected roles, and their separate contexts in the Dibs task or plan.
+Multiple phases, consequential design choices, security/data/history risk, and failure-investigation
+loops require role separation. Merely changing persona labels within one conversation is not
+independent testing or review. Small mechanical or documentation-only work may stay direct; record
+that scope decision in its task. Use the required roles rather than launching every persona by default.
+
 - **New feature:** designer, then (orchestrator starts) test builder, interpreter test audit,
   implementer, runner, interpreter on failure, reviewer if security-sensitive or large, closer.
 - **Bugfix:** interpreter (reproduce, locate), test builder (regression test first, must fail),

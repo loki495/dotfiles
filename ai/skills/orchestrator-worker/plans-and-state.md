@@ -15,9 +15,9 @@ crossing the second.
 - work I would already reach for the in-session `TodoWrite` tool for, **and** it
   needs to survive a session boundary rather than just this conversation.
 
-Skip Dibs for single-turn, single-file, quickly-resolved work — a plain reply
-or an ordinary `TodoWrite` list is enough, and scaffolding a plan for a three-line fix
-is pure overhead. When genuinely unsure whether a task clears this bar, err toward
+Skip a durable plan for single-turn, single-file, quickly-resolved work. Persistent mutation still
+requires a claimed task under rule 727; use a local-only temporary task for an ad hoc change.
+Only quickly resolved read-only questions need no Dibs record. When genuinely unsure whether a task clears this bar, err toward
 creating the plan — cheap to create (one `todo_scaffold_plan` call), cheap to leave
 nearly empty, expensive to reconstruct provenance for later if skipped and the task
 turns out to run long.

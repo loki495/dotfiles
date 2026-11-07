@@ -23,7 +23,8 @@ Work is built on **Dibs** (tasks, plans, bugs, knowledge) and **Sessioneer** (li
 between sessions) so any session of any agent can pick up another's work cold. Quota can run out
 mid-task, so the records must always be good enough to continue from.
 
-1. **Claim before working** [rule 727]; never end a session holding a claim [rule 728]. Unfinished
+1. **Track intent and claim before mutation** [rule 727]; use a temporary task for bounded ad hoc
+   work and a durable plan for substantial work. Never end a session holding a claim [rule 728]. Unfinished
    work is parked with a handoff, never just abandoned [rules 728, 747]. Identity
    `<agent>:<session name>:<conversation id>`, first comment with workdir and branch. Everywhere else refer to
    sessions by conversation id (name only as a label) and to Dibs records by local Dibs id, never
@@ -48,12 +49,16 @@ mid-task, so the records must always be good enough to continue from.
    quota stop starting new steps, park the work: file the handoff task, record exact state, release
    claims, tell Andres with its id.
    Keep Dibs lean [rule 757]; never reveal Dibs items in public docs [rule 737].
+8. **Use independent personas for substantial coding work** [rule 1468]; choose the applicable
+   profile before implementation (`orchestrator-worker/personas.md`). Small mechanical edits stay
+   direct; designing, testing and judging substantial work in one context is not role separation.
 
 ## Hard rules — always / never
 
 Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook when it applies.
 
-- **NEVER** start work unclaimed or alongside another session's live claim [727]; never end a session
+- **NEVER** begin persistent mutation or substantial work without a recorded intent and claim [727],
+  or edit alongside another session's live claim; never end a session
   holding a claim, and never with unfinished work and no handoff task (labelled `handoff`, body from
   skill `session-handoff`, id given to Andres) [728, 747].
 - **ALWAYS** clean up what you created only to test, in the same step [1209].
@@ -94,6 +99,8 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
   [rule 926]. Pick agent, model and reasoning effort by work
   type from the tier table (mechanical, balanced, advanced, frontier; frontier only with Andres's
   approval) [rule 1067]; skill `orchestrator-worker`, "Model routing by work type".
+- Select and record the persona profile for substantial feature, bugfix and refactor work before
+  implementation [rule 1468]; use separate contexts where the profile requires independence.
 - Offer a hand-off prompt for multi-session work only when context is getting full or a fresh
   session is genuinely needed. Prefer `sessioneer` continuation sessions (skill
   `orchestrator-worker`, "Continuation sessions") with `--model sonnet --mode auto`.

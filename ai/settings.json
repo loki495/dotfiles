@@ -436,6 +436,38 @@
             "command": "$HOME/.claude/hooks/dibs-block.py heartbeat"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py guard",
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py checkpoint"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py checkpoint"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -445,6 +477,15 @@
           {
             "type": "command",
             "command": "php $HOME/www/personal/sessioneer/host-agent/hooks/session_start.php"
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/dibs-block.py recover"
           }
         ]
       },

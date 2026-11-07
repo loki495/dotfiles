@@ -10,7 +10,7 @@ default way multi-step work happens, not something to invoke on request. Hard ru
 rules (injected by the rule-inject hook; other agents grep `ai/rules.md`): claim before working
 [727], never end holding a claim [728], keep plans current [729], done means all of it [730],
 name agent and model before launching and delegation cost [926], quota [747], keep Dibs lean [757], filing [927],
-model tiers [1067].
+model tiers [1067], independent personas for substantial work [1468].
 
 The loop: investigate, plan, delegate if warranted (cheapest capable model, one bounded task per
 worker), workers complete or block and ask, the orchestrator answers or re-plans, then review,
@@ -35,8 +35,9 @@ orchestrator listens.
    - Pick agent, model and effort by work type → `model-routing.md` (tier table, cost gates).
    - Write the worker prompt and handle completion, cost reporting, questions and blockers →
      `roles-and-workers.md`.
-   - Feature, bugfix or refactor big enough that one session should not design, test, implement
-     and judge it: split it across personas (designer, test builder, implementer, runner,
+   - Substantial feature, bugfix or refactor: rule 1468 requires choosing and recording the persona
+     profile before implementation. Use independent contexts for the required roles, not role
+     labels in one conversation. Split it across personas (designer, test builder, implementer, runner,
      interpreter, reviewer, closer) → `personas.md` (matrix, prompts, profiles, test ownership).
    - Launch, tag, verify the launch, cross-tool or continuation sessions, parallel vs sequential →
      `launching-workers.md`.

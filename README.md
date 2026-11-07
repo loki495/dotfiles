@@ -548,6 +548,23 @@ All projects:
   on the current branch (or `sha="none: …"`) and a summary. Each line applies once, so a re-sent block
   is safe; a refused line blocks the stop once with the reason. `DIBS_BLOCK_DRY_RUN=1` reports without
   writing; `DIBS_CLI` overrides the CLI (tests).
+- **Claim required** (`dibs-block.py guard`, PreToolUse on Bash and persistent file-edit tools):
+  checks Dibs before a change. Without a live claim, it creates and claims one idempotent local-only
+  temporary task, saves the intended work and a recovery checkpoint, and denies that first call with
+  the task id. Review and classify the task, then retry. Existing own claims are reused. The guard
+  exempts narrowly recognized read-only and bookkeeping commands; ambiguous shell commands require
+  tracking. Missing session identity or unavailable Dibs blocks persistent changes with a recovery
+  message rather than silently proceeding untracked. Scratch paths are not a blanket `/tmp` bypass.
+- **Recovery checkpoints** (`dibs-block.py heartbeat/checkpoint`): save the goal, canonical session
+  id, workdir, branch, bounded git status, time and next step in one living comment while preserving
+  progress notes. Checkpoints refresh during work and at Stop, PreCompact and SessionEnd; they never
+  complete or release a task. Hook-owned claims use a 90-minute lease, renewed at most every
+  15 minutes. Claims made through another client keep that client's token and renewal responsibility.
+  State and capability tokens remain private, with locked and atomic state updates.
+- **Dropped-work recovery** (`dibs-block.py recover`, SessionStart): lists bounded numeric task ids
+  under the current workdir, then asks the agent to inspect their normal trusted details before
+  resuming. It never runs or claims the listed work automatically, and does not put raw task titles
+  into the session context. An unavailable Dibs service produces a visible warning.
 - **Stop gate** (`hooks/stop-gate.sh`, Stop): first runs the Dibs block, then blocks (once per turn, via `stop_hook_active`) a final
   message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
   "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent; the block tells the session it need not repeat the message, only output the missing status line unless something else changed. It also tells a session waiting on the user to ask the pending question with the question tool first, keeping "Waiting on Andres" for what a question cannot carry. It also tells a session whose work was handed to a new session that no longer needs it to say "Safe to archive this session." instead of "Waiting on other work". Then blocks ending the session while it still holds a live

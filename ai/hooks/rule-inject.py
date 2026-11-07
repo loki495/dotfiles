@@ -34,7 +34,7 @@ BASH = [  # (regex on the command, rule ids, deny once)
 ]
 TEST_FILE = re.compile(r"(^|/)tests?/|(^|/)test_|_test\.|\.test\.|\.spec\.|Test\.php$")
 TOOLS = {  # tool name -> rule ids
-    "Agent": [926], "Task": [926],
+    "Agent": [926, 1468], "Task": [926, 1468],
     "mcp__dibs__todo_create": [927, 748, 757],
     "mcp__dibs__todo_complete": [728, 730, 1209, 1307], "mcp__dibs__todo_release": [728, 729, 730],
     "mcp__dibs__todo_comment": [757, 1307], "mcp__dibs__todo_heartbeat": [1307],
