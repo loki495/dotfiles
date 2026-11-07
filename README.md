@@ -552,7 +552,7 @@ All projects:
   Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
   Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
   `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;
-  `DIBS_STOP_GATE=off` skips it; Dibs unreachable allows with a warning. Subagent stops are not gated.
+  `DIBS_STOP_GATE=off` skips it; a session whose working directory holds an empty `.no-stop-gate` file is skipped entirely (one-off sessions that must return exactly what they were asked, such as Jacker's `bin/ai-bridge` extractions); Dibs unreachable allows with a warning. Subagent stops are not gated.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default 250k,
   `CLAUDE_CTX_BUDGET`) it warns and tells Claude to offer `/handoff` + `/clear`; after an idle gap
   (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over `CLAUDE_CTX_IDLE_FLOOR` (default 100k) it
