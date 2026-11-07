@@ -14,6 +14,8 @@ Interactive sessions only write hint lines; they never refresh a stale atlas. Ex
 (it runs inside a git hook).
 """
 import argparse
+import contextlib
+import fcntl
 import importlib.machinery
 import importlib.util
 import json
@@ -48,6 +50,18 @@ def append_jsonl(path, rec):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "a") as f:
         f.write(json.dumps(rec) + "\n")
+
+
+@contextlib.contextmanager
+def queue_lock(suffix=""):
+    path = QUEUE + suffix + ".lock"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def pending(records, repo):
@@ -116,7 +130,8 @@ def queue(repo):
         print(f"atlas-refresh: {repo}: merge brought in commits by others (or no ORIG_HEAD), not queued", file=sys.stderr)
         return
     head = subprocess.run(["git", "-C", repo, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-    append_jsonl(QUEUE, {"ts": int(time.time()), "repo": repo, "head": head})
+    with queue_lock():
+        append_jsonl(QUEUE, {"ts": int(time.time()), "repo": repo, "head": head})
     if quota_pct() <= QUOTA_MAX:
         subprocess.Popen([sys.executable, os.path.abspath(__file__), "run"], start_new_session=True,
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -125,7 +140,24 @@ def queue(repo):
 def stale_subsystems(repo):
     p = subprocess.run([os.path.join(HERE, "..", "hooks", "atlas-helper.py"), "stale", repo], capture_output=True,
                        text=True, env={**os.environ, "ATLAS_CACHE_TTL": "0"}, timeout=60)
-    return [s["id"] for s in json.loads(p.stdout or "{}").get("stale", [])]
+    if p.returncode != 0:
+        raise RuntimeError(f"atlas helper failed: {p.stderr.strip()}")
+    result = json.loads(p.stdout)
+    if (not isinstance(result, dict) or not result.get("atlas") or
+            not isinstance(result.get("subsystems"), list) or not result["subsystems"] or
+            not isinstance(result.get("stale"), list)):
+        raise RuntimeError("atlas helper returned an incomplete result")
+    subsystems = {}
+    for sub in result["subsystems"]:
+        if (not isinstance(sub, dict) or not isinstance(sub.get("id"), str) or not sub["id"] or
+                sub["id"] in subsystems or not isinstance(sub.get("owned"), list) or not sub["owned"] or
+                not all(isinstance(path, str) and path for path in sub["owned"])):
+            raise RuntimeError("atlas helper returned invalid subsystem inventory")
+        subsystems[sub["id"]] = sub["owned"]
+    stale = result["stale"]
+    if not all(isinstance(s, dict) and s.get("id") in subsystems for s in stale):
+        raise RuntimeError("atlas helper returned invalid stale subsystems")
+    return result["atlas"], subsystems, [s["id"] for s in stale]
 
 
 def stop_session(repo, session):
@@ -161,28 +193,55 @@ def refresh(repo, subsystem):
 
 
 def run(nightly):
-    queued = read_jsonl(QUEUE)
+    with queue_lock(".run"):
+        run_locked(nightly)
+
+
+def run_locked(nightly):
+    with queue_lock():
+        queued = read_jsonl(QUEUE)
     left = []
     for repo in dict.fromkeys(q["repo"] for q in queued):
         limit = HARD_MAX if nightly else QUOTA_MAX
         if quota_pct() > limit:
             left.append({"repo": repo})
             continue
-        stale = stale_subsystems(repo)
-        done = [s for s in stale if refresh(repo, s)]
+        try:
+            atlas, before, stale = stale_subsystems(repo)
+            done = []
+            for subsystem in stale:
+                cutoff = int(time.time()) - 1
+                if not refresh(repo, subsystem):
+                    continue
+                verified_atlas, subsystems, remaining = stale_subsystems(repo)
+                if (verified_atlas == atlas and subsystem in subsystems and subsystem not in remaining
+                        and set(before[subsystem]).issubset(subsystems[subsystem])):
+                    done.append((subsystem, cutoff))
+        except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as e:
+            left.append({"repo": repo})
+            print(f"atlas-refresh: {repo}: verification failed: {e}", file=sys.stderr)
+            continue
         if done:
-            append_jsonl(HINTS, {"ts": int(time.time()) + 1, "repo": repo, "refreshed": done})
-            print(f"{repo}: refreshed {', '.join(done)}")
+            for subsystem, cutoff in done:
+                append_jsonl(HINTS, {"ts": cutoff, "repo": repo, "refreshed": [subsystem]})
+            print(f"{repo}: refreshed {', '.join(s for s, _ in done)}")
         if len(done) < len(stale):
-            # A refresh that timed out or errored stays queued for the next run instead of
-            # vanishing with the queue file; the next merge or the nightly batch retries it.
             left.append({"repo": repo})
             print(f"atlas-refresh: {repo}: {len(stale) - len(done)} of {len(stale)} refreshes did not finish, queued again",
                   file=sys.stderr)
-    if os.path.exists(QUEUE):
-        os.remove(QUEUE)
-    for q in left:
-        append_jsonl(QUEUE, {"ts": int(time.time()), "repo": q["repo"], "head": q.get("head", "")})
+    with queue_lock():
+        current = read_jsonl(QUEUE)
+        # Only consume the snapshot; queue() may have appended more while a refresh ran.
+        remaining = current[len(queued):] if current[:len(queued)] == queued else current
+        remaining.extend({"ts": int(time.time()), "repo": q["repo"], "head": q.get("head", "")} for q in left)
+        if remaining:
+            temp = QUEUE + f".{os.getpid()}.tmp"
+            with open(temp, "w") as f:
+                for rec in remaining:
+                    f.write(json.dumps(rec) + "\n")
+            os.replace(temp, QUEUE)
+        elif os.path.exists(QUEUE):
+            os.remove(QUEUE)
     sync_hints()
 
 

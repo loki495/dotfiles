@@ -60,15 +60,26 @@ def load_atlas(repo):
         r, branch, sha = DM.parse_atlas(d.get("body", ""))
         if not r or os.path.realpath(r) != repo:
             continue
+        comments = d.get("comments", {})
+        if not isinstance(comments, dict) or comments.get("lastPage", 1) > 1:
+            raise ValueError("atlas comments incomplete")
         subs = []
-        for c in d.get("comments", {}).get("items", []):
+        for c in comments.get("items", []):
             b = c.get("body", "")
-            m = re.search(r"^subsystem:\s*(\S+)", b, re.M)
-            v = re.search(r"^verified-at:\s*([0-9a-f]{7,40})", b, re.M)
-            o = re.search(r"^owned_paths:\s*(.+)$", b, re.M)
+            m = re.search(r"^subsystem:[ \t]*(\S+)", b, re.M)
+            v = re.search(r"^verified-at:[ \t]*([0-9a-f]{7,40})", b, re.M)
+            o = re.search(r"^owned_paths:[ \t]*(.+)$", b, re.M)
+            if re.search(r"^subsystem:", b, re.M) and not m:
+                raise ValueError("malformed atlas subsystem header")
+            if m and (not v or not o or not o.group(1).strip()):
+                raise ValueError("malformed atlas subsystem")
             if m and v and o:
-                subs.append({"id": m.group(1), "verified_at": v.group(1),
-                             "owned": [x.strip() for x in o.group(1).split(",") if x.strip()]})
+                owned = [x.strip() for x in o.group(1).split(",") if x.strip()]
+                if not owned:
+                    raise ValueError("malformed atlas subsystem ownership")
+                subs.append({"id": m.group(1), "verified_at": v.group(1), "owned": owned})
+        if not subs:
+            raise ValueError("atlas has no verifiable subsystems")
         out = clean({"atlas": d["id"], "branch": branch, "stamp": sha, "subsystems": subs})
         break
     tmp = f"{cache}.{os.getpid()}"
@@ -82,7 +93,9 @@ def load_atlas(repo):
 def clean(a):
     """Drop subsystems whose stamp is not a plain hex SHA, so a bad cache or atlas never reaches git."""
     if a:
-        a["subsystems"] = [s for s in a.get("subsystems", []) if SHA_RE.match(str(s.get("verified_at", "")))]
+        subs = a.get("subsystems", [])
+        if any(not SHA_RE.fullmatch(str(s.get("verified_at", ""))) for s in subs):
+            raise ValueError("invalid atlas subsystem stamp")
     return a
 
 
@@ -115,11 +128,13 @@ def main():
             if git(repo, "merge-base", "--is-ancestor", s["verified_at"], "HEAD")[0] != 0:
                 stale.append({"id": s["id"], "why": f"stamp {s['verified_at']} is not on this branch"})
                 continue
-            changed = git(repo, "diff", "--name-only", s["verified_at"], "HEAD")[1].splitlines()
-            hit = [f for f in changed if owns(s["owned"], f)]
+            code, diff = git(repo, "diff", "--name-only", s["verified_at"], "HEAD", "--", *s["owned"])
+            if code != 0:
+                raise RuntimeError("git diff failed while checking atlas coverage")
+            hit = diff.splitlines()
             if hit:
                 stale.append({"id": s["id"], "why": f"{len(hit)} owned file(s) changed since {s['verified_at']}"})
-        print(json.dumps({"atlas": a["atlas"], "stale": stale}))
+        print(json.dumps({"atlas": a["atlas"], "subsystems": [{"id": s["id"], "owned": s["owned"]} for s in a["subsystems"]], "stale": stale}))
 
 
 main()

@@ -90,14 +90,110 @@ class AtlasRefreshTest(unittest.TestCase):
         with mock.patch.object(self.ar.subprocess, 'run', side_effect=OSError('no sessioneer')):
             self.assertEqual(self.ar.quota_pct(), 100)
 
-    def test_run_refreshes_stale_subsystems_records_them_and_empties_queue(self):
+    def test_partial_refresh_records_success_and_keeps_repository_for_retry(self):
         self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
-        with mock.patch.object(self.ar, 'quota_pct', return_value=10), mock.patch.object(self.ar, 'stale_subsystems', return_value=['core', 'ui']), \
+        self.ar.append_jsonl(self.ar.HINTS, self.hint(1, 'core'))
+        self.ar.append_jsonl(self.ar.HINTS, self.hint(1, 'ui'))
+        responses = [mock.Mock(returncode=0, stdout=json.dumps(value), stderr='') for value in (
+            {'atlas': 7, 'subsystems': [{'id': 'core', 'owned': ['src/']}, {'id': 'ui', 'owned': ['ui/']}], 'stale': [{'id': 'core'}, {'id': 'ui'}]},
+            {'atlas': 7, 'subsystems': [{'id': 'core', 'owned': ['src/']}, {'id': 'ui', 'owned': ['ui/']}], 'stale': [{'id': 'ui'}]},
+        )]
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), mock.patch.object(self.ar.subprocess, 'run', side_effect=responses), \
                 mock.patch.object(self.ar, 'refresh', side_effect=[True, False]) as refresh, mock.patch.object(self.ar, 'sync_hints'):
             self.ar.run(nightly=False)
         self.assertEqual(refresh.call_count, 2)
+        self.assertEqual(self.ar.read_jsonl(self.ar.HINTS)[-1]['refreshed'], ['core'])
+        self.assertEqual([h['subsystem'] for h in self.ar.pending(self.ar.read_jsonl(self.ar.HINTS), '/r')], ['ui'])
+        self.assertEqual([q['repo'] for q in self.ar.read_jsonl(self.ar.QUEUE)], ['/r'])
+
+    def run_with_helper_results(self, results):
+        self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
+        responses = [mock.Mock(returncode=code, stdout=stdout, stderr='helper error')
+                     for code, stdout in results]
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), \
+                mock.patch.object(self.ar.subprocess, 'run', side_effect=responses) as helper, \
+                mock.patch.object(self.ar, 'refresh', return_value=True) as refresh, \
+                mock.patch.object(self.ar, 'sync_hints'):
+            try:
+                self.ar.run(nightly=False)
+            except (RuntimeError, ValueError):
+                pass
+        self.assertEqual(helper.call_count, len(results))
+        return refresh
+
+    def test_unverifiable_initial_helper_result_retains_queue(self):
+        for result in [(1, ''), (0, '{"skipped": "Dibs unavailable"}'),
+                       (0, '{}'), (0, 'not json'), (0, '{"atlas": 7}'),
+                       (0, '{"atlas": 7, "subsystems": [], "stale": []}')]:
+            with self.subTest(result=result):
+                for path in (self.ar.QUEUE, self.ar.HINTS):
+                    if os.path.exists(path):
+                        os.remove(path)
+                refresh = self.run_with_helper_results([result])
+                refresh.assert_not_called()
+                self.assertEqual([q['repo'] for q in self.ar.read_jsonl(self.ar.QUEUE)], ['/r'])
+                self.assertEqual(self.ar.read_jsonl(self.ar.HINTS), [])
+
+    def test_successful_session_requires_fresh_verification_of_same_atlas(self):
+        initial = (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/", "docs/"]}], "stale": [{"id": "core"}]}')
+        for after in [(0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/", "docs/"]}], "stale": [{"id": "core"}]}'),
+                      (0, '{"atlas": 8, "subsystems": [{"id": "core", "owned": ["src/", "docs/"]}], "stale": []}'),
+                      (0, '{"atlas": 7, "subsystems": [], "stale": []}'),
+                      (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": []}], "stale": []}'),
+                      (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/"]}], "stale": []}'),
+                      (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/app/", "docs/"]}], "stale": []}'),
+                      (0, '{"atlas": 7, "stale": []}'),
+                      (0, '{"skipped": "Dibs unavailable"}'),
+                      (1, '')]:
+            with self.subTest(after=after):
+                for path in (self.ar.QUEUE, self.ar.HINTS):
+                    if os.path.exists(path):
+                        os.remove(path)
+                self.run_with_helper_results([initial, after]).assert_called_once_with('/r', 'core')
+                self.assertEqual([q['repo'] for q in self.ar.read_jsonl(self.ar.QUEUE)], ['/r'])
+                self.assertEqual(self.ar.read_jsonl(self.ar.HINTS), [])
+
+    def test_confirmed_refresh_clears_queue_and_records_subsystem(self):
+        self.run_with_helper_results([
+            (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/", "docs/"]}], "stale": [{"id": "core"}]}'),
+            (0, '{"atlas": 7, "subsystems": [{"id": "core", "owned": ["src/", "docs/", "tests/"]}], "stale": []}'),
+        ]).assert_called_once_with('/r', 'core')
+        self.assertEqual(self.ar.read_jsonl(self.ar.QUEUE), [])
         self.assertEqual(self.ar.read_jsonl(self.ar.HINTS)[0]['refreshed'], ['core'])
-        self.assertFalse(os.path.exists(self.ar.QUEUE))
+
+    def test_queue_entries_added_during_refresh_survive_even_for_same_repo(self):
+        self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'old'})
+        def refresh(repo, subsystem):
+            self.ar.append_jsonl(self.ar.QUEUE, {'ts': 2, 'repo': '/r', 'head': 'new'})
+            self.ar.append_jsonl(self.ar.QUEUE, {'ts': 2, 'repo': '/other', 'head': 'other'})
+            return True
+        before = (7, {'core': ['src/']}, ['core'])
+        after = (7, {'core': ['src/']}, [])
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), \
+                mock.patch.object(self.ar, 'stale_subsystems', side_effect=[before, after]), \
+                mock.patch.object(self.ar, 'refresh', side_effect=refresh), \
+                mock.patch.object(self.ar, 'sync_hints'):
+            self.ar.run(nightly=False)
+        queued = self.ar.read_jsonl(self.ar.QUEUE)
+        self.assertIn({'ts': 2, 'repo': '/r', 'head': 'new'}, queued)
+        self.assertIn({'ts': 2, 'repo': '/other', 'head': 'other'}, queued)
+
+    def test_hint_added_during_refresh_remains_pending(self):
+        self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'old'})
+        self.ar.append_jsonl(self.ar.HINTS, self.hint(10, 'core'))
+        def refresh(repo, subsystem):
+            self.ar.append_jsonl(self.ar.HINTS, self.hint(20, 'core'))
+            return True
+        before = (7, {'core': ['src/']}, ['core'])
+        after = (7, {'core': ['src/']}, [])
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), \
+                mock.patch.object(self.ar, 'stale_subsystems', side_effect=[before, after]), \
+                mock.patch.object(self.ar, 'refresh', side_effect=refresh), \
+                mock.patch.object(self.ar.time, 'time', return_value=20), \
+                mock.patch.object(self.ar, 'sync_hints'):
+            self.ar.run(nightly=False)
+        pending = self.ar.pending(self.ar.read_jsonl(self.ar.HINTS), '/r')
+        self.assertEqual([h['ts'] for h in pending], [20])
 
     def test_run_keeps_repo_queued_when_quota_is_high_unless_nightly(self):
         self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
@@ -105,10 +201,13 @@ class AtlasRefreshTest(unittest.TestCase):
             self.ar.run(nightly=False)
             refresh.assert_not_called()
         self.assertEqual([q['repo'] for q in self.ar.read_jsonl(self.ar.QUEUE)], ['/r'])
-        with mock.patch.object(self.ar, 'quota_pct', return_value=80), mock.patch.object(self.ar, 'stale_subsystems', return_value=['core']), \
+        with mock.patch.object(self.ar, 'quota_pct', return_value=80), mock.patch.object(self.ar, 'stale_subsystems', side_effect=[(7, {'core': ['src/']}, ['core']), (7, {'core': ['src/']}, [])]) as stale, \
                 mock.patch.object(self.ar, 'refresh', return_value=True) as refresh, mock.patch.object(self.ar, 'sync_hints'):
             self.ar.run(nightly=True)
-            refresh.assert_called_once()
+            refresh.assert_called_once_with('/r', 'core')
+            self.assertEqual(stale.call_count, 2)
+        self.assertEqual(self.ar.read_jsonl(self.ar.QUEUE), [])
+        self.assertEqual(self.ar.read_jsonl(self.ar.HINTS)[0]['refreshed'], ['core'])
 
     def test_install_hooks_writes_marker_hook_and_respects_foreign_hooks(self):
         for name in ('a', 'b'):
