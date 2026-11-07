@@ -4,10 +4,10 @@
   atlas-refresh.py sync-hints            write each atlas parent's `## Pending since last refresh` section
                                          from the hint queue (DIBS_ATLAS_HINTS, filled by the dibs block)
   atlas-refresh.py queue --repo PATH     a merge landed in PATH (git post-merge hook): queue it and, unless
-                                         the Claude 5h quota is above ATLAS_QUOTA_MAX (default 70), start `run`
+                                         the selected Claude session or weekly quota exceeds ATLAS_QUOTA_MAX (70), start `run`
   atlas-refresh.py run [--nightly]       refresh the stale subsystems of every queued repo in a headless
                                          Sonnet session each, that session stopped as soon as its turn ends;
-                                         --nightly ignores the quota threshold (not 90)
+                                         --nightly uses a 90% threshold instead of 70%
   atlas-refresh.py install-hooks         add the post-merge hook to every atlas repo that has none
 
 Interactive sessions only write hint lines; they never refresh a stale atlas. Exit 0 always for queue
@@ -15,10 +15,12 @@ Interactive sessions only write hint lines; they never refresh a stale atlas. Ex
 """
 import argparse
 import contextlib
+import datetime
 import fcntl
 import importlib.machinery
 import importlib.util
 import json
+import math
 import os
 import re
 import subprocess
@@ -30,8 +32,13 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 HINTS = os.environ.get("DIBS_ATLAS_HINTS") or os.path.expanduser("~/.local/state/dibs-atlas-hints.jsonl")
 QUEUE = os.environ.get("ATLAS_QUEUE") or os.path.expanduser("~/.local/state/dibs-atlas-queue.jsonl")
 SECTION = "## Pending since last refresh"
-QUOTA_MAX = int(os.environ.get("ATLAS_QUOTA_MAX", "70"))
+try:
+    QUOTA_MAX = min(99, max(0, int(os.environ.get("ATLAS_QUOTA_MAX", "70"))))
+except ValueError:
+    QUOTA_MAX = -1  # Keep queueing but never launch on invalid configuration.
 HARD_MAX = 90
+CLAUDE_PROFILE = os.environ.get("ATLAS_CLAUDE_PROFILE", "personal")
+QUOTA_MAX_AGE = 3600
 MARK = "# atlas-refresh"
 _l = importlib.machinery.SourceFileLoader("dm", os.path.join(HERE, "dibs-measure.py"))
 DM = importlib.util.module_from_spec(importlib.util.spec_from_loader("dm", _l))
@@ -106,9 +113,22 @@ def sync_hints():
 def quota_pct():
     try:
         p = subprocess.run(["sessioneer", "--usage"], capture_output=True, text=True, timeout=60)
-        return int(json.loads(p.stdout)["agents"]["claude"]["profiles"]["personal"]["quota"]["session"]["pct"])
-    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
-        return 100  # unknown quota: defer to the nightly batch
+        if p.returncode != 0:
+            return 100
+        profile = json.loads(p.stdout)["agents"]["claude"]["profiles"][CLAUDE_PROFILE]
+        if not profile.get("ok"):
+            return 100
+        quota = profile["quota"]
+        captured = datetime.datetime.fromisoformat(quota["captured_at"].replace("Z", "+00:00"))
+        if captured.tzinfo is None or not 0 <= time.time() - captured.timestamp() <= QUOTA_MAX_AGE:
+            return 100
+        values = [quota[key]["pct"] for key in ("session", "week_all")]
+        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or
+               not math.isfinite(value) or not 0 <= value <= 100 for value in values):
+            return 100
+        return max(values)
+    except (OSError, ValueError, KeyError, TypeError, OverflowError, subprocess.TimeoutExpired):
+        return 100  # Unknown or stale quota must defer rather than launch.
 
 
 def own_commits_only(repo):
@@ -132,7 +152,7 @@ def queue(repo):
     head = subprocess.run(["git", "-C", repo, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     with queue_lock():
         append_jsonl(QUEUE, {"ts": int(time.time()), "repo": repo, "head": head})
-    if quota_pct() <= QUOTA_MAX:
+    if quota_pct() <= min(QUOTA_MAX, 99):
         subprocess.Popen([sys.executable, os.path.abspath(__file__), "run"], start_new_session=True,
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -182,7 +202,7 @@ def refresh(repo, subsystem):
     prompt = (f"Headless atlas refresh. Run /feature-atlas-subsystem {subsystem} for this repo's atlas: refresh that one "
               "subsystem in place, stamp it at HEAD, patch the parent. Edit no source file and nothing else.")
     p = subprocess.run(["sessioneer", "--wait", "--json", "--timeout", "1800", "--workdir", repo, "--model", "sonnet",
-                        "--effort", "medium", "--mode", "auto", prompt], capture_output=True, text=True)
+                        "--effort", "medium", "--mode", "auto", "--profile", CLAUDE_PROFILE, prompt], capture_output=True, text=True)
     try:
         session = (json.loads(p.stdout or "{}") or {}).get("session")
     except ValueError:
@@ -202,7 +222,7 @@ def run_locked(nightly):
         queued = read_jsonl(QUEUE)
     left = []
     for repo in dict.fromkeys(q["repo"] for q in queued):
-        limit = HARD_MAX if nightly else QUOTA_MAX
+        limit = HARD_MAX if nightly else min(QUOTA_MAX, 99)
         if quota_pct() > limit:
             left.append({"repo": repo})
             continue
@@ -210,6 +230,8 @@ def run_locked(nightly):
             atlas, before, stale = stale_subsystems(repo)
             done = []
             for subsystem in stale:
+                if quota_pct() > limit:
+                    break
                 cutoff = int(time.time()) - 1
                 if not refresh(repo, subsystem):
                     continue

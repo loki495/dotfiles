@@ -531,8 +531,9 @@ All projects:
   dibs block land in `~/.local/state/dibs-atlas-hints.jsonl` and are written into the atlas parent under
   `## Pending since last refresh` (`sync-hints`). A git `post-merge` hook in each atlas repo (`install-hooks`)
   queues the repo; `run` refreshes its stale subsystems with one headless Sonnet `/feature-atlas-subsystem`
-  session each, straight away if the Claude 5h quota is at most `ATLAS_QUOTA_MAX` (70), otherwise in the
-  nightly batch (which stops at 90). Each refresh turn is stopped (killed, so archived) as soon as it
+  session each, straight away if both Claude session and weekly quota are at most `ATLAS_QUOTA_MAX` (70),
+  otherwise in the nightly batch (which stops above 90). `ATLAS_CLAUDE_PROFILE` selects the account
+  (default `personal`) for both quota checks and the launched session; missing or hour-old usage defers. Each refresh turn is stopped (killed, so archived) as soon as it
   ends, since a session nobody kills keeps a dashboard row and a live-session slot, and a refresh that
   did not finish stays queued for the next run. After a successful turn, a fresh atlas check must
   confirm the same subsystem is current and retains its owned paths; unverifiable results stay queued.
