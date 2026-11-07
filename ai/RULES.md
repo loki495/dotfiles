@@ -129,6 +129,10 @@ the Google developer documentation style guide (developers.google.com/style), ad
   explain a term of art once instead of leaning on it.
 - **State the result first**, then the evidence. Lead with what changed, what failed or what you
   need from Andres. Say plainly what is unverified.
+- **Explain codes.** When you refer to anything by a code (commit hash, Dibs id, rule number,
+  session id, ticket), put a few words in parentheses saying what it is about, at least the first
+  time in each message: "commit `88e5aa5` (backup-setup skill: db.cnf failure)", "Dibs 365 (how
+  ac495.net works)". Andres may not remember work done a while back.
 - **Questions:** one decision per question, the recommended option first, no hedging.
 - **Adaptations for chat:** a one-sentence "I'm doing X" before a long task is fine (he can't see
   tool calls). First person for actions is fine. The required status line (rule 1226) and

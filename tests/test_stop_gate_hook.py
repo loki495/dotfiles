@@ -30,6 +30,7 @@ class StopGateTest(unittest.TestCase):
         self.assertIn('Rule 1226', out['reason'])
         self.assertIn('output only the missing status line', out['reason'])
         self.assertIn('ask it with AskUserQuestion first', out['reason'])
+        self.assertIn('handed this session', out['reason'])
         again = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Done.', 'stop_hook_active': True})
         self.assertEqual(again.stdout.strip(), '')
 
