@@ -108,6 +108,20 @@ class GateTests(unittest.TestCase):
     def test_non_commit_command_is_ignored(self):
         self.assertIsNone(self.hook('commit-gate.sh', 'git status'))
 
+    def test_cross_subsystem_rename_sends_old_and_new_paths_to_atlas_helper(self):
+        Path(self.repo, 'other').mkdir()
+        git(self.repo, 'mv', 'src/a.py', 'other/a.py')
+        helper = Path(self.tmp.name, 'record-helper')
+        output = Path(self.tmp.name, 'helper-args.json')
+        helper.write_text('#!/usr/bin/env python3\nimport json, os, sys\n'
+                          'open(os.environ["HELPER_ARGS"], "w").write(json.dumps(sys.argv[1:]))\n'
+                          'print(json.dumps({"subsystems": ["source", "target"]}))\n')
+        helper.chmod(0o755)
+        self.hook('commit-gate.sh', 'git commit -m "Move source"', HELPER=str(helper), HELPER_ARGS=str(output))
+        args = json.loads(output.read_text())
+        self.assertEqual(args[:2], ['touched', self.repo])
+        self.assertCountEqual(args[2:], ['src/a.py', 'other/a.py'])
+
     # push gate
     def commit(self, path):
         self.change(path)

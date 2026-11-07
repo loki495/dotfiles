@@ -11,7 +11,7 @@ cwd=$(jq -r '.cwd // empty' <<<"$input"); cd "${cwd:-.}" 2>/dev/null || exit 0
 git rev-parse --show-toplevel >/dev/null 2>&1 || exit 0
 top=$(git rev-parse --show-toplevel)
 
-files=$(git diff --cached --name-only)
+files=$(git diff --cached --name-only --no-renames)
 grep -Eq '(^|[[:space:]])(-[[:alnum:]]*a[[:alnum:]]*|--all)([[:space:]]|$)' <<<"$cmd" && files=$(printf '%s\n%s\n' "$files" "$(git diff --name-only)")
 files=$(sed '/^$/d' <<<"$files" | sort -u)
 [ -n "$files" ] || exit 0

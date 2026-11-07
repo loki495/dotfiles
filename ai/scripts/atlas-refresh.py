@@ -45,11 +45,13 @@ DM = importlib.util.module_from_spec(importlib.util.spec_from_loader("dm", _l))
 _l.exec_module(DM)
 
 
-def read_jsonl(path):
+def read_jsonl(path, *, missing_ok=True):
     try:
         with open(path) as f:
             return [json.loads(x) for x in f if x.strip()]
     except OSError:
+        if not missing_ok:
+            raise
         return []
 
 
@@ -71,23 +73,52 @@ def queue_lock(suffix=""):
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
+def is_ancestor(repo, earlier, later):
+    if not re.fullmatch(r"[0-9a-f]{7,40}", str(earlier or "")) or not re.fullmatch(r"[0-9a-f]{7,40}", str(later or "")):
+        return False
+    return subprocess.run(["git", "-C", repo, "merge-base", "--is-ancestor", earlier, later],
+                          capture_output=True).returncode == 0
+
+
 def pending(records, repo):
-    """Hint records for repo not yet covered by a later refresh of the same subsystem, oldest first."""
-    done = {}
-    for r in records:
-        if r.get("refreshed") and r.get("repo") == repo:
-            for s in r["refreshed"]:
-                done[s] = max(done.get(s, 0), r["ts"])
-    return [r for r in records if "subsystem" in r and r.get("repo") == repo and r["ts"] > done.get(r["subsystem"], 0)]
+    """Hints not covered by a later confirmed refresh of an ancestor commit."""
+    done = [r for r in records if r.get("refreshed") and r.get("repo") == repo]
+    out = []
+    for hint in records:
+        if "subsystem" not in hint or hint.get("repo") != repo:
+            continue
+        covered = any(hint["subsystem"] in r["refreshed"] and r["ts"] >= hint["ts"] and
+                      is_ancestor(repo, hint.get("head"), r.get("head"))
+                      for r in done)
+        if not covered:
+            out.append(hint)
+    return out
 
 
 def with_section(body, hints):
-    """body with its Pending section replaced by one listing hints (removed when there are none)."""
-    body = re.sub(rf"\n*{re.escape(SECTION)}\n.*?(?=\n## |\Z)", "", body or "", flags=re.S).rstrip()
-    if not hints:
-        return body + "\n"
-    lines = [f"- {h['subsystem']}: {h['change']} ({h['head'][:9]}, {time.strftime('%Y-%m-%d', time.gmtime(h['ts']))})" for h in hints]
-    return f"{body}\n\n{SECTION}\n" + "\n".join(lines) + "\n"
+    """Replace only our generated block; manually written pending notes remain untouched."""
+    body = body or ""
+    section = re.search(rf"(?:^|\n){re.escape(SECTION)}\n(.*?)(?=\n## |\Z)", body, re.S)
+    before = body[:section.start()] if section else body
+    after = body[section.end():] if section else ""
+    old = section.group(1) if section else ""
+    start_marker = "<!-- atlas-refresh:start -->"
+    end_marker = "<!-- atlas-refresh:end -->"
+    pattern = rf"(?:^|\n){re.escape(start_marker)}\n.*?\n{re.escape(end_marker)}(?=\n|\Z)"
+    if (old.count(start_marker) != old.count(end_marker) or old.count(start_marker) > 1 or
+            (start_marker in old and not re.search(pattern, old, re.S))):
+        raise ValueError("malformed managed atlas hint block")
+    manual = re.sub(pattern, "", old, flags=re.S).strip("\n")
+    generated = ""
+    if hints:
+        lines = [f"- {h['subsystem']}: {h['change']} ({h['head'][:9]}, {time.strftime('%Y-%m-%d', time.gmtime(h['ts']))})" for h in hints]
+        generated = start_marker + "\n" + "\n".join(lines) + "\n" + end_marker
+    content = "\n".join(part for part in (manual, generated) if part)
+    result = before.rstrip()
+    if content:
+        result += ("\n\n" if result else "") + SECTION + "\n" + content
+    separator = "\n" if result and after.startswith("\n## ") else ""
+    return (result + separator + after).rstrip() + "\n"
 
 
 def atlas_parents():
@@ -101,10 +132,73 @@ def atlas_parents():
     return out
 
 
+def git_common_dir(repo):
+    p = subprocess.run(["git", "-C", repo, "rev-parse", "--git-common-dir"],
+                       capture_output=True, text=True)
+    if p.returncode != 0 or not p.stdout.strip():
+        return None
+    return os.path.realpath(os.path.join(repo, p.stdout.strip()))
+
+
+def canonical_records(records, repo, atlas):
+    """Map linked worktrees and only unambiguous subsystem aliases to atlas identities."""
+    canonical_repo = os.path.realpath(repo)
+    common = git_common_dir(canonical_repo)
+    if not common:
+        raise RuntimeError(f"cannot resolve atlas repository {canonical_repo}")
+    common_cache = {canonical_repo: common}
+    comments = atlas.get("comments", {})
+    names = []
+    if (comments.get("page") == 1 and comments.get("lastPage") == 1 and
+            not any(c.get("withheld") for c in comments.get("items", []))):
+        for comment in comments.get("items", []):
+            match = re.search(r"^subsystem:[ \t]*(\S+)", comment.get("body") or "", re.M)
+            if match:
+                names.append(match.group(1))
+    def key(name):
+        return re.sub(r"[^a-z0-9]", "", name.casefold())
+    def canonical(name):
+        if name in names:
+            return name
+        matches = [known for known in names if key(known) == key(name)]
+        return matches[0] if len(matches) == 1 else name
+    out = []
+    for record in records:
+        source = record.get("repo")
+        if not isinstance(source, str):
+            continue
+        source = os.path.realpath(source)
+        if source != canonical_repo:
+            if source not in common_cache:
+                common_cache[source] = git_common_dir(source)
+            if not common_cache[source]:
+                raise RuntimeError(f"cannot resolve hint repository {source}")
+            if common_cache[source] != common:
+                continue
+        if source != canonical_repo and "refreshed" in record:
+            continue
+        item = dict(record, repo=canonical_repo)
+        if isinstance(item.get("subsystem"), str):
+            item["subsystem"] = canonical(item["subsystem"])
+        if isinstance(item.get("refreshed"), list):
+            item["refreshed"] = [canonical(name) if isinstance(name, str) else name for name in item["refreshed"]]
+        out.append(item)
+    return out
+
+
 def sync_hints():
-    records = read_jsonl(HINTS)
+    try:
+        records = read_jsonl(HINTS, missing_ok=False)
+    except OSError as e:
+        print(f"atlas-refresh: pending hints unchanged: {e}", file=sys.stderr)
+        return
     for repo, d in atlas_parents():
-        new = with_section(d.get("body", ""), pending(records, repo))
+        try:
+            mapped = canonical_records(records, repo, d)
+        except RuntimeError as e:
+            print(f"atlas-refresh: pending hints unchanged: {e}", file=sys.stderr)
+            continue
+        new = with_section(d.get("body", ""), pending(mapped, os.path.realpath(repo)))
         if new.strip() != (d.get("body") or "").strip():
             DM.dibs_json("todo:agent:update", str(d["id"]), f"--expected-revision={d['revision']}", f"--body={new}")
             print(f"{d['title']}: pending section updated")
@@ -178,6 +272,15 @@ def stale_subsystems(repo):
     if not all(isinstance(s, dict) and s.get("id") in subsystems for s in stale):
         raise RuntimeError("atlas helper returned invalid stale subsystems")
     return result["atlas"], subsystems, [s["id"] for s in stale]
+
+
+def git_head(repo):
+    p = subprocess.run(["git", "-C", repo, "rev-parse", "--verify", "HEAD^{commit}"],
+                       capture_output=True, text=True)
+    head = p.stdout.strip()
+    if p.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40,64}", head):
+        raise RuntimeError("cannot verify repository HEAD")
+    return head
 
 
 def stop_session(repo, session):
@@ -297,18 +400,19 @@ def run_locked(nightly):
                         cutoff = int(time.time()) - 1
                         if not refresh(repo, subsystem):
                             continue
+                        head = git_head(repo)
                         verified_atlas, subsystems, remaining = stale_subsystems(repo)
-                        if (verified_atlas == atlas and subsystem in subsystems and subsystem not in remaining
-                                and set(before[subsystem]).issubset(subsystems[subsystem])):
-                            done.append((subsystem, cutoff))
+                        if (git_head(repo) == head and verified_atlas == atlas and subsystem in subsystems
+                                and subsystem not in remaining and set(before[subsystem]).issubset(subsystems[subsystem])):
+                            done.append((subsystem, cutoff, head))
         except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired) as e:
             left.append({"repo": repo})
             print(f"atlas-refresh: {repo}: verification failed: {e}", file=sys.stderr)
             continue
         if done:
-            for subsystem, cutoff in done:
-                append_jsonl(HINTS, {"ts": cutoff, "repo": repo, "refreshed": [subsystem]})
-            print(f"{repo}: refreshed {', '.join(s for s, _ in done)}")
+            for subsystem, cutoff, head in done:
+                append_jsonl(HINTS, {"ts": cutoff, "repo": repo, "head": head, "refreshed": [subsystem]})
+            print(f"{repo}: refreshed {', '.join(s for s, _, _ in done)}")
         if len(done) < len(stale):
             left.append({"repo": repo})
             print(f"atlas-refresh: {repo}: {len(stale) - len(done)} of {len(stale)} refreshes did not finish, queued again",

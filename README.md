@@ -529,7 +529,8 @@ All projects:
   of refusing to cite it) and rule 1310 (it only fires at a screenshot tool call, not on a stated plan) failed.
 - **Atlas off the interactive path** (`scripts/atlas-refresh.py`): `atlas <subsystem>: <change>` lines from the
   dibs block land in `~/.local/state/dibs-atlas-hints.jsonl` and are written into the atlas parent under
-  `## Pending since last refresh` (`sync-hints`). A git `post-merge` hook in each atlas repo (`install-hooks`)
+  `## Pending since last refresh` (`sync-hints`). Generated hints use a marked block in that section;
+  manually written notes are preserved. A git `post-merge` hook in each atlas repo (`install-hooks`)
   queues the repo; `run` refreshes its stale subsystems with one headless Sonnet `/feature-atlas-subsystem`
   session each, straight away if both Claude session and weekly quota are at most `ATLAS_QUOTA_MAX` (70),
   otherwise in the nightly batch (which stops above 90). `ATLAS_CLAUDE_PROFILE` selects the account
@@ -537,6 +538,10 @@ All projects:
   ends, since a session nobody kills keeps a dashboard row and a live-session slot, and a refresh that
   did not finish stays queued for the next run. After a successful turn, a fresh atlas check must
   confirm the same subsystem is current and retains its owned paths; unverifiable results stay queued.
+  Hints from linked worktrees are associated with the canonical repo, and clear only when their
+  commit is an ancestor of the verified refresh commit; ambiguous subsystem names stay pending.
+  If a recorded hint repository can no longer be resolved, the existing pending section is retained
+  until its identity is resolved.
   The job claims matching reconciler drift tasks while refreshing and releases them afterward; a claim
   conflict or release failure leaves the repo queued for retry. A merge that brought in commits by anyone but the repo's configured
   user is not queued, since the refresh runs an unattended auto-mode session over the repo. Sessions never refresh a stale atlas themselves, so the push guard

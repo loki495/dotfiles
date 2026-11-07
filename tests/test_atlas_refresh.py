@@ -33,6 +33,12 @@ class AtlasRefreshTest(unittest.TestCase):
         claims = mock.patch.object(self.ar, 'reconciler_claims', create=True)
         claims.start()
         self.addCleanup(claims.stop)
+        head = mock.patch.object(self.ar, 'git_head', return_value='a' * 40)
+        head.start()
+        self.addCleanup(head.stop)
+        ancestry = mock.patch.object(self.ar, 'is_ancestor', side_effect=lambda repo, earlier, later: bool(earlier and later))
+        ancestry.start()
+        self.addCleanup(ancestry.stop)
 
     def hint(self, ts, sub, repo='/r'):
         return {'ts': ts, 'repo': repo, 'head': 'a' * 40, 'subsystem': sub, 'change': 'did x'}
@@ -40,9 +46,14 @@ class AtlasRefreshTest(unittest.TestCase):
     def test_section_is_added_replaced_and_removed(self):
         body = 'Repo: /r\nVerified at: abc\n'
         once = self.ar.with_section(body, [self.hint(1, 'core')])
-        self.assertIn('## Pending since last refresh\n- core: did x (aaaaaaaaa, 1970-01-01)', once)
+        self.assertIn('## Pending since last refresh\n', once)
+        self.assertIn('<!-- atlas-refresh:start -->', once)
+        self.assertIn('- core: did x (aaaaaaaaa, 1970-01-01)', once)
+        self.assertIn('<!-- atlas-refresh:end -->', once)
         twice = self.ar.with_section(once, [self.hint(1, 'core'), self.hint(2, 'ui')])
         self.assertEqual(twice.count('## Pending since last refresh'), 1)
+        self.assertEqual(twice.count('<!-- atlas-refresh:start -->'), 1)
+        self.assertEqual(twice.count('<!-- atlas-refresh:end -->'), 1)
         self.assertIn('- ui: did x', twice)
         self.assertEqual(self.ar.with_section(twice, []).strip(), body.strip())
 
@@ -50,10 +61,42 @@ class AtlasRefreshTest(unittest.TestCase):
         body = 'Intro\n\n## Pending since last refresh\n- old\n\n## Other\nkeep\n'
         out = self.ar.with_section(body, [self.hint(1, 'core')])
         self.assertIn('## Other\nkeep', out)
-        self.assertNotIn('- old', out)
+        self.assertIn('- old', out)
+
+    def test_manual_pending_lines_and_multiline_notes_survive_sync_and_clear(self):
+        manual = '- manual hint\n  continuation line\n\n  another paragraph\n- legacy hint\n'
+        body = 'Intro\n\n## Pending since last refresh\n' + manual + '\n## Other\nkeep\n'
+        self.assertEqual(self.ar.with_section(body, []), body)
+        once = self.ar.with_section(body, [self.hint(1, 'core')])
+        self.assertIn(manual, once)
+        self.assertIn('## Other\nkeep\n', once)
+        self.assertEqual(once.count('<!-- atlas-refresh:start -->'), 1)
+        twice = self.ar.with_section(once, [self.hint(2, 'ui')])
+        self.assertIn(manual, twice)
+        self.assertNotIn('- core: did x', twice)
+        self.assertIn('- ui: did x', twice)
+        self.assertEqual(twice.count('<!-- atlas-refresh:start -->'), 1)
+        cleared = self.ar.with_section(twice, [])
+        self.assertIn(manual, cleared)
+        self.assertIn('## Other\nkeep\n', cleared)
+        self.assertNotIn('<!-- atlas-refresh:start -->', cleared)
+        self.assertNotIn('- ui: did x', cleared)
+
+    def test_malformed_inverted_or_duplicate_markers_never_rewrite_content(self):
+        start = '<!-- atlas-refresh:start -->'
+        end = '<!-- atlas-refresh:end -->'
+        for markers in (start, end, end + '\n' + start,
+                        start + '\n' + end + '\n' + start + '\n' + end):
+            with self.subTest(markers=markers):
+                body = 'Intro\n\n## Pending since last refresh\n- manual\n' + markers + '\n\n## Other\nkeep\n'
+                try:
+                    result = self.ar.with_section(body, [self.hint(1, 'core')])
+                except ValueError:
+                    continue
+                self.assertEqual(result, body)
 
     def test_refresh_record_clears_only_older_hints_of_that_subsystem_and_repo(self):
-        recs = [self.hint(1, 'core'), self.hint(2, 'ui'), {'ts': 3, 'repo': '/r', 'refreshed': ['core']},
+        recs = [self.hint(1, 'core'), self.hint(2, 'ui'), {'ts': 3, 'repo': '/r', 'refreshed': ['core'], 'head': 'a' * 40},
                 self.hint(4, 'core'), self.hint(1, 'core', '/other')]
         self.assertEqual([(h['subsystem'], h['ts']) for h in self.ar.pending(recs, '/r')], [('ui', 2), ('core', 4)])
 
@@ -201,6 +244,33 @@ class AtlasRefreshTest(unittest.TestCase):
             self.ar.run(nightly=False)
         pending = self.ar.pending(self.ar.read_jsonl(self.ar.HINTS), '/r')
         self.assertEqual([h['ts'] for h in pending], [20])
+
+    def test_refresh_marker_records_the_verified_head(self):
+        self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
+        head = 'a' * 40
+        before = (7, {'core': ['src/']}, ['core'])
+        after = (7, {'core': ['src/']}, [])
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), \
+                mock.patch.object(self.ar, 'stale_subsystems', side_effect=[before, after]), \
+                mock.patch.object(self.ar, 'git_head', return_value=head), \
+                mock.patch.object(self.ar, 'refresh', return_value=True), \
+                mock.patch.object(self.ar, 'sync_hints'):
+            self.ar.run(nightly=False)
+        self.assertEqual(self.ar.read_jsonl(self.ar.HINTS)[0]['head'], head)
+
+    def test_head_change_during_refresh_keeps_hint_and_queue(self):
+        self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
+        self.ar.append_jsonl(self.ar.HINTS, self.hint(1, 'core'))
+        before = (7, {'core': ['src/']}, ['core'])
+        after = (7, {'core': ['src/']}, [])
+        with mock.patch.object(self.ar, 'quota_pct', return_value=10), \
+                mock.patch.object(self.ar, 'stale_subsystems', side_effect=[before, after]), \
+                mock.patch.object(self.ar, 'git_head', side_effect=['a' * 40, 'b' * 40]), \
+                mock.patch.object(self.ar, 'refresh', return_value=True), \
+                mock.patch.object(self.ar, 'sync_hints'):
+            self.ar.run(nightly=False)
+        self.assertEqual([q['repo'] for q in self.ar.read_jsonl(self.ar.QUEUE)], ['/r'])
+        self.assertEqual([h['subsystem'] for h in self.ar.pending(self.ar.read_jsonl(self.ar.HINTS), '/r')], ['core'])
 
     def test_run_keeps_repo_queued_when_quota_is_high_unless_nightly(self):
         self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})

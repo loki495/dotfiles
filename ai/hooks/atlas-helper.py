@@ -65,6 +65,8 @@ def load_atlas(repo):
             raise ValueError("atlas comments incomplete")
         subs = []
         for c in comments.get("items", []):
+            if c.get("withheld"):
+                raise ValueError("atlas comment withheld")
             b = c.get("body", "")
             m = re.search(r"^subsystem:[ \t]*(\S+)", b, re.M)
             v = re.search(r"^verified-at:[ \t]*([0-9a-f]{7,40})", b, re.M)
@@ -116,8 +118,20 @@ def main():
         return
     if cmd == "touched":
         files = sys.argv[3:]
-        print(json.dumps({"atlas": a["atlas"], "subsystems": [
-            s["id"] for s in a["subsystems"] if any(owns(s["owned"], f) for f in files)]}))
+        touched = []
+        for sub in a["subsystems"]:
+            result = subprocess.run(["git", "-C", repo, "ls-files", "--cached", "--others", "--full-name", "-z", "--", *sub["owned"]],
+                                    capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError("git ls-files failed while matching atlas ownership")
+            staged = subprocess.run(["git", "-C", repo, "diff", "--cached", "--no-renames", "--name-only", "-z", "HEAD", "--", *sub["owned"]],
+                                    capture_output=True, text=True)
+            if staged.returncode != 0:
+                raise RuntimeError("git diff failed while matching atlas ownership")
+            owned = set(result.stdout.split("\0")) | set(staged.stdout.split("\0"))
+            if any(f in owned for f in files):
+                touched.append(sub["id"])
+        print(json.dumps({"atlas": a["atlas"], "subsystems": touched}))
     elif cmd == "stale":
         _, cur = git(repo, "symbolic-ref", "--short", "HEAD")
         if a["branch"] and a["branch"] != cur:

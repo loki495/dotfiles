@@ -23,6 +23,9 @@ class AtlasClaimTest(unittest.TestCase):
         loader = importlib.machinery.SourceFileLoader('claims_ar', str(SCRIPT))
         self.ar = importlib.util.module_from_spec(importlib.util.spec_from_loader('claims_ar', loader))
         loader.exec_module(self.ar)
+        head = mock.patch.object(self.ar, 'git_head', return_value='a' * 40)
+        head.start()
+        self.addCleanup(head.stop)
         self.ar.append_jsonl(self.ar.QUEUE, {'ts': 1, 'repo': '/r', 'head': 'h'})
         self.events = []
         self.fail_lookup = False

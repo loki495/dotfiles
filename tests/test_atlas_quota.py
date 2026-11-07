@@ -39,6 +39,9 @@ class AtlasQuotaTest(unittest.TestCase):
         claims = mock.patch.object(module, 'reconciler_claims', create=True)
         claims.start()
         self.addCleanup(claims.stop)
+        head = mock.patch.object(module, 'git_head', return_value='a' * 40)
+        head.start()
+        self.addCleanup(head.stop)
         return module
 
     @staticmethod
