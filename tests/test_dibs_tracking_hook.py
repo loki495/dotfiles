@@ -426,7 +426,7 @@ class TrackingHookTest(unittest.TestCase):
         settings = json.loads((HOOK.parents[1] / 'settings.json').read_text())
         entries = [h for g in settings['hooks']['PreToolUse'] for h in g['hooks'] if h['command'].endswith('dibs-block.py guard')]
         self.assertEqual(len(entries), 1)
-        self.assertEqual(entries[0]['onFailure'], 'warn')
+        self.assertEqual(entries[0]['onFailure'], 'continue')
 
 
 if __name__ == '__main__':

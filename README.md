@@ -572,7 +572,7 @@ All projects:
   `docker compose up/down`, `npm`/`composer install`, `curl -X POST`. Targets under `/tmp`,
   `$XDG_RUNTIME_DIR` and `/dev/null` are ignored, and calls from subagents (`agent_id`) are skipped.
   If Dibs or the state directory is unavailable the call still goes ahead with a visible warning
-  (`onFailure` is `warn`). A read-only session creates no task.
+  (`onFailure` is `continue`; valid values are `continue` and `block`). A read-only session creates no task.
 - **Recovery checkpoints** (`dibs-block.py heartbeat/checkpoint`): save the goal, canonical session
   id, workdir, branch, bounded git status, time and next step in one living comment while preserving
   progress notes. Checkpoints refresh during work and at Stop, PreCompact and SessionEnd; they never
