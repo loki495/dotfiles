@@ -1,7 +1,7 @@
 ---
 model: sonnet
 name: feature-atlas-mapper
-description: Whole-repository discovery pass for the feature-atlas skill family. Reads the project's Format v2 atlas (Dibs parent issue + subsystem comments, or .ai/feature-atlas/ files when Dibs is unreachable), runs the Refresh procedure (per-comment pathspec diff, coverage diff, removals), proposes boundaries on a first run, and reports which subsystems are new, stale, removed, unchanged, or conflicting. Read-only — never writes files or Dibs items, only returns a structured report to the caller. Run before per-subsystem scout work.
+description: Read-only whole-repo pass: reports which atlas subsystems are new, stale, removed or unchanged. Run before scout work.
 tools: [Read, Bash, Grep, Glob, mcp__dibs__todo_list, mcp__dibs__todo_show]
 ---
 

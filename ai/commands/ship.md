@@ -1,3 +1,8 @@
+---
+description: Commit finished work and get it where it belongs (pushed, cherry-picked, propagated or opened as a PR) using the repo's own flow.
+disable-model-invocation: true
+---
+
 Commit finished work and get it where it belongs (pushed, cherry-picked to production, propagated, or opened as a PR), using this repo's own shipping flow. Asks once before anything leaves the machine.
 
 **Arguments:** $ARGUMENTS (optional: what to ship, e.g. "the login fix", or a flow override like "as a PR")

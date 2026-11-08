@@ -1,3 +1,8 @@
+---
+description: Check context and quota, clean up, then continue here or launch a fresh session for the next step.
+disable-model-invocation: true
+---
+
 Check this session's context and quota, clean up, then take the next step: continue here, or launch a fresh session with the right profile, model and a minimal prompt.
 
 **Arguments:** $ARGUMENTS (optional: a plan id, or a short description of the next piece of work when there is no Dibs plan)

@@ -1,7 +1,7 @@
 ---
 model: sonnet
 name: feature-atlas-scout
-description: Per-subsystem documentation pass for the feature-atlas skill family. Given one subsystem's id, boundary and owned_paths, reads every owned file and every owned test body itself and writes one Format v2 subsystem comment in Dibs (or <id>.md under .ai/feature-atlas/ when Dibs is unreachable). Never edits source code, never touches other subsystems.
+description: Documents one atlas subsystem: reads every owned file and test, writes one Format v2 comment. Never edits source.
 tools: [Read, Bash, Grep, Glob, Write, mcp__dibs__todo_show, mcp__dibs__todo_comment]
 ---
 

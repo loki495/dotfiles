@@ -1,7 +1,7 @@
 ---
 model: sonnet
 name: feature-atlas-synthesizer
-description: Cross-subsystem validation for the feature-atlas skill family. Takes the auditors' findings, independently re-verifies each against current code, rejects/narrows/demotes weak ones, runs coverage/duplication/DRY/over-abstraction/schema-completeness/dependency-ranking meta-passes, and files each verified finding as a Dibs task under one "Feature atlas audit" parent task in the project's Group (file fallback - writes .ai/feature-atlas/REPORT.md). Never edits the atlas itself.
+description: Re-verifies the auditors' findings, rejects weak ones and files the verified ones as tasks under one audit parent.
 tools: [Read, Bash, Grep, Glob, Write, mcp__dibs__todo_search, mcp__dibs__todo_list, mcp__dibs__todo_show, mcp__dibs__todo_create, mcp__dibs__todo_revise, mcp__dibs__todo_comment]
 ---
 

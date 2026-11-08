@@ -1,7 +1,7 @@
 ---
 model: sonnet
 name: feature-atlas-auditor
-description: Per-subsystem maintainability/readability/extensibility audit for the feature-atlas skill family. Given a subsystem's atlas comment (Dibs) or <id>.md (file fallback), re-verifies it against current code and returns ranked, evidence-backed findings (DRY, bugs, schema issues, invalid-state-permitting booleans, duplicated branching, stale-state risks, etc.) in its final response; in file mode it also writes AUDIT-<id>.md. Stays strictly within the subsystem's ownership boundary.
+description: Audits one feature-atlas subsystem against current code and returns ranked, evidence-backed findings. Stays inside the subsystem boundary.
 tools: [Read, Bash, Grep, Glob, Write, mcp__dibs__todo_show]
 ---
 

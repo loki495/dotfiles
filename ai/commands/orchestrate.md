@@ -1,3 +1,8 @@
+---
+description: Run a whole Dibs plan: launch a worker per task, verify each one's evidence, loop until the plan is finished.
+disable-model-invocation: true
+---
+
 Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and remaining quota): launch a worker session per task (right agent, model, effort), in parallel where tasks don't block each other, verify each one's evidence against its done requirements, send it back until it is really done, archive it, and loop until the plan is finished. `/next` does one task; this does the plan.
 
 **Arguments:** $ARGUMENTS (a plan id; with none, the plan of a task this session holds a claim on, else ask)
