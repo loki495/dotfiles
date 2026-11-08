@@ -558,7 +558,6 @@
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "ponytail@ponytail": false,
     "hookify@claude-plugins-official": false,
     "claude-md-management@claude-plugins-official": false,
     "laravel-boost@claude-plugins-official": false,
@@ -575,14 +574,6 @@
     "github@claude-plugins-official": false,
     "session-report@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false
-  },
-  "extraKnownMarketplaces": {
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
-      }
-    }
   },
   "theme": "dark",
   "verbose": true,
