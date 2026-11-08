@@ -424,7 +424,7 @@
         ]
       },
       {
-        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_complete|mcp__dibs__todo_release|mcp__dibs__todo_comment|mcp__dibs__todo_heartbeat|mcp__playwright__browser_take_screenshot",
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|Agent|Task|mcp__dibs__todo_create|mcp__dibs__todo_revise|mcp__dibs__todo_claim|mcp__dibs__todo_complete|mcp__dibs__todo_release|mcp__dibs__todo_comment|mcp__dibs__todo_heartbeat|mcp__playwright__browser_take_screenshot",
         "hooks": [
           {
             "type": "command",

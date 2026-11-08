@@ -18,7 +18,10 @@ class PersonaRuleHookTest(unittest.TestCase):
         root = Path(self.tmp.name)
         rules = root / 'rules.md'
         rules.write_text(EXPORT)
-        self.env = {**os.environ, 'RULE_FILES': str(rules), 'RULE_STATE_DIR': str(root / 'state')}
+        (root / 'trig.json').write_text(json.dumps({'agent-launch': [1468]}))
+        self.env = {**os.environ, 'RULE_FILES': str(rules), 'RULE_STATE_DIR': str(root / 'state'),
+                    'RULE_TRIGGERS': str(root / 'trig.json'), 'RULE_PRIVATE_KEYS': str(root / 'nokeys.json'),
+                    'SESSIONEER_BIN': str(root / 'no-such-sessioneer'), 'HOME': str(root)}
 
     def hook(self, **event):
         event.setdefault('session_id', 'persona-session')

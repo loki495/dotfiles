@@ -56,8 +56,9 @@ It does not launch repair workers. Closed tasks outside plans are not checked (t
 tasks only).
 
 After the checks (not on `--dry-run`) it also runs the rules export below with `--commit` semantics:
-`ai/rules.md` and the private file are rewritten when the rule records changed and committed (just
-those paths, never pushed).
+the export files are rewritten when the rule records changed and committed (just those paths, never
+pushed). Rule validation problems (exit 3 of the export) appear in the standing issue under "Rule
+export problems", not as "Dibs unreachable".
 
 Tests: `python3 -I tests/test_dibs_reconcile.py` (fixture git repo, fake Dibs: violation present,
 second run, violation cleared, dry run, Dibs unreachable).
@@ -84,15 +85,35 @@ Tests: `python3 -I tests/test_token_usage.py`.
 Exports the open Dibs issues labelled `rule` to files agents read: `ai/rules.md` (public) and
 `~/.dotfiles-private/ai/rules.private.md` (records also labelled `private`; never in the public
 file). Each rule is a `## <id>@<revision> <title>` heading and its text (the record body up to the
-first `Trigger:`/`Check:`/`Applies to:`/`Source:`/`Merged candidates:` line). Ordered by id, so the
-output is stable and a file is rewritten only when it changed.
+first `Trigger:`/`Check:`/`Applies to:`/`Source:`/`Merged candidates:`/`Always:`/`Keys:`/`Pull when:`
+line). Ordered by id, so the output is stable and a file is rewritten only when it changed.
+
+Tiers: every rule has exactly one label, `tier always`, `tier trigger` or `tier pull`, and the metadata
+lines go at the end of the body. `tier always` needs `Always: <one line>`, `tier trigger` needs
+`Keys: k1, k2` (known keys only, see `KEYS` in the script), `tier pull` needs `Pull when: <text>`. From
+these the export writes:
+
+- between `<!-- rules-export:start -->` and `<!-- rules-export:end -->` in `ai/RULES.md` (public rules)
+  and `~/.dotfiles-private/ai/CLAUDE.private.md` (private rules): the always lines, then a rule index
+  (`- <id> [<keys>] <title>` or `- <id> [pull: <when>] <title>`, no revisions). Text outside the
+  markers is never touched; a missing or repeated marker is an error.
+- `ai/rules-triggers.json` and `~/.dotfiles-private/ai/rules-triggers.private.json`: `{key: [rule ids]}`
+  for the `rule-inject` hook.
+
+If any rule fails validation (wrong tier labels, missing line, unknown key) none of these four files is
+written, each problem is reported, and `rules.md` is still exported (a rule is never dropped).
 
 ```bash
-python3 ~/dotfiles/ai/scripts/rules-export.py [--public PATH] [--private PATH] [--commit]
+python3 ~/dotfiles/ai/scripts/rules-export.py [--public PATH] [--private PATH] [--rules-md PATH] \
+    [--private-md PATH] [--triggers PATH] [--private-triggers PATH] [--commit | --check]
 ```
 
-`--commit` commits just the changed paths in their own repo; it never pushes. The reconciler runs it
-hourly. Exit 2 and nothing written when Dibs is unreachable. The `rule-inject` hook and the other
-agents read these files, never Dibs.
+`--commit` commits just the changed paths in their own repo; it never pushes. A `RULES.md` or private
+markdown file that already has uncommitted changes is neither rewritten nor committed that run (it is
+retried next time), so a session's unfinished edit is not committed as "Rules export". `--check`
+renders everything, writes nothing and lists the files that differ. Exit codes: 0 ok, 1 `--check` found
+drift, 2 Dibs unreachable (nothing written), 3 validation or marker problems (printed to stderr). The
+reconciler runs the export hourly. The `rule-inject` hook and the other agents read these files, never
+Dibs.
 
 Tests: `python3 -I tests/test_rules_export.py`.

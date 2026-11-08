@@ -1,46 +1,97 @@
 #!/usr/bin/env python3
 """Just-in-time rules: inject the few Dibs rule records an event is about, once per context lifetime.
 
-One script for PreToolUse, PostToolUse, SessionStart and UserPromptSubmit. Rules come from the
-exports ai/rules.md and ~/.dotfiles-private/ai/rules.private.md (RULE_FILES overrides, ':'-separated),
-never from a live Dibs call. A rule is sent only if its id@revision is absent from the delivered set
-$RULE_STATE_DIR (default $XDG_RUNTIME_DIR/dibs-rules, else ~/.cache/dibs-rules)/<session>-<agent_id|main>.
-`git commit` and `git push` get their rules as context like any other command.
-Everything else is plain additionalContext. Any failure is silent (exit 0): this hook never blocks
-on its own trouble.
+One script for PreToolUse, PostToolUse, SessionStart and UserPromptSubmit. An event is turned into
+trigger keys (git-commit, test-run, ...); the key -> rule ids maps come from the generated
+ai/rules-triggers.json and ~/.dotfiles-private/ai/rules-triggers.private.json (RULE_TRIGGERS overrides,
+':'-separated, merged by key). The private keys home-net and work-creds use regexes from
+~/.dotfiles-private/ai/rule-keys.private.json (RULE_PRIVATE_KEYS). Rule texts come from the exports
+ai/rules.md and ~/.dotfiles-private/ai/rules.private.md (RULE_FILES overrides), never from a live Dibs
+call. A rule is sent only if its id@revision is absent from the delivered set $RULE_STATE_DIR (default
+$XDG_RUNTIME_DIR/dibs-rules, else ~/.cache/dibs-rules)/<session>-<agent_id|main>. Everything is plain
+additionalContext. Two checks ride along: a hyphenated Dibs label name gets a warning, and a prompt
+gets a quota warning once usage (`$SESSIONEER_BIN --usage`, cached 300 s) reaches 90%.
+Any failure is silent (exit 0): this hook never blocks on its own trouble.
 """
 import glob
 import json
 import os
 import re
+import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_FILES = [os.path.join(os.path.dirname(HERE), "rules.md"),
                  os.path.expanduser("~/.dotfiles-private/ai/rules.private.md")]
+DEFAULT_TRIGGERS = [os.path.join(os.path.dirname(HERE), "rules-triggers.json"),
+                    os.path.expanduser("~/.dotfiles-private/ai/rules-triggers.private.json")]
+DEFAULT_PRIVATE_KEYS = "~/.dotfiles-private/ai/rule-keys.private.json"
 CAP = 9000  # additionalContext is capped at 10,000 characters
 HEADING = re.compile(r"^## (\d+)@(\d+) (.*)$")
 
 GIT = r"(^|[^\w-])git(\s+-\S+(\s+[^-\s]\S*)?)*\s+(%s)(\s|$)"
-BASH = [  # (regex on the command, rule ids)
-    (GIT % "commit", [732, 737, 738]),
-    (GIT % "push", [734, 735, 730]),
-    (GIT % "merge|rebase|worktree|cherry-pick|stash|reset", [731, 733, 736, 739]),
-    (r"\b(pest|phpunit)\b", [740, 741, 742]),
-    (r"\b(artisan|composer|pint|phpstan|rector)\b", [750]),
-    (r"\bcurl\b", [745]),
-    (r"\b(mysql|mariadb|sqlite3|tinker|migrate)\b", [929]),
-    (r"\bsessioneer\s+--usage\b", [747]),
+ARGS = r"([^\s&;|]+\s+)*"
+BASH = [  # (key, regex on the command)
+    ("git-commit", GIT % "commit"),
+    ("git-push", GIT % "push"),
+    ("git-history", GIT % "merge|rebase|worktree|cherry-pick|stash|reset"),
+    ("git-history", GIT % "commit" + r".*--amend"),
+    ("git-add-all", GIT % "add" + ARGS + r"(-A|--all|\.)(\s|$)"),
+    ("git-add-all", GIT % "commit" + ARGS + r"(-[a-zA-Z]*a[a-zA-Z]*|--all)(\s|$)"),
+    ("git-add-all", GIT % "checkout" + r"(--\s+)?\.(\s|$)"),
+    ("git-add-all", GIT % "clean"),
+    ("test-run", r"\b(pest|phpunit|pytest|vitest|jest)\b|\bartisan\s+test\b|\bnpm\s+(run\s+)?test\b"),
+    ("php-tool", r"\b(artisan|composer|pint|phpstan|rector)\b"),
+    ("live-check", r"\bcurl\b|\bdocker[ -]compose\s+(up|restart)\b"),
+    ("db-cli", r"\b(mysql|mariadb|sqlite3|tinker|migrate)\b"),
+    ("quota-check", r"\bsessioneer\s+--usage\b"),
+    ("session-launch", r"\bsessioneer\b.*--(agent|model|effort|resume)\b"),
+    ("peer-send", r"\bsessioneer\b.*--(send|peers)\b"),
+    ("schedule", r"(^|[;&|])\s*(at|atq)(\s|$)|\bsleep\s+[1-9]\d{2,}"),
 ]
-REMINDER = "Rule 1226: end your reply with one status line (Safe to archive this session. / Continue in this session: ... / Waiting on Andres: ... / All planned work is done.)."
+REMINDER = ("Rule 1226: end your reply with one status line: Safe to archive this session. / Continue in this "
+            "session: ... / Continue in a different session: ... / Waiting on Andres: ... / Waiting on other "
+            "work: ... / All planned work is done.")
 TEST_FILE = re.compile(r"(^|/)tests?/|(^|/)test_|_test\.|\.test\.|\.spec\.|Test\.php$")
-TOOLS = {  # tool name -> rule ids
-    "Agent": [926, 1468], "Task": [926, 1468],
-    "mcp__dibs__todo_create": [927, 748, 757],
-    "mcp__dibs__todo_complete": [728, 730, 1209, 1307], "mcp__dibs__todo_release": [728, 729, 730],
-    "mcp__dibs__todo_comment": [757, 1307], "mcp__dibs__todo_heartbeat": [1307],
-    "mcp__playwright__browser_take_screenshot": [1310],
+TOOLS = {  # tool name -> trigger key
+    "Agent": "agent-launch", "Task": "agent-launch",
+    "mcp__dibs__todo_create": "dibs-create", "mcp__dibs__todo_revise": "dibs-revise",
+    "mcp__dibs__todo_comment": "dibs-comment", "mcp__dibs__todo_heartbeat": "dibs-comment",
+    "mcp__dibs__todo_claim": "dibs-claim", "mcp__dibs__todo_complete": "dibs-complete",
+    "mcp__dibs__todo_release": "dibs-release",
+    "mcp__playwright__browser_take_screenshot": "screenshot",
 }
+LABEL_TOOLS = {"mcp__dibs__todo_create": ("labelNames", "newLabelName"), "mcp__dibs__todo_revise": ("addLabels",)}
+QUOTA_LIMIT, QUOTA_TTL = 90, 300
+
+
+def load_triggers():
+    merged = {}
+    files = os.environ.get("RULE_TRIGGERS")
+    for path in files.split(":") if files else DEFAULT_TRIGGERS:
+        try:
+            data = json.load(open(path))
+        except (OSError, ValueError):
+            continue
+        for key, ids in data.items() if isinstance(data, dict) else []:
+            if isinstance(ids, list):
+                merged.setdefault(key, []).extend(i for i in ids if isinstance(i, int))
+    return merged
+
+
+def private_key_patterns():
+    try:
+        data = json.load(open(os.path.expanduser(os.environ.get("RULE_PRIVATE_KEYS") or DEFAULT_PRIVATE_KEYS)))
+    except (OSError, ValueError):
+        return []
+    out = []
+    for key, rx in data.items() if isinstance(data, dict) else []:
+        try:
+            out.append((key, re.compile(rx)))
+        except (re.error, TypeError):
+            pass
+    return out
 
 
 def load_rules():
@@ -91,33 +142,76 @@ def git_root_has_compose(path):
 
 
 def match(data):
-    """The rule ids the event is about."""
+    """The trigger keys the event is about."""
     ev, tool, inp = data.get("hook_event_name"), data.get("tool_name", ""), data.get("tool_input") or {}
     if ev == "UserPromptSubmit":
-        return [928] if str(data.get("prompt", "")).startswith("[sessioneer peer:") else []
+        prompt = str(data.get("prompt", ""))
+        keys = [k for k, rx in private_key_patterns() if rx.search(prompt)]
+        if prompt.startswith("[sessioneer peer:"):
+            keys.append("peer-prompt")
+        if re.match(r"(?i)(todo|next):", prompt):
+            keys.append("todo-note")
+        return keys
     if ev != "PreToolUse":
         return []
     if tool in TOOLS:
-        return TOOLS[tool]
+        return [TOOLS[tool]]
     if tool == "Bash":
-        cmd, ids = str(inp.get("command", "")), []
-        for rx, rule_ids in BASH:
-            if re.search(rx, cmd):
-                ids += [i for i in rule_ids if i not in ids]
-        return ids
+        cmd = str(inp.get("command", ""))
+        keys = [k for k, rx in BASH if re.search(rx, cmd)]
+        return list(dict.fromkeys(keys + [k for k, rx in private_key_patterns() if rx.search(cmd)]))
     path = str(inp.get("file_path") or inp.get("notebook_path") or "")
     if tool in ("Edit", "Write", "MultiEdit", "NotebookEdit") and path:
-        ids = []
+        keys = []
         if path.startswith(os.path.expanduser("~/www/")) and git_root_has_compose(path):
-            ids += [745, 749]
+            keys.append("live-repo")
         if TEST_FILE.search(path):
-            ids += [740, 741, 742]
+            keys.append("test-file")
         if path.endswith(".md"):
-            ids += [924, 737]
+            keys.append("md-edit")
         if os.path.basename(path) in ("CLAUDE.md", "AGENTS.md"):
-            ids += [925]
-        return list(dict.fromkeys(ids))
+            keys.append("project-doc")
+        return keys
     return []
+
+
+def hyphen_labels(data):
+    names = (data.get("tool_input") or {}).copy()
+    labels = []
+    for field in LABEL_TOOLS.get(data.get("tool_name"), ()):
+        v = names.get(field)
+        labels += v if isinstance(v, list) else [v]
+    return [l for l in labels if isinstance(l, str) and "-" in l]
+
+
+def read_quota(profile):
+    try:
+        r = subprocess.run([os.environ.get("SESSIONEER_BIN") or "sessioneer", "--usage"],
+                           capture_output=True, text=True, timeout=10)
+        if r.returncode:
+            return None
+        p = json.loads(r.stdout)["agents"]["claude"]["profiles"][profile]
+        vals = [p["quota"]["session"]["pct"], p["quota"]["week_all"]["pct"]]
+        ok = p.get("ok") and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vals)
+        return max(vals) if ok else None
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        return None
+
+
+def quota_pct(state_dir):
+    """Highest quota percentage, or None; the reading is cached so prompts do not each run the binary."""
+    profile = os.environ.get("RULE_QUOTA_PROFILE") or "personal"
+    cache = os.path.join(state_dir, "quota-" + re.sub(r"[^A-Za-z0-9_-]", "_", profile))
+    try:
+        stamp, pct = json.load(open(cache))
+        if time.time() - stamp < QUOTA_TTL:
+            return pct
+    except (OSError, ValueError, TypeError):
+        pass
+    pct = read_quota(profile)
+    with open(cache, "w") as f:
+        json.dump([time.time(), pct], f)
+    return pct
 
 
 def work_order(obj):
@@ -159,19 +253,29 @@ def main():
             with open(path, "a") as f:
                 f.writelines(f"{r['id']}@{r['revision']}\n" for r in rules if r.get("text"))
         return
-    ids = match(data)
+    triggers = load_triggers()
+    ids = list(dict.fromkeys(i for k in match(data) for i in triggers.get(k, [])))
     rules, have = load_rules(), delivered(path)
     fresh = [i for i in ids if i in rules and f"{i}@{rules[i]['rev']}" not in have]
-    if fresh:
-        with open(path, "a") as f:
-            f.writelines(f"{i}@{rules[i]['rev']}\n" for i in fresh)
-    body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
+    new = [f"{i}@{rules[i]['rev']}" for i in fresh]
+    parts = []
     if ev == "UserPromptSubmit":
-        body = REMINDER + (f"\n\nRules for this action:\n\n{body}" if body else "")
-    elif body:
-        body = f"Rules for this action:\n\n{body}"
+        parts.append(REMINDER)
+        pct = quota_pct(os.path.dirname(path))
+        if pct is not None and pct >= QUOTA_LIMIT and "quota-warned" not in have:
+            new.append("quota-warned")
+            parts.append(f"Quota at {int(pct)}%: rule 747. Start no new steps; park the work with a handoff.")
+    body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
-        out(ev, "additionalContext", body)
+        parts.append(f"Rules for this action:\n\n{body}")
+    bad = hyphen_labels(data) if ev == "PreToolUse" else []
+    if bad:
+        parts.append(f"Label names use spaces, not hyphens: {', '.join(bad)}.")
+    if new:
+        with open(path, "a") as f:
+            f.writelines(f"{n}\n" for n in new)
+    if parts:
+        out(ev, "additionalContext", "\n\n".join(parts))
 
 
 if __name__ == "__main__":

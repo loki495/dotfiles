@@ -151,6 +151,33 @@ class ReconcileTests(unittest.TestCase):
         self.assertIn('nothing written', err.getvalue())
         self.assertEqual(fake.writes, [])
 
+    def test_rule_export_validation_problems_become_their_own_finding(self):
+        fake = FakeDibs(self.atlas(self.first))
+        dr.M.dibs_json = fake
+        seen = {}
+
+        def export(*a, **kw):
+            seen.update(kw)
+            kw['problems'].append('742: tier trigger needs a known key')
+            return []
+        err = io.StringIO()
+        with redirect_stderr(err), unittest.mock.patch('sys.argv', ['x']), \
+                unittest.mock.patch.object(dr.RULES_EXPORT, 'export', side_effect=export):
+            code = dr.main()
+        self.assertIsInstance(seen.get('problems'), list)
+        self.assertNotEqual(code, 2)
+        self.assertNotIn('unreachable', err.getvalue())
+        written = [str(x) for w in fake.writes for x in w]
+        self.assertTrue(any('742: tier trigger needs a known key' in x for x in written), written)
+
+    def test_no_export_problems_means_no_such_finding(self):
+        fake = FakeDibs(self.atlas(self.first))
+        dr.M.dibs_json = fake
+        with redirect_stderr(io.StringIO()), unittest.mock.patch('sys.argv', ['x']), \
+                unittest.mock.patch.object(dr.RULES_EXPORT, 'export', return_value=[]):
+            self.assertEqual(dr.main(), 0)
+        self.assertFalse(any('tier' in str(x) and 'known key' in str(x) for w in fake.writes for x in w))
+
     def test_plan_findings_flag_missing_status_and_sha(self):
         f = dr.plan_findings([(
             {'id': 5, 'body': 'S1 done', 'children': [{'id': 7, 'title': 'S2 b', 'state': 'CLOSED'}]},

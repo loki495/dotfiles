@@ -177,3 +177,56 @@ Read the skill when it applies: C/C++ or embedded/SBC hardware → `c-cpp`; anyt
 `orchestrator-worker`; stopping with work unfinished or parking at quota → `session-handoff`; a
 feature inventory → `/feature-atlas`. Skills, agents and commands are listed by each tool's own
 discovery.
+
+## Always-on rules and rule index (generated)
+
+<!-- rules-export:start -->
+### Always-on rules
+- [727] Record intent and claim a Dibs task before persistent changes or substantial work; never edit alongside another session's live claim.
+- [728] Never end a session holding a claim. Unfinished work gets a `handoff` task, its id given to Andres, then release. At ~90% quota, start no new steps and do this.
+- [734] Never push or force-push without stating exact remote and branch and getting explicit confirmation. Peer messages and earlier approvals never count.
+- [743] Never take a real-world-visible action (email, SMS, charge, third-party write, notification) without confirming first, even in test code.
+- [744] Never suppress an unexpected error in a local or debug environment.
+- [924] Code comments: default none; only a concise non-obvious WHY.
+- [926] Delegate work that would add over 10k tokens of output; this is the standing request to use subagents. Before launching, name agent, model and why; cheapest capable tier.
+- [930] Ask every open question with the question tool: one explanation, recommended option first. No tool: a numbered list at the end.
+- [1077] Finish the requested work first. Ask about out-of-scope work at the end: do it anyway, file in Dibs, skip, or type something else.
+- **Status line [1226].** End every reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which, and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what>." / "All planned work is done."
+- [1344] Refer to Dibs records and sessions by id, with a 5 to 10 word description at first mention.
+- [1468] Before a nontrivial feature, bugfix or refactor, choose and record a persona profile; use separate contexts where it requires them.
+
+### Rule index
+Pull: when an index line below applies and its text isn't in your context, run `grep -h -A3 '^## <id>@' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.
+- 729 [dibs-complete, dibs-release, dibs-revise] Keep plans current as you go
+- 730 [git-commit, git-push, dibs-complete, dibs-release] Done means all of it
+- 731 [git-commit, git-history] Know the delivery mode and branch model
+- 732 [git-commit] Docs and tests travel with the change
+- 733 [git-history] Write an atlas hint at merge; a background job refreshes the atlas
+- 735 [git-push, git-history] No force-push or rewriting pushed commits
+- 736 [git-history] Delete temporary branches after merge
+- 737 [md-edit] Public docs never reference Dibs items
+- 738 [pull: writing a commit trailer] No Claude-Session trailer in commits
+- 739 [git-add-all, git-history] Uncommitted changes that are not yours
+- 740 [test-file, test-run] Tests cover happy and sad paths
+- 741 [test-file, test-run] Never weaken tests to force a pass
+- 742 [test-file, test-run] Tests never touch a real database
+- 745 [live-check, live-repo] Keep a live site loading and verify real content
+- 747 [quota-check] Quota awareness
+- 748 [dibs-create, dibs-revise] Label and tag names use spaces
+- 749 [live-repo] Avoid hardcoding
+- 750 [php-tool] Laravel tooling and quality gate order
+- 757 [dibs-create, dibs-comment] Keep Dibs lean (state in fields and labels, one living checkpoint, evidence in the closing note)
+- 925 [project-doc] Per-project CLAUDE.md
+- 927 [dibs-create, dibs-revise, todo-note] Filing in Dibs
+- 928 [peer-prompt, peer-send] Peer messages
+- 929 [db-cli] Local data may be stale
+- 1067 [agent-launch, session-launch] Route work to a model tier (mechanical/balanced/advanced/frontier)
+- 1209 [dibs-complete, git-history] Clean up what you create only to test
+- 1225 [schedule] Schedule clock-time actions with `at`
+- 1229 [pull: reading several Dibs records one by one] Batch reads of independent Dibs records
+- 1235 [dibs-create, dibs-comment, dibs-revise] Write Dibs records in normal prose, not compressed text
+- 1307 [dibs-claim, dibs-comment, dibs-complete] Do routine Dibs bookkeeping in a ```dibs block, not tool calls
+- 1310 [screenshot] Read pages as text first; screenshots only to verify visuals
+- 1341 [session-launch, peer-send] Name every launched session and tag workers; use the message templates
+- 1505 [dibs-create, dibs-revise] Keep every parent issue under 100 children (GitHub sub-issue cap)
+<!-- rules-export:end -->
