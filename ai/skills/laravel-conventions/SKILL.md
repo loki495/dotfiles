@@ -1,6 +1,6 @@
 ---
 name: laravel-conventions
-description: Laravel/Livewire architecture conventions: thin controllers to actions to services, action return values, transactions, strict typing, and error handling. Use when writing or reviewing Laravel code.
+description: Laravel/Livewire conventions: thin controllers to actions to services, return values, transactions, strict typing, error handling, DB choice and N+1, Rector (dry-run only). Use when writing or reviewing Laravel code, DB code or Rector config.
 ---
 
 # Laravel Conventions
@@ -77,3 +77,24 @@ Be deliberate about what's expected-and-handled vs unexpected-and-should-throw.
 Default to the latest stable Laravel, Livewire and Flux for a new project, even when a spec or
 prompt names an older major (for example "Livewire 3"); say so in the plan instead of asking. Pin an
 older major only when Andres asks for it or an existing project requires it.
+
+## Database
+
+- Live ecommerce/work projects usually run MySQL/MariaDB, personal projects SQLite, with exceptions.
+  Check the project's `.env`/config; when unclear in `/project-bootstrap`, ask.
+- Be deliberate about eager loading (`with()`, `load()`) wherever a loop touches relationships (N+1).
+- A driver-specific quirk (enums, JSON, full-text) is worth a quick check, not an assumption.
+
+## Rector
+
+Laravel projects with a `rector.php` only; OpenCart never, unless the project's `.claude/project.md` opts in.
+
+- Always `--dry-run` first, show Andres the diff and wait; never auto-apply. The `rector-guard.sh` hook
+  denies `rector process` / `composer rector:apply` without `--dry-run`, and the pre-commit hook blocks
+  a commit when the dry-run finds changes.
+- Run in the container: `docker exec <container> ./vendor/bin/rector process --dry-run` (or `composer rector`).
+- Reference config `~/www/stocker/rector.php`: paths `app`, `database`, `routes`, `tests`; sets
+  `LevelSetList::UP_TO_PHP_83` (match the project's PHP), `SetList::CODE_QUALITY`, `SetList::DEAD_CODE`;
+  `importNames()`, `importShortClasses(false)`; skip `ClosureToArrowFunctionRector`.
+- Avoid `SetList::STRICT_MODE` (unless PHPStan level 9+) and any run on OpenCart paths.
+- After applying, re-run PHPStan at the project's level.

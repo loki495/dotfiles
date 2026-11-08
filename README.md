@@ -509,6 +509,7 @@ All projects:
   again) also lists the unpushed commits (`git log --oneline` from `@{push}`, else `@{upstream}`, "as of
   last fetch"; a note when there is no upstream) and any risky flags (`--force`, `-f`, `--force-with-lease`,
   `--delete`, `-d`, `--no-verify`, `--mirror`, `:branch`), both in the prompt and as context for the model.
+- **Rector guard** (`hooks/rector-guard.sh`, PreToolUse on Bash): denies `rector process` and `composer rector:apply` unless the command has `--dry-run`; test `tests/test_rector_guard_hook.py`.
 - **Commit gate** (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message or
   staged `.md` addition that cites a Dibs number (a "Dibs" or `todo_show` call followed by a number; rule 737) and a
   `Claude-Session:` trailer (rule 738); it also denies a message

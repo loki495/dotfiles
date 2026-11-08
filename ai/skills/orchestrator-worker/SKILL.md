@@ -1,6 +1,6 @@
 ---
 name: orchestrator-worker
-description: Default protocol for multi-step coding work, solo, forked or delegated to workers. A plan is a `plan`-labeled issue in Dibs (MCP server `dibs`; `todo:agent:*` CLI fallback) so any session of any agent can resume it cold; research and lessons are shared Dibs records; small work escalates to workers and model tiering only when warranted. Use by default for multi-step work, not only when asked.
+description: Protocol for multi-step or multi-session work with a Dibs plan, workers and model tiering. Use when planning, delegating to workers, resuming a plan or choosing a model tier; not for single-turn edits.
 ---
 
 # Orchestrator/Worker Protocol

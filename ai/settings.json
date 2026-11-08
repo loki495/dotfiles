@@ -389,6 +389,10 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/commit-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rector-guard.sh"
           }
         ]
       },
@@ -554,7 +558,7 @@
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "ponytail@ponytail": true,
+    "ponytail@ponytail": false,
     "hookify@claude-plugins-official": false,
     "claude-md-management@claude-plugins-official": false,
     "laravel-boost@claude-plugins-official": false,
@@ -568,7 +572,7 @@
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
+    "github@claude-plugins-official": false,
     "session-report@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false
   },

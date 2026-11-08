@@ -91,7 +91,7 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
 - Read-only phrasing ("analyze", "just suggest", "brainstorm", "don't make changes yet", a research
   or explain question) means no edits or mutating commands: end with findings and options.
 - When Andres asks to "see" a file, list or todo, print its contents in the message (he often reads
-  on a phone); for many candidate edits write one standing review file to approve from later.
+  on a phone); when he asks to review many candidate edits later, write one standing review file (his request counts as asking for a .md file).
 - When he says to drop a line of investigation, don't revisit it unless he does; if worth tracking,
   file it in Dibs. `Todo:` / `next:` / "after X, do Y" are backlog notes: file them, keep working
   [rule 927]. Plain statements ("X should show Y") are normal requests to implement.
