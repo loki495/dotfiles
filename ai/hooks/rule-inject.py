@@ -13,6 +13,8 @@ additionalContext. Two checks ride along: a hyphenated Dibs label name gets a wa
 gets a quota warning once usage (`$SESSIONEER_BIN --usage`, cached 300 s) reaches 90%.
 Any failure is silent (exit 0): this hook never blocks on its own trouble.
 """
+import contextlib
+import fcntl
 import glob
 import json
 import os
@@ -64,6 +66,44 @@ TOOLS = {  # tool name -> trigger key
 }
 LABEL_TOOLS = {"mcp__dibs__todo_create": ("labelNames", "newLabelName"), "mcp__dibs__todo_revise": ("addLabels",)}
 QUOTA_LIMIT, QUOTA_TTL = 90, 300
+
+
+TYPE_KEYS = {"code": ["live-repo"], "tests": ["test-file", "test-run"],
+             "docs": ["md-edit", "project-doc"], "git": ["git-commit", "git-history", "git-add-all", "git-push"],
+             "db": ["db-cli"], "live-site": ["live-check", "live-repo"],
+             "dibs": ["dibs-create", "dibs-revise", "dibs-comment", "dibs-claim", "dibs-complete", "dibs-release"],
+             "infra": ["home-net", "schedule", "live-check"], "research": []}
+LATE = "This rule arrived after the call ran. Check that call and your earlier work in this session against it, and fix what it missed."
+
+
+@contextlib.contextmanager
+def state_lock(path):
+    with open(path + ".lock", "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        yield
+
+
+def rules_for_types(types, session_id, agent_id, tool_use_id=None):
+    path = state_file({"session_id": session_id, "agent_id": agent_id})
+    with state_lock(path):
+        have, rules, triggers = delivered(path), load_rules(), load_triggers()
+        same_call = set()
+        if tool_use_id:
+            try:
+                with open(path + ".calls") as f:
+                    for line in f:
+                        call, revision = json.loads(line)
+                        if call == tool_use_id:
+                            same_call.add(revision)
+            except (OSError, ValueError):
+                pass
+        ids = list(dict.fromkeys(i for kind in types for key in TYPE_KEYS.get(kind, []) for i in triggers.get(key, [])))
+        fresh = [i for i in ids if i in rules and (f"{i}@{rules[i]['rev']}" not in have or
+                                                        f"{i}@{rules[i]['rev']}" in same_call)]
+        if fresh:
+            with open(path, "a") as f:
+                f.writelines(f"{i}@{rules[i]['rev']}\n" for i in fresh if f"{i}@{rules[i]['rev']}" not in have)
+        return [f"[rule {i}] {rules[i]['text']}" for i in fresh]
 
 
 def load_triggers():
@@ -240,6 +280,11 @@ def main():
     if not session:
         return
     path = state_file(data)
+    with state_lock(path):
+        run_event(data, ev, session, path)
+
+
+def run_event(data, ev, session, path):
     if ev == "SessionStart":
         if data.get("source") in ("compact", "clear", "resume"):
             for f in glob.glob(os.path.join(os.path.dirname(path), re.sub(r"[^A-Za-z0-9_-]", "_", session) + "-*")):
@@ -271,9 +316,15 @@ def main():
     bad = hyphen_labels(data) if ev == "PreToolUse" else []
     if bad:
         parts.append(f"Label names use spaces, not hyphens: {', '.join(bad)}.")
+    if fresh and ev == "PreToolUse" and data.get("tool_use_id"):
+        with open(path + ".calls", "a") as f:
+            for i in fresh:
+                f.write(json.dumps([data["tool_use_id"], f"{i}@{rules[i]['rev']}"]) + "\n")
     if new:
         with open(path, "a") as f:
             f.writelines(f"{n}\n" for n in new)
+    if body and ev == "PreToolUse":
+        parts.append(LATE)
     if parts:
         out(ev, "additionalContext", "\n\n".join(parts))
 

@@ -236,6 +236,127 @@ class DibsBlockHookTest(unittest.TestCase):
         self.assertNotIn('decision', out)
         self.assertIn('done 5: completed', out['systemMessage'])
 
+    # --- [complete] line: same effect and validations as `done`, applied by the stop mode ---
+
+    def msg(self, body, **kw):
+        return self.hook('stop', last_assistant_message=body, **kw)
+
+    def complete_line(self, task=5, evidence=None, notes='Fixed it'):
+        evidence = evidence if evidence is not None else f'sha={self.sha[:9]} tests="pest --filter X" docs=README.md'
+        return f'[complete {task} | {evidence} | {notes}]'
+
+    def test_complete_line_completes_like_done(self):
+        self.stop('claim 5')
+        out = self.msg(f'All fixed.\n\n{self.complete_line()}\nAll planned work is done.')
+        self.assertIn('done 5: completed', out['systemMessage'])
+        call = self.calls('complete')[0]
+        result = json.loads(next(a for a in call if a.startswith('--result='))[9:])
+        self.assertEqual(result['commit'], self.sha[:9])
+        self.assertEqual(result['tests'], {'command': 'pest --filter X', 'exit_code': 0})
+        self.assertEqual(result['docs'], ['README.md'])
+        self.assertIn('--token=tok5', call)
+        self.assertEqual(self.dbs()['issues']['5']['state'], 'CLOSED')
+
+    def test_complete_line_evidence_is_parsed_with_shlex(self):
+        self.stop('claim 5')
+        line = self.complete_line(evidence=f'sha={self.sha} tests="pest --filter \'A B\'" docs=a.md,b.md')
+        self.msg(line)
+        result = json.loads(next(a for a in self.calls('complete')[0] if a.startswith('--result='))[9:])
+        self.assertEqual(result['tests']['command'], "pest --filter 'A B'")
+        self.assertEqual(result['docs'], ['a.md', 'b.md'])
+
+    def test_complete_line_with_none_reasons(self):
+        self.stop('claim 5')
+        line = self.complete_line(evidence='sha="none: research only" tests="none: no code" docs="none: no docs"', notes='Findings filed')
+        self.assertIn('done 5: completed', self.msg(line)['systemMessage'])
+
+    def test_complete_line_works_together_with_a_dibs_block_in_the_same_message(self):
+        body = f'Done.\n\n```dibs\nclaim 5\nnote 5: wrapped up\n```\n{self.complete_line()}\nSafe to archive this session.'
+        out = self.msg(body)
+        self.assertIn('done 5: completed', out['systemMessage'])
+        self.assertEqual(len(self.calls('comment')), 1)
+        self.assertEqual(self.dbs()['issues']['5']['state'], 'CLOSED')
+
+    def test_complete_line_for_a_task_this_session_does_not_hold_is_refused(self):
+        out = self.msg(self.complete_line())
+        self.assertEqual(out['decision'], 'block')
+        self.assertIn('5', out['reason'])
+        self.assertEqual(self.calls('complete'), [])
+
+    def test_complete_line_refuses_bad_evidence_with_the_done_validations(self):
+        self.stop('claim 5')
+        cases = ((self.complete_line(evidence='sha=deadbeef1'), 'does not exist'),
+                 (self.complete_line(evidence=f'sha={self.side}'), 'not on the current branch'),
+                 (self.complete_line(evidence='tests=x'), 'sha='),
+                 (self.complete_line(notes=''), 'summary'))
+        for line, text in cases:
+            with self.subTest(line=line):
+                out = self.msg(line)
+                self.assertEqual(out['decision'], 'block')
+                self.assertIn(text, out['reason'])
+        self.assertEqual(self.calls('complete'), [])
+        self.assertEqual(self.dbs()['issues']['5']['state'], 'OPEN')
+
+    def test_complete_line_refusal_blocks_once(self):
+        self.stop('claim 5')
+        out = self.msg(self.complete_line(evidence='sha=deadbeef1'), stop_hook_active=True)
+        self.assertNotIn('decision', out)
+        self.assertIn('refused', out['systemMessage'])
+
+    def test_resent_complete_line_is_not_applied_twice(self):
+        self.stop('claim 5')
+        line = self.complete_line()
+        self.msg(line)
+        self.assertIsNone(self.msg(line))
+        self.assertEqual(len(self.calls('complete')), 1)
+
+    def test_complete_line_results_are_reported_on_the_next_prompt_once(self):
+        self.stop('claim 5')
+        self.msg(self.complete_line())
+        ctx = self.hook('prompt', prompt='next')['hookSpecificOutput']['additionalContext']
+        self.assertIn('done 5', ctx)
+        self.assertIsNone(self.hook('prompt', prompt='again'))
+
+    def test_fenced_inline_and_embedded_complete_lines_are_ignored(self):
+        self.stop('claim 5')
+        line = self.complete_line()
+        for body in (f'```\n{line}\n```', f'Use `{line}` to finish.', f'Done: {line}', f'{line} and more', f'> {line}'):
+            with self.subTest(body=body):
+                self.assertIsNone(self.msg(body))
+        self.assertEqual(self.calls('complete'), [])
+
+    def test_malformed_complete_lines_never_crash(self):
+        self.stop('claim 5')
+        for body in ('[complete x | sha=1 | n]', '[complete 5 | sha=1]', '[complete 5 | sha="unterminated | n]', '[complete | a | b]'):
+            with self.subTest(body=body):
+                self.msg(body)
+        self.assertEqual(self.calls('complete'), [])
+
+    def test_complete_line_in_dry_run_writes_nothing(self):
+        self.stop('claim 5')
+        out = self.msg(self.complete_line(), env={'DIBS_BLOCK_DRY_RUN': '1'})
+        self.assertIn('would', out['systemMessage'])
+        self.assertEqual(self.calls('complete'), [])
+
+    # --- the stop mode renews this session's claims even when the message has no actions ---
+
+    def test_plain_stop_heartbeats_each_claim_this_session_made(self):
+        self.stop('claim 5')
+        before = len(self.calls('heartbeat'))
+        self.assertIsNone(self.msg('Plain reply, nothing to apply.'))
+        self.assertEqual(len(self.calls('heartbeat')), before + 1)
+        self.assertEqual(self.calls('heartbeat')[-1][1], '5')
+
+    def test_plain_stop_without_claims_calls_nothing(self):
+        self.msg('Plain reply.')
+        self.assertEqual(self.dbs()['log'], [])
+
+    def test_renewal_survives_a_dead_claim_and_an_unreachable_dibs(self):
+        self.stop('claim 5')
+        db = self.dbs(); del db['claims']['5']; self.db.write_text(json.dumps(db))
+        self.msg('Plain reply.')
+        self.msg('Plain reply.', env={'DIBS_CLI': '/nonexistent/cli'})
+
 
 if __name__ == '__main__':
     unittest.main()

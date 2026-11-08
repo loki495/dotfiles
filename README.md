@@ -563,16 +563,16 @@ All projects:
   on the current branch (or `sha="none: …"`) and a summary. Each line applies once, so a re-sent block
   is safe; a refused line blocks the stop once with the reason. `DIBS_BLOCK_DRY_RUN=1` reports without
   writing; `DIBS_CLI` overrides the CLI (tests).
-- **Claim required** (`dibs-block.py guard`, PreToolUse on Bash and file-edit tools): never denies.
-  On the first real mutation without a live claim it writes a local breadcrumb (prompt, workdir,
-  branch, time, agent pid) to the session state file, then creates and claims one idempotent
-  local-only temporary task and allows the call with the task id as context. Own claims are reused.
-  A Bash command counts as a mutation only if, with quoted strings removed, it matches the denylist:
-  `rm`/`mv`/`cp`/`tee`/`touch`/`mkdir`/`sed -i`, redirects, `git commit/push/merge/reset/...`,
-  `docker compose up/down`, `npm`/`composer install`, `curl -X POST`. Targets under `/tmp`,
-  `$XDG_RUNTIME_DIR` and `/dev/null` are ignored, and calls from subagents (`agent_id`) are skipped.
-  If Dibs or the state directory is unavailable the call still goes ahead with a visible warning
-  (`onFailure` is `continue`; valid values are `continue` and `block`). A read-only session creates no task.
+- **Claim required** (`dibs-block.py guard`, PreToolUse on all tools): write
+  `[work <id or new> | <description> | <type>]` on its own line before related work.
+  Types are `code`, `tests`, `docs`, `git`, `db`, `live-site`, `dibs`, `infra`, and
+  `research`, combined with `+`. The hook claims the task (or creates a temporary one)
+  and delivers its rules. A change with fresh rules is held once for review and retry;
+  an unclaimed change is denied twice, then tracked in a temporary task with a warning.
+  Reads, scratch paths, subagents, and Dibs outages pass through. Work lines inside code
+  fences are ignored. For a read, a claim made outside the hook may still incur the bounded
+  transcript wait; this avoids contacting Dibs for ordinary reads. Use `[complete <id> | sha=... tests="..." | notes]` to complete
+  a hook-owned claim at Stop, or release it explicitly.
 - **Recovery checkpoints** (`dibs-block.py heartbeat/checkpoint`): save the goal, canonical session
   id, workdir, branch, bounded git status, time and next step in one living comment while preserving
   progress notes. Checkpoints refresh during work and at Stop, PreCompact and SessionEnd; they never
@@ -583,13 +583,13 @@ All projects:
   under the current workdir (and the breadcrumbs of dead sessions that never got a task), then asks the agent to inspect their normal trusted details before
   resuming. It never runs or claims the listed work automatically, and does not put raw task titles
   into the session context. An unavailable Dibs service produces a visible warning.
-- **Stop gate** (`hooks/stop-gate.sh`, Stop): first runs the Dibs block, then blocks (once per turn, via `stop_hook_active`) a final
-  message whose last 3 non-empty lines lack the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
-  "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent; the block tells the session it need not repeat the message, only output the missing status line unless something else changed. It also tells a session waiting on the user to ask the pending question with the question tool first, keeping "Waiting on Andres" for what a question cannot carry. It also tells a session whose work was handed to a new session that no longer needs it to say "Safe to archive this session." instead of "Waiting on other work". Then blocks ending the session while it still holds a live
-  Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
-  Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
-  `$XDG_RUNTIME_DIR`, else `~/.cache`), then allows with a visible warning so it never loops;
-  `DIBS_STOP_GATE=off` skips it; a session whose exact working directory is registered as an empty file named by the sha256 of that path (first 32 hex characters) in `dibs-stop-gate-skip/` next to the counter dir, owned by you and touched within 30 minutes, is skipped entirely (for one-off sessions that must return exactly what they were asked, such as Jacker's `bin/ai-bridge` extractions; the entry lives outside the work directory so a repo cannot ship it, and the registering script removes it on exit); Dibs unreachable allows with a warning. Subagent stops are not gated.
+- **Stop gate** (`hooks/stop-gate.sh`, Stop): checks the last three non-empty lines
+  for a status line before applying Dibs blocks and completion lines. Continue and Waiting
+  statuses keep the claim and renew its lease. Archive and all-done statuses require a
+  completion or release; continuing in another session requires a handoff and release.
+  A repeated stop allows with a warning to avoid loops. `DIBS_STOP_GATE=off` skips the gate
+  after applying bookkeeping; Dibs outages allow with a warning. A recently registered,
+  user-owned entry in `dibs-stop-gate-skip` skips one-off sessions entirely.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default 250k,
   `CLAUDE_CTX_BUDGET`) it warns and tells Claude to offer `/handoff` then a fresh `/takeover` session
   (or `/clear` after the handoff); after an idle gap
@@ -597,7 +597,7 @@ All projects:
   blocks the prompt once; re-send to continue. Slash commands always pass through.
 - **Rule inject** (`hooks/rule-inject.py`; PreToolUse on Bash, file edits, Agent, the Dibs
   create/revise/claim/complete/release tools; PostToolUse on `todo_claim`; SessionStart;
-  UserPromptSubmit): turns an event into trigger keys and injects the rules the key map names. The
+  UserPromptSubmit): turns an event into trigger keys and injects the rules the key map names. Rules arriving on an allowed tool call include a notice to check that call and earlier work. The
   trigger map is `{key: [rule ids]}` from `ai/rules-triggers.json` and
   `~/.dotfiles-private/ai/rules-triggers.private.json` (generated by `rules-export.py`, `RULE_TRIGGERS`
   overrides, merged by key); a missing or malformed map means no rules. The 28 keys: `git-commit`,

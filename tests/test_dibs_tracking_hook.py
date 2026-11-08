@@ -1,4 +1,4 @@
-"""Tracking hook contract (never-deny guard + breadcrumbs), exercised only against an isolated fake Dibs CLI."""
+"""Tracking hook contract (claim-or-work-line guard + breadcrumbs), exercised only against an isolated fake Dibs CLI."""
 import json
 import os
 import re
@@ -123,6 +123,22 @@ class TrackingHookTest(unittest.TestCase):
         if out:
             self.assertNotEqual(out.get('hookSpecificOutput', {}).get('permissionDecision'), 'deny')
 
+    def assert_denied(self, out):
+        self.assertIsNotNone(out)
+        event = out['hookSpecificOutput']
+        self.assertEqual((event['hookEventName'], event['permissionDecision']), ('PreToolUse', 'deny'))
+        return event['permissionDecisionReason']
+
+    def mutate(self, tool='Edit', session='sess-1', env=None, **inp):
+        inp = inp or {'file_path': str(self.repo / 'changed.txt')}
+        return self.hook('guard', session_id=session, tool_name=tool, tool_input=inp, env=env)
+
+    def auto_edit(self, tool='Edit', session='sess-1', env=None, **inp):
+        """Contract 2: two denials without a claim, then the third mutating call opens the temporary task and is allowed."""
+        for _ in range(2):
+            self.assert_denied(self.mutate(tool, session, env, **inp))
+        return self.mutate(tool, session, env, **inp)
+
     def assert_allowed(self, out, task=None):
         self.assertIsNotNone(out)
         event = out['hookSpecificOutput']
@@ -143,12 +159,24 @@ class TrackingHookTest(unittest.TestCase):
         """Not denied and not allowed: nothing printed."""
         self.assertIsNone(out)
 
-    # --- contract 5: first mutating call is allowed, tracked, breadcrumbed ---
+    # --- contract 2: a change without a claim or work line is denied twice, then auto-tracked with a warning ---
 
-    def test_first_edit_allows_creates_claims_and_records_breadcrumb(self):
+    def test_first_edit_without_claim_or_work_line_is_denied_and_creates_nothing(self):
+        self.hook('prompt', prompt='Fix the parser and run its focused tests')
+        reason = self.assert_denied(self.edit())
+        self.assertIn('[work', reason)
+        self.assertEqual(self.calls('create'), [])
+        self.assertEqual(self.calls('claim'), [])
+        self.assertEqual(self.dbs()['claims'], {})
+
+    def test_third_edit_after_two_denials_allows_creates_claims_and_records_breadcrumb(self):
         prompt = 'Fix the parser and run its focused tests'
         self.hook('prompt', prompt=prompt)
-        self.assert_allowed(self.edit(), '100')
+        out = self.auto_edit()
+        self.assert_allowed(out, '100')
+        self.assertIn('Dibs', out['systemMessage'])
+        self.assertEqual(self.calls('create')[0][0], 'create')
+        self.assertTrue(any(a.startswith('--title=Auto-tracked:') or 'Auto-tracked:' in a for a in self.calls('create')[0]))
         db = self.dbs()
         self.assertEqual(len(db['issues']), 1)
         self.assertTrue(db['issues']['100']['temporary'])
@@ -161,18 +189,18 @@ class TrackingHookTest(unittest.TestCase):
         self.assertLess(abs(b['ts'] - time.time()), 60)
 
     def test_breadcrumb_without_recorded_prompt(self):
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.assertEqual(self.breadcrumb()['prompt'], '(no prompt recorded)')
 
     def test_breadcrumb_is_written_before_any_dibs_call(self):
         self.hook('prompt', prompt='Probe ordering')
-        self.assert_allowed(self.edit(env={'PROBE': str(self.state_file())}))
+        self.assert_allowed(self.auto_edit(env={'PROBE': str(self.state_file())}))
         probe = self.dbs()['probe']
         self.assertIsNotNone(probe)
         self.assertIn('Probe ordering', probe)
 
     def test_second_mutating_call_in_session_does_not_create_again(self):
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.assert_never_denied(self.edit())
         self.bash('touch f', session='sess-1')
         self.assertEqual(len(self.calls('create')), 1)
@@ -203,6 +231,8 @@ class TrackingHookTest(unittest.TestCase):
     def test_lost_create_response_retries_same_key_without_duplicate(self):
         self.hook('prompt', prompt='Repair the parser after a lost response')
         self.update_db(lose_create_response_once=True)
+        for _ in range(2):
+            self.assert_denied(self.edit())
         self.assert_never_denied(self.edit())
         self.assertEqual(len(self.dbs()['issues']), 1)
         self.assert_never_denied(self.edit())
@@ -215,28 +245,30 @@ class TrackingHookTest(unittest.TestCase):
 
     def test_completed_auto_task_is_replaced(self):
         self.hook('prompt', prompt='Finish the first task')
-        self.assert_allowed(self.edit(), '100')
+        self.assert_allowed(self.auto_edit(), '100')
         self.update_db(issues={}, claims={})
         self.hook('prompt', prompt='Start a different second task')
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.assertEqual(len(self.dbs()['claims']), 1)
         self.assertEqual(len(self.calls('create')), 2)
 
     def test_stale_local_token_does_not_bypass_or_duplicate_task(self):
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.update_db(claims={})
-        self.assert_never_denied(self.edit())
+        self.assert_never_denied(self.auto_edit())
         self.assertEqual(len(self.dbs()['issues']), 1)
         self.assertEqual(len(self.dbs()['claims']), 1)
 
     def test_deleted_task_detection_does_not_depend_on_cli_wording(self):
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.update_db(issues={}, claims={}, show_error='Record gone (code 7)')
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.assertEqual(len(self.calls('create')), 2)
 
     def test_concurrent_first_edits_create_only_one_task_and_claim(self):
         self.hook('prompt', prompt='Fix concurrency')
+        for _ in range(2):
+            self.assert_denied(self.edit())
         with ThreadPoolExecutor(max_workers=2) as pool:
             outputs = list(pool.map(lambda _: self.edit(), range(2)))
         for out in outputs:
@@ -246,7 +278,7 @@ class TrackingHookTest(unittest.TestCase):
 
     def test_checkpoint_and_heartbeat_refresh_one_comment_and_leave_task_open(self):
         self.hook('prompt', prompt='Implement recovery')
-        self.assert_allowed(self.edit())
+        self.assert_allowed(self.auto_edit())
         self.hook('stop', last_assistant_message='```dibs\nnote 100: Parser fixed; next run tests\n```')
         self.assertIn('Parser fixed', self.dbs()['comments']['1']['body'])
         self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
@@ -274,7 +306,7 @@ class TrackingHookTest(unittest.TestCase):
         self.assertEqual(len(db['comments']), 1)
         self.assertIn('inspect the parser', db['comments']['1']['body'].lower())
 
-    # --- contract 1 and 6: never deny, degrade to a warning ---
+    # --- contract 2: Dibs down, bad input or unusable state degrade to a warning, never a denial ---
 
     def test_never_denies_on_missing_session_invalid_json_or_dibs_down(self):
         for data, env in (({'session_id': ''}, {}), ({}, {'DIBS_CLI': '/nonexistent/dibs'})):
@@ -335,8 +367,11 @@ class TrackingHookTest(unittest.TestCase):
     def test_all_edit_tools_outside_tmp_are_mutating(self):
         for index, tool in enumerate(('Edit', 'Write', 'MultiEdit', 'NotebookEdit')):
             with self.subTest(tool=tool):
-                self.assert_allowed(self.hook('guard', session_id=f'tool-{index}', tool_name=tool,
-                                              tool_input={'file_path': str(self.repo / 'changed.txt')}))
+                self.assert_denied(self.mutate(tool, session=f'tool-{index}', file_path=str(self.repo / 'changed.txt')))
+        self.assertEqual(self.calls('create'), [])
+        for index, tool in enumerate(('Edit', 'Write', 'MultiEdit', 'NotebookEdit')):
+            with self.subTest(tool=tool, step='auto'):
+                self.assert_allowed(self.auto_edit(tool, session=f'tool2-{index}', file_path=str(self.repo / 'changed.txt')))
         self.assertEqual(len(self.calls('create')), 4)
 
     def test_read_only_session_causes_no_create_and_no_state_needed(self):
@@ -366,9 +401,8 @@ class TrackingHookTest(unittest.TestCase):
                     'git status; touch f', 'ls && rm f', 'true | tee f']
         for index, command in enumerate(commands):
             with self.subTest(command=command):
-                before = len(self.calls('create'))
-                self.assert_allowed(self.bash(command, session=f'mut-{index}'))
-                self.assertEqual(len(self.calls('create')), before + 1)
+                self.assert_denied(self.bash(command, session=f'mut-{index}'))
+                self.assertEqual(self.calls('create'), [])
 
     # --- contract 8: recover lists orphaned breadcrumbs ---
 
@@ -427,6 +461,9 @@ class TrackingHookTest(unittest.TestCase):
         entries = [h for g in settings['hooks']['PreToolUse'] for h in g['hooks'] if h['command'].endswith('dibs-block.py guard')]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]['onFailure'], 'continue')
+        matchers = [g.get('matcher') for g in settings['hooks']['PreToolUse']
+                    if any(h['command'].endswith('dibs-block.py guard') for h in g['hooks'])]
+        self.assertEqual(matchers, ['*'])
 
 
 if __name__ == '__main__':

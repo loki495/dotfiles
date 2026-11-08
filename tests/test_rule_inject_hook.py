@@ -562,5 +562,126 @@ class QuotaCheckTest(HookBase):
         self.assertIn(QUOTA_MSG % 95, ctx)
 
 
+LATE = 'This rule arrived after the call ran. Check that call and your earlier work in this session against it, and fix what it missed.'
+TYPE_KEYS = {'code': ['live-repo'], 'tests': ['test-file', 'test-run'], 'docs': ['md-edit', 'project-doc'],
+             'git': ['git-commit', 'git-history', 'git-add-all', 'git-push'], 'db': ['db-cli'],
+             'live-site': ['live-check', 'live-repo'],
+             'dibs': ['dibs-create', 'dibs-revise', 'dibs-comment', 'dibs-claim', 'dibs-complete', 'dibs-release'],
+             'infra': ['home-net', 'schedule', 'live-check'], 'research': []}
+
+
+class LateRuleNoticeTest(HookBase):
+    """Contract 4: rules delivered on an allowed PreToolUse call end with the late-rule notice; nowhere else."""
+
+    def test_pretooluse_rules_end_with_the_exact_notice_once(self):
+        out = self.bash('git commit -m x')
+        self.assertTrue(out['additionalContext'].endswith(LATE))
+        self.assertEqual(out['additionalContext'].count(LATE), 1)
+        self.assertIn('TEXT-732', out['additionalContext'])
+
+    def test_notice_comes_once_for_several_rules_and_after_all_of_them(self):
+        ctx = self.bash('git commit -m x')['additionalContext']
+        self.assertEqual(ctx.count(LATE), 1)
+        for i in (732, 737, 738):
+            self.assertLess(ctx.index(f'TEXT-{i}'), ctx.index(LATE))
+
+    def test_every_pretooluse_delivery_path_has_it(self):
+        for ev in (dict(tool_name='Bash', tool_input={'command': 'git push'}),
+                   dict(tool_name='Edit', tool_input={'file_path': '/x/tests/FooTest.php'}),
+                   dict(tool_name='mcp__playwright__browser_take_screenshot', tool_input={}),
+                   dict(tool_name='Bash', tool_input={'command': 'mysql -e "select 1"'})):
+            with self.subTest(ev=ev):
+                out = self.run_hook(hook_event_name='PreToolUse', session_id=f"n{ev['tool_name']}{ev['tool_input']}", **ev)
+                self.assertTrue(out['additionalContext'].endswith(LATE))
+
+    def test_no_rule_delivered_means_no_output_and_no_notice(self):
+        self.bash('git commit -m x')
+        self.assertIsNone(self.bash('git commit -m again'))
+        self.assertIsNone(self.bash('echo hello'))
+
+    def test_prompt_and_session_start_never_get_the_notice(self):
+        out = self.run_hook(hook_event_name='UserPromptSubmit', prompt='[sessioneer peer: a · /x · master] hi')
+        self.assertIn('TEXT-928', out['additionalContext'])
+        self.assertNotIn(LATE, out['additionalContext'])
+        out = self.prompt('plain prompt')
+        self.assertNotIn(LATE, out['additionalContext'])
+        out = self.run_hook(hook_event_name='SessionStart', source='compact')
+        self.assertNotIn(LATE, out['additionalContext'])
+
+    def test_a_dibs_claim_work_order_is_not_a_delivery_and_adds_no_notice(self):
+        wo = {'workOrder': {'rules': [{'id': 732, 'revision': 1, 'text': 'x'}]}}
+        out = self.run_hook(hook_event_name='PostToolUse', tool_name='mcp__dibs__todo_claim', tool_response=wo)
+        self.assertTrue(out is None or LATE not in out.get('additionalContext', ''))
+
+
+class RulesForTypesTest(KeyHarness):
+    """Contract 3: TYPE_KEYS and rules_for_types(types, session_id, agent_id), importable by path, shared delivered state."""
+    SCRIPT = (
+        'import importlib.util, json, sys\n'
+        'spec = importlib.util.spec_from_file_location("rule_inject", sys.argv[1])\n'
+        'mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)\n'
+        'types, session, agent = json.loads(sys.argv[2]), sys.argv[3], (sys.argv[4] or None)\n'
+        'print(json.dumps({"result": mod.rules_for_types(types, session, agent), "table": getattr(mod, "TYPE_KEYS", None)}, default=str))\n')
+
+    def call(self, types, session='s1', agent='', env=None):
+        proc = subprocess.run(['python3', '-c', self.SCRIPT, str(HOOK), json.dumps(types), session, agent],
+                              capture_output=True, text=True, env=env or self.env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return json.loads(proc.stdout)
+
+    def keys_in(self, payload):
+        blob = json.dumps(payload['result'])
+        return {k for k in KEYS if f'TEXT-{k}' in blob}
+
+    def test_the_type_table_is_exposed_and_maps_as_specified(self):
+        table = self.call(['research'])['table']
+        self.assertEqual({k: sorted(v) for k, v in table.items()}, {k: sorted(v) for k, v in TYPE_KEYS.items()})
+
+    def test_each_type_returns_exactly_its_rules(self):
+        for index, (kind, keys) in enumerate(TYPE_KEYS.items()):
+            with self.subTest(kind=kind):
+                self.assertEqual(self.keys_in(self.call([kind], session=f'ty{index}')), set(keys))
+
+    def test_several_types_return_the_union_without_duplicates(self):
+        payload = self.call(['code', 'live-site', 'tests'])
+        self.assertEqual(self.keys_in(payload), {'live-repo', 'live-check', 'test-file', 'test-run'})
+        self.assertEqual(json.dumps(payload['result']).count('TEXT-live-repo'), 1)
+
+    def test_delivered_rules_are_not_returned_again_and_are_shared_with_the_hook(self):
+        self.assertEqual(self.keys_in(self.call(['git'])), set(TYPE_KEYS['git']))
+        self.assertEqual(self.call(['git'])['result'], [])
+        self.assertIsNone(self.bash('git commit -m x'))
+        self.assertIsNone(self.bash('git push'))
+
+    def test_rules_delivered_by_the_hook_are_not_returned(self):
+        self.assertIsNotNone(self.bash('git commit -m x'))
+        self.assertEqual(self.keys_in(self.call(['git'])), set(TYPE_KEYS['git']) - {'git-commit'})
+
+    def test_state_is_per_session_and_per_agent(self):
+        self.call(['db'])
+        self.assertEqual(self.keys_in(self.call(['db'], session='other')), {'db-cli'})
+        self.assertEqual(self.keys_in(self.call(['db'], agent='a1')), {'db-cli'})
+        self.assertEqual(self.call(['db'], agent='a1')['result'], [])
+
+    def test_a_revision_bump_returns_the_rule_again(self):
+        self.call(['db'])
+        (self.tmp / 'rules.md').write_text(KEY_EXPORT.replace(f'{KEY_ID["db-cli"]}@1', f'{KEY_ID["db-cli"]}@2'))
+        self.assertEqual(self.keys_in(self.call(['db'])), {'db-cli'})
+
+    def test_unknown_empty_and_research_types_return_nothing(self):
+        for types in ([], ['research'], ['nonsense'], ['nonsense', 'research']):
+            with self.subTest(types=types):
+                self.assertEqual(self.call(types)['result'], [])
+
+    def test_missing_export_or_trigger_map_returns_nothing_without_raising(self):
+        self.assertEqual(self.call(['code'], env={**self.env, 'RULE_FILES': str(self.tmp / 'nope.md')})['result'], [])
+        self.assertEqual(self.call(['code'], env={**self.env, 'RULE_TRIGGERS': str(self.tmp / 'nope.json')})['result'], [])
+
+    def test_a_key_missing_from_the_trigger_map_is_skipped(self):
+        triggers = {k: [i] for k, i in KEY_ID.items() if k != 'test-run'}
+        self.write_triggers(triggers, {})
+        self.assertEqual(self.keys_in(self.call(['tests'])), {'test-file'})
+
+
 if __name__ == '__main__':
     unittest.main()

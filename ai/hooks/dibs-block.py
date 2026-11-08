@@ -4,9 +4,8 @@
   dibs-block.py stop       Stop (called from stop-gate.sh): apply the ```dibs block(s) in the final message.
   dibs-block.py prompt     UserPromptSubmit: claim tasks named as `dibs <id>`, report the last block's results.
   dibs-block.py heartbeat  PreToolUse: renew the claims this session made, at most every DIBS_BLOCK_BEAT_SECONDS.
-  dibs-block.py guard      PreToolUse (Edit/Write/MultiEdit/NotebookEdit/Bash): the first real mutation without a live
-                           claim writes a local breadcrumb, then creates and claims one temporary task and allows the call
-                           with context. Never denies; subagents and Dibs outages pass through (the latter with a warning).
+  dibs-block.py guard      PreToolUse: process work lines and require a claim for changes; after two denials,
+                           create a temporary fallback task. Subagents and Dibs outages pass through.
   dibs-block.py checkpoint PreCompact/SessionEnd: renew leases and refresh the breadcrumb; never releases or completes.
   dibs-block.py recover    SessionStart: list dropped task ids under the working directory, and the breadcrumbs of dead
                            sessions that never got a task.
@@ -24,6 +23,7 @@ can be fixed, and everything is reported on the next prompt. DIBS_BLOCK_DRY_RUN=
 import contextlib
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -55,6 +55,10 @@ WRAPPERS = {'sudo', 'env', 'command', 'nohup', 'time', 'nice'}
 
 
 class Refused(Exception):
+    pass
+
+
+class WorkRefused(Refused):
     pass
 
 
@@ -124,7 +128,7 @@ class Session:
             raise Refused(f'task {issue} is not open')
         if DRY:
             return f'claim {issue}: would claim (dry run)'
-        r = cli('claim', issue, f'--agent={self.agent}', f'--pid={agent_pid()}', f'--minutes={LEASE}')
+        r = cli('claim', issue, f'--agent={self.agent}', f'--pid={agent_pid()}', f'--minutes={LEASE}', f'--path={self.cwd}')
         self.state['claims'][issue] = r['capability_token']
         return f'claimed {issue} (capability token {r["capability_token"]}, for MCP calls on this claim)'
 
@@ -169,14 +173,18 @@ class Session:
         notes[issue] = {'id': r['comment_id'], 'revision': r.get('revision', 1), 'text': progress}
         return f'note {issue}: checkpoint comment {r["comment_id"]} added'
 
-    def beat(self):
+    def beat(self, refresh=True, only=None):
         for issue, token in list(self.state['claims'].items()):
+            if only is not None and issue not in only:
+                continue
             try:
                 cli('heartbeat', issue, f'--pid={agent_pid()}', f'--token={token}', f'--minutes={LEASE}')
             except Refused:
                 self.state['claims'].pop(issue)
             except (OSError, subprocess.TimeoutExpired) as e:
                 self.warns.append(f'lease renewal for {issue} failed ({type(e).__name__})')
+        if not refresh:
+            return
         try:
             held = self.held()
             self.ensure(held)
@@ -342,14 +350,39 @@ def append_to_section(body, section, text):
     return (body.rstrip('\n') + f'\n\n{head}\n{text}').lstrip('\n')
 
 
+def fence_step(line, fence):
+    """Track CommonMark-style backtick and tilde fences, including their length."""
+    if fence:
+        char, size = fence
+        if re.fullmatch(r' {0,3}' + re.escape(char) + '{' + str(size) + r',}[ \t]*', line):
+            return None
+        return fence
+    m = re.match(r'^ {0,3}(`{3,}|~{3,})(.*)$', line)
+    if m and (m[1][0] != '`' or '`' not in m[2]):
+        return (m[1][0], len(m[1]))
+    return None
+
+
 def actions(message):
-    out = []
-    for block in BLOCK_RE.findall(message or ''):
-        for line in block.split('\n'):
+    out, fence, dibs = [], None, False
+    for line in (message or '').splitlines():
+        old = fence
+        fence = fence_step(line, fence)
+        if old is None and fence is not None:
+            dibs = bool(re.fullmatch(r' {0,3}`{3,}dibs[ \t]*', line))
+            continue
+        if old is not None and fence is None:
+            dibs = False
+            continue
+        if dibs:
             if line.startswith((' ', '\t')) and out:
                 out[-1] += '\n' + line.strip()
             elif line.strip():
                 out.append(line.strip())
+        elif fence is None:
+            m = re.fullmatch(r'\[complete (\d+) \| (.*?) \| (.*)\]\s*', line)
+            if m:
+                out.append(f'done {m[1]} {m[2]} :: {m[3]}')
     return out
 
 
@@ -463,44 +496,166 @@ def emit(event, **fields):
     print(json.dumps({'hookSpecificOutput': {'hookEventName': event, **fields}}))
 
 
+def transcript_lines(data, wait):
+    path, tid = data.get('transcript_path'), data.get('tool_use_id')
+    if not path:
+        return []
+    deadline = time.monotonic() + (min(max(float(os.environ.get('DIBS_WORK_WAIT_SECONDS', '1.5')), 0), 1.5) if wait else 0)
+    while True:
+        try:
+            rows = Path(path).read_text().splitlines()
+        except OSError:
+            return []
+        entries = []
+        found = False
+        for row in rows:
+            try:
+                obj = json.loads(row)
+                if not isinstance(obj, dict) or obj.get('type') != 'assistant':
+                    continue
+                content = obj.get('message', {}).get('content', [])
+                if not isinstance(content, list):
+                    continue
+                found |= any(isinstance(c, dict) and c.get('type') == 'tool_use' and c.get('id') == tid and tid for c in content)
+                entries.extend(c.get('text', '') for c in content if isinstance(c, dict) and c.get('type') == 'text')
+            except (ValueError, AttributeError, TypeError):
+                continue
+        if found or time.monotonic() >= deadline:
+            return entries
+        time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+
+
+def work_lines(entries):
+    fence, result, index = None, [], 0
+    for entry in entries:
+        for line in entry.splitlines():
+            index += 1
+            old = fence
+            fence = fence_step(line, fence)
+            if old is not None or fence is not None:
+                continue
+            m = re.fullmatch(r'\[work (\d+|new) \| (.+) \| ([a-z-]+(?:\+[a-z-]+)*)\]\s*', line)
+            if m and all(t in RULES.TYPE_KEYS for t in m[3].split('+')):
+                result.append((index, *m.groups()))
+    return result
+
+
+spec = importlib.util.spec_from_file_location('rule_inject', Path(__file__).with_name('rule-inject.py'))
+RULES = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(RULES)
+
+
+def process_work_claim(s, held, index, issue, description, types):
+    if issue == 'new':
+        key = hashlib.sha256(f'{s.id}\nwork\n{index}'.encode()).hexdigest()[:24]
+        r = cli('create', description, '--temporary', f'--idempotency-key=dibs-work:{key}',
+                f'--body=Goal: {description}\nWorkdir: {s.cwd}\nType: {types}')
+        issue = str(r['id'])
+    if issue not in held:
+        s.state['claims'].pop(issue, None)
+        try:
+            s.claim(issue)
+        except Refused as e:
+            raise WorkRefused(str(e)) from e
+        held.add(issue)
+        key = hashlib.sha256(f'{s.id}\nwork\n{index}'.encode()).hexdigest()[:24]
+        s.register(issue, description, key)
+    return issue
+
+
 def guard(data):
     tool, inp = data.get('tool_name'), data.get('tool_input') or {}
-    if DRY or data.get('agent_id') or tool not in MUTATING:
+    if DRY or data.get('agent_id'):
         return
-    if tool == 'Bash':
-        if not bash_mutates(inp.get('command') or ''):
-            return
-    elif scratch(str(inp.get('file_path') or inp.get('notebook_path') or '')):
-        return
-    note, warns = None, []
+    mutation = tool in MUTATING and (bash_mutates(inp.get('command') or '') if tool == 'Bash' else
+                                     not scratch(str(inp.get('file_path') or inp.get('notebook_path') or '')))
     if not data.get('session_id'):
-        warns.append('no session id, so no Dibs task could be opened for this change')
-    else:
-        try:
-            with locked(data['session_id']):
-                s = Session(data)
-                s.state.setdefault('breadcrumb', {
-                    'prompt': s.state.get('intent') or '(no prompt recorded)', 'cwd': s.cwd,
+        if mutation:
+            print(json.dumps({'systemMessage': 'Dibs tracking: no session id; change goes ahead untracked'}))
+        return
+    try:
+        with locked(data['session_id']):
+            s = Session(data)
+            # Check live claims before waiting; an externally held claim is not in local state.
+            # Record the breadcrumb before contacting Dibs for a mutating call.
+            held_before = None
+            if mutation:
+                s.state.setdefault('breadcrumb', {'prompt': s.state.get('intent') or '(no prompt recorded)', 'cwd': s.cwd,
                     'branch': s.git('branch', '--show-current').stdout.strip(), 'ts': int(time.time()), 'pid': int(agent_pid())})
                 s.save()
-                try:
-                    note = s.track()
-                    if not s.state.get('auto'):
-                        s.state.pop('breadcrumb', None)  # a claim made elsewhere already covers this work
-                except (Refused, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as e:
-                    s.state['pending'] = {'goal': s.state.get('intent'), 'cwd': s.cwd, 'ts': int(time.time())}
-                    warns.append(f'Dibs tracking failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead and the intent is kept locally')
+                held_before = s.held()
+            entries = transcript_lines(data, not bool(held_before) if mutation else not bool(s.state['claims']))
+            lines = [x for x in work_lines(entries) if x[0] > s.state.get('work_index', 0)]
+            if not mutation and not lines:
+                return
+            if mutation or lines:
+                s.state.setdefault('breadcrumb', {'prompt': s.state.get('intent') or '(no prompt recorded)', 'cwd': s.cwd,
+                    'branch': s.git('branch', '--show-current').stdout.strip(), 'ts': int(time.time()), 'pid': int(agent_pid())})
                 s.save()
-                warns += s.warns
-        except Exception as e:
-            warns.append(f'Dibs tracking state failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead untracked')
-    out = {}
-    if note:
-        out['hookSpecificOutput'] = {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'additionalContext': note}
-    if warns:
-        out['systemMessage'] = 'Dibs tracking: ' + '; '.join(warns)
-    if out:
-        print(json.dumps(out))
+            try:
+                held = held_before if held_before is not None else s.held()
+                notices, rule_texts, hold = [], [], False
+                for index, issue, description, types in lines:
+                    try:
+                        issue = process_work_claim(s, held, index, issue, description, types)
+                    except WorkRefused as e:
+                        # A healthy claims response distinguishes a semantic refusal from an outage.
+                        s.held()
+                        s.state['work_index'] = index
+                        s.save()
+                        s.warns.append(f'work line refused: {e}')
+                        continue
+                    notices.append(f'Dibs task {issue} claimed for this session.')
+                    rules = RULES.rules_for_types(types.split('+'), s.id, data.get('agent_id'), data.get('tool_use_id'))
+                    if rules:
+                        rule_texts.extend(rules)
+                        if mutation and issue not in s.state.setdefault('work_held', []):
+                            s.state['work_held'].append(issue)
+                            hold = True
+                    s.state['work_index'] = index
+                    s.state['denials'] = 0
+                    s.save()
+                if held:
+                    s.state['denials'] = 0
+                if hold:
+                    s.save()
+                    emit('PreToolUse', permissionDecision='deny', permissionDecisionReason='\n\n'.join(notices + rule_texts) + '\nPlease retry the call.')
+                    return
+                if notices:
+                    context = '\n\n'.join(notices + rule_texts +
+                                          (['; '.join(s.warns)] if s.warns else []) +
+                                          ([RULES.LATE] if rule_texts else []))
+                    s.save()
+                    emit('PreToolUse', permissionDecision='allow', additionalContext=context)
+                    return
+                if held:
+                    if s.warns:
+                        warn(s)
+                    s.state.pop('breadcrumb', None)
+                    s.save()
+                    return
+                if not mutation and s.warns:
+                    warn(s)
+                if mutation:
+                    if s.state.get('denials', 0) < 2:
+                        s.state['denials'] = s.state.get('denials', 0) + 1
+                        s.save()
+                        ids = re.findall(r'(?i)(?:\b(?:dibs|task|plan)\s+#?|#)(\d+)', s.state.get('intent', ''))
+                        reason = 'Output [work <id or new> | <description> | <type>] on its own line outside code fences before related work. Types: ' + ', '.join(RULES.TYPE_KEYS)
+                        if ids:
+                            reason += '. Candidates: ' + ', '.join('task ' + i for i in ids)
+                        emit('PreToolUse', permissionDecision='deny', permissionDecisionReason=reason)
+                        return
+                    note = s.track()
+                    s.state['denials'] = 0
+                    s.save()
+                    print(json.dumps({'systemMessage': 'Dibs tracking: fallback task opened after two denials.', 'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'additionalContext': note}}))
+            except (Refused, OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as e:
+                s.state['pending'] = {'goal': s.state.get('intent'), 'cwd': s.cwd, 'ts': int(time.time())}
+                s.save()
+                print(json.dumps({'systemMessage': f'Dibs tracking failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead and the intent is kept locally'}))
+    except Exception as e:
+        print(json.dumps({'systemMessage': f'Dibs tracking state failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead untracked'}))
 
 
 def unrecorded():
@@ -606,11 +761,14 @@ def run_mode(mode, data):
             warn(s)
             return
         s, done, refused = Session(data), [], []
+        # Newly claimed tasks already have a fresh lease; renew claims held before bookkeeping.
+        previously_claimed = set(s.state['claims'])
         for a in todo:
             ok, err = s.run(a)
             done += [ok] if ok else []
             refused += [err] if err else []
         s.state['report'] += done + refused
+        s.beat(refresh=False, only=previously_claimed)
         s.save()
         if refused and not data.get('stop_hook_active'):
             print(json.dumps({'decision': 'block', 'reason': 'Dibs block: ' + '; '.join(refused)
