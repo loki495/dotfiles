@@ -122,6 +122,43 @@ class GateTests(unittest.TestCase):
         self.assertEqual(args[:2], ['touched', self.repo])
         self.assertCountEqual(args[2:], ['src/a.py', 'other/a.py'])
 
+    # commit gate: rules 737, 738
+    def test_dibs_reference_in_message_is_denied_with_rule_737(self):
+        self.change('src/a.py'); self.change('README.md')
+        for msg in ('Fix per Dibs 123', 'fix dibs task 5', 'DIBS plan #7', 'dibs id 9', 'dibs #12',
+                    'closes todo_show 42', 'todo_claim 3', 'todo_complete 8'):
+            o = self.hook('commit-gate.sh', f'git commit -m "{msg}"')
+            self.assertEqual(o['permissionDecision'], 'deny', msg)
+            self.assertIn('737', o['permissionDecisionReason'], msg)
+
+    def test_dibs_reference_added_to_staged_markdown_is_denied(self):
+        self.change('src/a.py')
+        Path(self.repo, 'README.md').write_text('see Dibs task 77\n')
+        git(self.repo, 'add', 'README.md')
+        o = self.hook('commit-gate.sh', 'git commit -m "x"')
+        self.assertEqual(o['permissionDecision'], 'deny')
+        self.assertIn('737', o['permissionDecisionReason'])
+
+    def test_dibs_reference_in_unstaged_or_non_markdown_file_is_not_denied(self):
+        Path(self.repo, 'README.md').write_text('see Dibs task 77\n')
+        self.change('src/a.py')
+        Path(self.repo, 'src/b.py').write_text('# Dibs 5\n')
+        git(self.repo, 'add', 'src/b.py')
+        o = self.hook('commit-gate.sh', 'git commit -m "x"')
+        self.assertTrue(o is None or 'permissionDecision' not in o)
+
+    def test_claude_session_trailer_is_denied_with_rule_738(self):
+        self.change('src/a.py')
+        o = self.hook('commit-gate.sh', 'git commit -m "x\n\nClaude-Session: abc123"')
+        self.assertEqual(o['permissionDecision'], 'deny')
+        self.assertIn('738', o['permissionDecisionReason'])
+
+    def test_clean_messages_mentioning_rules_or_dibs_are_not_denied(self):
+        self.change('src/a.py')
+        for msg in ('Rules 757 and 927: use todo_search', 'dibs-block hook fix', 'Dibs integration', 'fix 123 bugs'):
+            o = self.hook('commit-gate.sh', f'git commit -m "{msg}"')
+            self.assertTrue(o is None or 'permissionDecision' not in o, msg)
+
     # push gate
     def commit(self, path):
         self.change(path)
@@ -163,6 +200,48 @@ class GateTests(unittest.TestCase):
         o = self.hook('push-guard.sh', 'git push origin main')
         self.assertEqual(o['permissionDecision'], 'ask')
         self.assertIn('atlas stale', o['permissionDecisionReason'])
+
+    def push_setup(self, upstream=True):
+        remote = str(Path(self.tmp.name) / 'remote.git')
+        subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', remote], check=True)
+        git(self.repo, 'remote', 'add', 'origin', remote)
+        if upstream:
+            git(self.repo, 'push', '-q', '-u', 'origin', 'main')
+        git(self.repo, 'config', 'push.default', 'upstream')
+        self.change('src/a.py'); git(self.repo, 'commit', '-qm', 'first unpushed')
+        self.change('README.md'); git(self.repo, 'commit', '-qm', 'second unpushed')
+        return git(self.repo, 'log', '--oneline', 'origin/main..HEAD') if upstream else ''
+
+    def test_push_lists_unpushed_commits_in_reason_and_additional_context_every_time(self):
+        log = self.push_setup()
+        self.assertEqual(len(log.splitlines()), 2)
+        for _ in range(2):
+            o = self.hook('push-guard.sh', 'git push')
+            self.assertEqual(o['permissionDecision'], 'ask')
+            for field in ('permissionDecisionReason', 'additionalContext'):
+                self.assertIn(log, o[field], field)
+                self.assertIn('as of last fetch', o[field], field)
+                self.assertNotIn('Risky flags:', o[field], field)
+
+    def test_push_with_risky_flags_names_them(self):
+        self.push_setup()
+        o = self.hook('push-guard.sh', 'git push --force-with-lease --no-verify origin main')
+        for field in ('permissionDecisionReason', 'additionalContext'):
+            line = next(l for l in o[field].splitlines() if l.startswith('Risky flags:'))
+            self.assertIn('--force-with-lease', line)
+            self.assertIn('--no-verify', line)
+        for cmd, flag in (('git push -f', '-f'), ('git push origin --delete old', '--delete'),
+                          ('git push origin :old', ':old'), ('git push --mirror', '--mirror')):
+            o = self.hook('push-guard.sh', cmd)
+            line = next(l for l in o['permissionDecisionReason'].splitlines() if l.startswith('Risky flags:'))
+            self.assertIn(flag, line, cmd)
+
+    def test_push_without_upstream_says_unpushed_commits_are_unknown_and_asks(self):
+        self.push_setup(upstream=False)
+        o = self.hook('push-guard.sh', 'git push origin main')
+        self.assertEqual(o['permissionDecision'], 'ask')
+        for field in ('permissionDecisionReason', 'additionalContext'):
+            self.assertIn('no upstream', o[field].lower(), field)
 
     def test_non_push_is_ignored(self):
         self.assertIsNone(self.hook('push-guard.sh', 'git log'))

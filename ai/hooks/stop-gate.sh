@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop: block ending a turn whose final message lacks the rule-1226 status line (one of four fixed
+# Stop: block ending a turn whose last 3 non-empty lines lack the rule-1226 status line (one of the fixed
 # phrases), once per turn (stop_hook_active), failing open when the message is absent.
 # Also block ending the session while it still holds a live Dibs claim. Blocks at most
 # STOP_GATE_CAP times per session (a counter file), then allows with a visible warning, so it can
@@ -28,8 +28,9 @@ session=$(jq -r '.session_id // empty' <<<"$input")
 [ -n "$session" ] || exit 0
 
 msg=$(jq -r '.last_assistant_message // empty' <<<"$input")
+tail3=$(grep -v '^[[:space:]]*$' <<<"$msg" | tail -n 3)
 if [ -n "$msg" ] && [ "$(jq -r '.stop_hook_active // false' <<<"$input")" != true ] \
-  && ! grep -q -E 'Safe to archive this session\.|Continue in this session:|Continue in a different session:|Waiting on (Andres|other work):|All planned work is done\.' <<<"$msg"; then
+  && ! grep -q -E 'Safe to archive this session\.|Continue in this session:|Continue in a different session:|Waiting on (Andres|other work):|All planned work is done\.' <<<"$tail3"; then
   jq -n '{decision: "block", reason: "Rule 1226: end your message with one status line, exactly one of: \"Safe to archive this session.\" / \"Continue in this session: <what and why>.\" / \"Continue in a different session: <which session or agent, and why>.\" / \"Waiting on Andres: <input needed>.\" / \"Waiting on other work: <what>.\" / \"All planned work is done.\" (archive only after claims are released and records updated). If you handed this session over to a new session or a handoff that does not need this one, the line is \"Safe to archive this session.\" naming the new session, never \"Waiting on other work\". If you are waiting on the user for a decision or answer from this session, ask it with AskUserQuestion first (explanation, recommended option first); use the Waiting on Andres line only for what a question cannot carry (a real-world action, a file to review, a later date). You need not repeat the whole message: if nothing else changed, output only the missing status line; resend the full message only if something else changed."}'
   exit 0
 fi

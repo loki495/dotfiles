@@ -505,8 +505,13 @@ All projects:
   command, whatever the permission mode or allow rules. In a repo with a feature atlas it first
   denies the push when a subsystem's owned files changed since that subsystem's `Verified at` (or
   its stamp is no longer on the branch), naming the subsystems; Dibs unreachable skips only that
-  check (`hooks/atlas-helper.py`, atlas cached 5 min).
-- **Commit gate** (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message
+  check (`hooks/atlas-helper.py`, atlas cached 5 min). Every push (stateless, so a second push shows it
+  again) also lists the unpushed commits (`git log --oneline` from `@{push}`, else `@{upstream}`, "as of
+  last fetch"; a note when there is no upstream) and any risky flags (`--force`, `-f`, `--force-with-lease`,
+  `--delete`, `-d`, `--no-verify`, `--mirror`, `:branch`), both in the prompt and as context for the model.
+- **Commit gate** (`hooks/commit-gate.sh`, PreToolUse on Bash): at `git commit` it denies a message or
+  staged `.md` addition that cites a Dibs number (a "Dibs" or `todo_show` call followed by a number; rule 737) and a
+  `Claude-Session:` trailer (rule 738); it also denies a message
   that says docs were updated (a `Docs: updated` line, or prose such as "README updated") when no
   documentation file (`.md`, `.rst`, `docs/`) is in the commit (a test file does not count);
   otherwise it only adds context: a code-only commit without docs/tests (add them or say
@@ -517,7 +522,7 @@ All projects:
   `paths` of another live claim and, if so, adds a warning; never blocks, and says so when Dibs is
   unreachable. Claims list their paths through `todo_claim`'s `paths`.
 - **Read guard** (`hooks/read-guard.sh`, PreToolUse on Read): denies a whole-file Read of a text file
-  over `READ_GUARD_LINES` lines (default 400), telling Claude to grep/LSP first and read with
+  over `READ_GUARD_LINES` lines (default 400), telling Claude to use the Grep tool or LSP first and read with
   `offset`/`limit`; a Read with `offset`, `limit`, `pages` or `allow_large` passes, as do images, PDFs
   and notebooks. `READ_GUARD=off` disables it.
 - **Batch read warn** (`hooks/batch-read-warn.py`, PreToolUse on `todo_show`/`todo_claim_status`): when a
@@ -557,13 +562,16 @@ All projects:
   on the current branch (or `sha="none: …"`) and a summary. Each line applies once, so a re-sent block
   is safe; a refused line blocks the stop once with the reason. `DIBS_BLOCK_DRY_RUN=1` reports without
   writing; `DIBS_CLI` overrides the CLI (tests).
-- **Claim required** (`dibs-block.py guard`, PreToolUse on Bash and persistent file-edit tools):
-  checks Dibs before a change. Without a live claim, it creates and claims one idempotent local-only
-  temporary task, saves the intended work and a recovery checkpoint, and denies that first call with
-  the task id. Review and classify the task, then retry. Existing own claims are reused. The guard
-  exempts narrowly recognized read-only and bookkeeping commands; ambiguous shell commands require
-  tracking. Missing session identity or unavailable Dibs blocks persistent changes with a recovery
-  message rather than silently proceeding untracked. Scratch paths are not a blanket `/tmp` bypass.
+- **Claim required** (`dibs-block.py guard`, PreToolUse on Bash and file-edit tools): never denies.
+  On the first real mutation without a live claim it writes a local breadcrumb (prompt, workdir,
+  branch, time, agent pid) to the session state file, then creates and claims one idempotent
+  local-only temporary task and allows the call with the task id as context. Own claims are reused.
+  A Bash command counts as a mutation only if, with quoted strings removed, it matches the denylist:
+  `rm`/`mv`/`cp`/`tee`/`touch`/`mkdir`/`sed -i`, redirects, `git commit/push/merge/reset/...`,
+  `docker compose up/down`, `npm`/`composer install`, `curl -X POST`. Targets under `/tmp`,
+  `$XDG_RUNTIME_DIR` and `/dev/null` are ignored, and calls from subagents (`agent_id`) are skipped.
+  If Dibs or the state directory is unavailable the call still goes ahead with a visible warning
+  (`onFailure` is `warn`). A read-only session creates no task.
 - **Recovery checkpoints** (`dibs-block.py heartbeat/checkpoint`): save the goal, canonical session
   id, workdir, branch, bounded git status, time and next step in one living comment while preserving
   progress notes. Checkpoints refresh during work and at Stop, PreCompact and SessionEnd; they never
@@ -571,11 +579,11 @@ All projects:
   15 minutes. Claims made through another client keep that client's token and renewal responsibility.
   State and capability tokens remain private, with locked and atomic state updates.
 - **Dropped-work recovery** (`dibs-block.py recover`, SessionStart): lists bounded numeric task ids
-  under the current workdir, then asks the agent to inspect their normal trusted details before
+  under the current workdir (and the breadcrumbs of dead sessions that never got a task), then asks the agent to inspect their normal trusted details before
   resuming. It never runs or claims the listed work automatically, and does not put raw task titles
   into the session context. An unavailable Dibs service produces a visible warning.
 - **Stop gate** (`hooks/stop-gate.sh`, Stop): first runs the Dibs block, then blocks (once per turn, via `stop_hook_active`) a final
-  message without the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
+  message whose last 3 non-empty lines lack the rule-1226 status line ("Safe to archive this session." / "Continue in this session:" /
   "Continue in a different session:" / "Waiting on Andres:" / "Waiting on other work:" / "All planned work is done."); fails open when the message is absent; the block tells the session it need not repeat the message, only output the missing status line unless something else changed. It also tells a session waiting on the user to ask the pending question with the question tool first, keeping "Waiting on Andres" for what a question cannot carry. It also tells a session whose work was handed to a new session that no longer needs it to say "Safe to archive this session." instead of "Waiting on other work". Then blocks ending the session while it still holds a live
   Dibs claim (`todo:agent:claims --held-by=<session id>`), telling Claude to complete or release it.
   Blocks at most twice per session (`STOP_GATE_CAP`, counter in a private `dibs-stop-gate/` dir under
@@ -593,8 +601,8 @@ All projects:
   references, no session trailer), `git push`, test files, `*.md` and `CLAUDE.md` edits, subagent
   launches, `todo_create`, a `[sessioneer peer:` prompt. Each rule goes in once per context lifetime by
   id and revision (delivered set under `$XDG_RUNTIME_DIR/dibs-rules/`, `RULE_STATE_DIR` overrides; one
-  set per subagent). The first `git commit` and `git push` are denied with their rules; the re-run
-  proceeds. A `todo_claim` response that carries rule texts marks them delivered, and SessionStart
+  set per subagent). `git commit` and `git push` get their rules as context, not a denial. Every prompt also gets a
+  short reminder of the rule-1226 status line. A `todo_claim` response that carries rule texts marks them delivered, and SessionStart
   after compact/clear/resume empties the set and reminds Claude to pass `contextReset: true`. It is silent
   and exits 0 whenever the exports are missing or the input is malformed.
 

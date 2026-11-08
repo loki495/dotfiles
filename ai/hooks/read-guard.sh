@@ -13,5 +13,5 @@ esac
 max=${READ_GUARD_LINES:-400}
 lines=$(wc -l <"$file" 2>/dev/null) || exit 0
 [ "$lines" -gt "$max" ] || exit 0
-jq -n --arg m "$file has $lines lines (over $max). Find the relevant part first (Grep, LSP, or grep -n), then Read it with offset/limit. If you truly need the whole file, re-run with limit set to $lines." \
+jq -n --arg m "$file has $lines lines (over $max). Find the relevant part first with the Grep tool or LSP, then Read it with offset and limit. If you truly need the whole file, re-run with limit set to $lines." \
   '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: $m}}'

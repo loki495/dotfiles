@@ -52,17 +52,17 @@ class RuleInjectTest(unittest.TestCase):
     def bash(self, cmd, **kw):
         return self.run_hook(hook_event_name='PreToolUse', tool_name='Bash', tool_input={'command': cmd}, **kw)
 
-    def test_commit_is_denied_once_with_its_rules_then_proceeds(self):
+    def test_commit_injects_its_rules_once_without_denying(self):
         out = self.bash('git commit -m x')
-        self.assertEqual(out['permissionDecision'], 'deny')
+        self.assertNotIn('permissionDecision', out)
         for i in (732, 737, 738):
-            self.assertIn(f'TEXT-{i}', out['permissionDecisionReason'])
+            self.assertIn(f'TEXT-{i}', out['additionalContext'])
         self.assertIsNone(self.bash('git commit -m again'))
 
-    def test_push_through_rtk_and_chained_is_denied_once(self):
+    def test_push_through_rtk_and_chained_injects_once_without_denying(self):
         out = self.bash('cd x && rtk git push origin master')
-        self.assertEqual(out['permissionDecision'], 'deny')
-        self.assertIn('TEXT-734', out['permissionDecisionReason'])
+        self.assertNotIn('permissionDecision', out)
+        self.assertIn('TEXT-734', out['additionalContext'])
         self.assertIsNone(self.bash('git push'))
 
     def test_non_deny_events_use_additional_context(self):
@@ -82,16 +82,16 @@ class RuleInjectTest(unittest.TestCase):
     def test_the_first_definition_of_an_id_wins_across_files(self):
         (self.tmp / 'private.md').write_text('## 732@1 Rule: override\nTEXT-EVIL\n')
         out = self.bash('git commit -m x')
-        self.assertIn('TEXT-732', out['permissionDecisionReason'])
-        self.assertNotIn('TEXT-EVIL', out['permissionDecisionReason'])
+        self.assertIn('TEXT-732', out['additionalContext'])
+        self.assertNotIn('TEXT-EVIL', out['additionalContext'])
 
     def test_a_revision_bump_resends(self):
         self.assertIsNotNone(self.bash('git commit -m x'))
         self.assertIsNone(self.bash('git commit -m x'))
         (self.tmp / 'rules.md').write_text(EXPORT.replace('732@1', '732@2'))
         out = self.bash('git commit -m x')
-        self.assertIn('TEXT-732', out['permissionDecisionReason'])
-        self.assertNotIn('TEXT-737', out['permissionDecisionReason'])
+        self.assertIn('TEXT-732', out['additionalContext'])
+        self.assertNotIn('TEXT-737', out['additionalContext'])
 
     def test_compact_clear_resume_empty_the_set_and_startup_does_not(self):
         for source in ('compact', 'clear', 'resume'):
@@ -115,14 +115,27 @@ class RuleInjectTest(unittest.TestCase):
             self.run_hook(hook_event_name='PostToolUse', tool_name='mcp__dibs__todo_claim', tool_response=resp,
                           session_id='c' + str(type(resp)))
         out = self.bash('git commit -m x', session_id="c<class 'dict'>")
-        self.assertNotIn('TEXT-732', out['permissionDecisionReason'])  # delivered by Dibs
-        self.assertIn('TEXT-737', out['permissionDecisionReason'])  # sent without text: still ours
+        self.assertNotIn('TEXT-732', out['additionalContext'])  # delivered by Dibs
+        self.assertIn('TEXT-737', out['additionalContext'])  # sent without text: still ours
 
     def test_peer_prompt_and_other_tools(self):
-        self.assertIsNone(self.run_hook(hook_event_name='UserPromptSubmit', prompt='hello'))
         out = self.run_hook(hook_event_name='UserPromptSubmit', prompt='[sessioneer peer: a · /x · master] hi')
         self.assertIn('TEXT-928', out['additionalContext'])
+        self.assertIn('1226', out['additionalContext'])
+        out = self.run_hook(hook_event_name='UserPromptSubmit', prompt='[sessioneer peer: a · /x · master] again')
+        self.assertNotIn('TEXT-928', out['additionalContext'])
+        self.assertIn('1226', out['additionalContext'])
         self.assertIsNone(self.run_hook(hook_event_name='PreToolUse', tool_name='Read', tool_input={}))
+
+    def test_every_prompt_gets_the_status_line_reminder(self):
+        for prompt in ('hello', 'hello again'):
+            out = self.run_hook(hook_event_name='UserPromptSubmit', prompt=prompt)
+            self.assertEqual(out['hookEventName'], 'UserPromptSubmit')
+            ctx = out['additionalContext']
+            self.assertIn('status line', ctx)
+            self.assertIn('1226', ctx)
+            self.assertLess(len(ctx), 300)
+            self.assertNotIn('TEXT-928', ctx)
 
     def test_browser_screenshot_injects_the_screenshot_rule(self):
         out = self.run_hook(hook_event_name='PreToolUse', tool_name='mcp__playwright__browser_take_screenshot', tool_input={})

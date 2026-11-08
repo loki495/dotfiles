@@ -28,6 +28,16 @@ class ReadGuardHookTest(unittest.TestCase):
         self.assertEqual(decision(proc), 'deny')
         self.assertIn('401 lines', proc.stdout)
 
+    def test_deny_reason_points_to_grep_tool_or_lsp_not_bash(self):
+        out = json.loads(run(401).stdout)['hookSpecificOutput']['permissionDecisionReason']
+        self.assertIn('Grep', out)
+        self.assertIn('LSP', out)
+        self.assertRegex(out, r'offset')
+        self.assertRegex(out, r'limit')
+        self.assertNotIn('grep -n', out)
+        self.assertNotIn('Bash', out)
+        self.assertNotIn('bash', out.lower())
+
     def test_allows_small_file(self):
         self.assertIsNone(decision(run(400)))
 

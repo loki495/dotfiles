@@ -1,6 +1,8 @@
-"""Tracking hook contract, exercised only against an isolated fake Dibs CLI."""
+"""Tracking hook contract (never-deny guard + breadcrumbs), exercised only against an isolated fake Dibs CLI."""
 import json
 import os
+import re
+import time
 from pathlib import Path
 import subprocess
 import sys
@@ -32,6 +34,8 @@ with open(path, 'r+') as f:
         key = opts.get('idempotency-key')
         existing = db['keys'].get(key) if key else None
         task = existing or str(100 + len(set(db['issues']) | set(db['keys'].values())))
+        if os.environ.get('PROBE'):
+            db['probe'] = open(os.environ['PROBE']).read() if os.path.exists(os.environ['PROBE']) else None
         if not existing:
             db['issues'][task] = {'id': int(task), 'state': 'OPEN', 'body': opts.get('body', ''), 'revision': 1, 'temporary': '--temporary' in args or opts.get('temporary') == 'true'}
             if key: db['keys'][key] = task
@@ -72,7 +76,7 @@ with open(path, 'r+') as f:
 
 class TrackingHookTest(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(dir='/var/tmp')  # outside /tmp: /tmp edits are exempt
         self.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
         self.repo = root / 'repo'
@@ -85,7 +89,10 @@ class TrackingHookTest(unittest.TestCase):
         self.db.write_text(json.dumps({'log': [], 'claims': {}, 'issues': {}, 'comments': {}, 'keys': {}, 'dropped': []}))
         self.env = {**os.environ, 'DIBS_CLI': f'{sys.executable} {stub} {self.db}',
                     'DIBS_BLOCK_STATE_DIR': str(root / 'state'), 'DIBS_AGENT_PID': '4242',
-                    'DIBS_ATLAS_SYNC': 'off', 'SESSIONEER_SELF': 'tester'}
+                    'DIBS_ATLAS_SYNC': 'off', 'SESSIONEER_SELF': 'tester',
+                    'XDG_RUNTIME_DIR': str(root / 'xdg')}
+        (root / 'xdg').mkdir()
+        self.state = root / 'state'
 
     def dbs(self):
         return json.loads(self.db.read_text())
@@ -109,47 +116,71 @@ class TrackingHookTest(unittest.TestCase):
     def edit(self, **extra):
         return self.hook('guard', tool_name='Edit', tool_input={'file_path': str(self.repo / 'changed.txt')}, **extra)
 
-    def assert_denied(self, out):
+    def bash(self, command, session='b', **extra):
+        return self.hook('guard', session_id=session, tool_name='Bash', tool_input={'command': command}, **extra)
+
+    def assert_never_denied(self, out):
+        if out:
+            self.assertNotEqual(out.get('hookSpecificOutput', {}).get('permissionDecision'), 'deny')
+
+    def assert_allowed(self, out, task=None):
         self.assertIsNotNone(out)
         event = out['hookSpecificOutput']
         self.assertEqual(event['hookEventName'], 'PreToolUse')
-        self.assertEqual(event['permissionDecision'], 'deny')
-        self.assertTrue(event['permissionDecisionReason'])
-        return event['permissionDecisionReason']
+        self.assertEqual(event['permissionDecision'], 'allow')
+        if task:
+            self.assertIn(task, event['additionalContext'])
+        self.assertIn('breadcrumb', event['additionalContext'].lower())
+        return event['additionalContext']
 
-    def assert_not_denied(self, out):
-        if out:
-            event = out.get('hookSpecificOutput', {})
-            self.assertNotIn(event.get('permissionDecision'), ('deny', 'allow'))
+    def state_file(self, session='sess-1'):
+        return self.state / f'{session}.json'
 
-    def test_first_edit_creates_claims_and_records_breadcrumb_then_retry_proceeds(self):
+    def breadcrumb(self, session='sess-1'):
+        return json.loads(self.state_file(session).read_text())['breadcrumb']
+
+    def settle(self, out):
+        """Not denied and not allowed: nothing printed."""
+        self.assertIsNone(out)
+
+    # --- contract 5: first mutating call is allowed, tracked, breadcrumbed ---
+
+    def test_first_edit_allows_creates_claims_and_records_breadcrumb(self):
         prompt = 'Fix the parser and run its focused tests'
         self.hook('prompt', prompt=prompt)
-        reason = self.assert_denied(self.edit())
-        self.assertIn('100', reason)
-        self.assert_not_denied(self.edit())
+        self.assert_allowed(self.edit(), '100')
         db = self.dbs()
         self.assertEqual(len(db['issues']), 1)
         self.assertTrue(db['issues']['100']['temporary'])
         self.assertEqual(len(self.calls('create')), 1)
-        self.assertTrue(any(a.startswith('--idempotency-key=') and len(a.split('=', 1)[1]) > 0 for a in self.calls('create')[0]))
-        self.assertIn('--minutes=90', self.calls('claim')[0])
-        self.assertEqual(len(db['comments']), 1)
-        breadcrumb = next(iter(db['comments'].values()))['body']
-        for value in (prompt, 'sess-1', str(self.repo), 'tracking-test', 'changed.txt'):
-            self.assertIn(value, breadcrumb)
-        self.assertRegex(breadcrumb.lower(), r'next|step')
-        self.assertLess(len(breadcrumb), 10000)
-        self.assertEqual(db['issues']['100']['state'], 'OPEN')
-        state = Path(self.env['DIBS_BLOCK_STATE_DIR'])
-        self.assertEqual(state.stat().st_mode & 0o077, 0)
-        for path in state.rglob('*'):
-            self.assertEqual(path.stat().st_mode & 0o077, 0, str(path))
+        self.assertEqual(len(self.calls('claim')), 1)
+        self.assertIn('100', db['claims'])
+        b = self.breadcrumb()
+        self.assertEqual((b['prompt'], b['cwd'], b['branch'], b['pid']), (prompt, str(self.repo), 'tracking-test', 4242))
+        self.assertIsInstance(b['ts'], int)
+        self.assertLess(abs(b['ts'] - time.time()), 60)
 
-    def test_existing_live_claim_avoids_creation(self):
+    def test_breadcrumb_without_recorded_prompt(self):
+        self.assert_allowed(self.edit())
+        self.assertEqual(self.breadcrumb()['prompt'], '(no prompt recorded)')
+
+    def test_breadcrumb_is_written_before_any_dibs_call(self):
+        self.hook('prompt', prompt='Probe ordering')
+        self.assert_allowed(self.edit(env={'PROBE': str(self.state_file())}))
+        probe = self.dbs()['probe']
+        self.assertIsNotNone(probe)
+        self.assertIn('Probe ordering', probe)
+
+    def test_second_mutating_call_in_session_does_not_create_again(self):
+        self.assert_allowed(self.edit())
+        self.assert_never_denied(self.edit())
+        self.bash('touch f', session='sess-1')
+        self.assertEqual(len(self.calls('create')), 1)
+
+    def test_existing_live_claim_avoids_creation_and_output(self):
         self.update_db(claims={'5': {'token': 'external', 'agent': 'claude:tester:sess-1'}},
                        issues={'5': {'id': 5, 'state': 'OPEN', 'revision': 1, 'body': ''}})
-        self.assert_not_denied(self.edit())
+        self.settle(self.edit())
         self.assertEqual(self.calls('create'), [])
 
     def test_external_claim_gets_breadcrumbs_without_renewing_unknown_token(self):
@@ -157,69 +188,78 @@ class TrackingHookTest(unittest.TestCase):
         self.update_db(claims={'5': {'token': 'unknown-mcp-token', 'agent': 'claude:tester:sess-1'}},
                        issues={'5': {'id': 5, 'state': 'OPEN', 'revision': 1, 'body': original}})
         self.hook('prompt', prompt='Inspect parser errors')
-        self.assert_not_denied(self.edit())
-        comments = self.dbs()['comments']
-        self.assertEqual(len(comments), 1)
-        self.assertEqual(comments['1']['issue'], '5')
-        self.assertIn('sess-1', comments['1']['body'])
-        self.assertIn('Inspect parser errors', comments['1']['body'])
+        self.settle(self.edit())
         self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
         self.hook('checkpoint', hook_event_name='PreCompact')
         db = self.dbs()
         self.assertEqual(len(db['comments']), 1)
-        self.assertGreater(db['comments']['1']['revision'], 1)
+        self.assertEqual(db['comments']['1']['issue'], '5')
         self.assertIn('Inspect parser errors', db['comments']['1']['body'])
         self.assertEqual(db['issues']['5']['body'], original)
-        self.assertEqual(db['issues']['5']['state'], 'OPEN')
-        self.assertIn('5', db['claims'])
         self.assertEqual(self.calls('heartbeat'), [])
         self.assertEqual(self.calls('claim'), [])
         self.assertNotIn('unknown-mcp-token', json.dumps(db['log']))
 
-    def test_read_looking_commands_with_mutating_options_require_claim(self):
-        commands = ['git diff --output=changed.txt', "rg --pre 'touch changed.txt' text .",
-                    'tree -o changed.txt', 'date --set=2026-01-01']
-        for index, command in enumerate(commands):
-            with self.subTest(command=command):
-                before = len(self.calls('create'))
-                out = self.hook('guard', session_id=f'command-{index}', tool_name='Bash',
-                                tool_input={'command': command})
-                self.assert_denied(out)
-                self.assertEqual(len(self.calls('create')), before + 1)
-
     def test_lost_create_response_retries_same_key_without_duplicate(self):
-        prompt = 'Repair the parser after a lost response'
-        self.hook('prompt', prompt=prompt)
+        self.hook('prompt', prompt='Repair the parser after a lost response')
         self.update_db(lose_create_response_once=True)
-        self.assert_denied(self.edit())
+        self.assert_never_denied(self.edit())
         self.assertEqual(len(self.dbs()['issues']), 1)
-        self.assert_denied(self.edit())
+        self.assert_never_denied(self.edit())
         calls = self.calls('create')
         self.assertEqual(len(calls), 2)
-        keys = [next(arg for arg in call if arg.startswith('--idempotency-key=')) for call in calls]
+        keys = [next(a for a in c if a.startswith('--idempotency-key=')) for c in calls]
         self.assertEqual(keys[0], keys[1])
-        db = self.dbs()
-        self.assertEqual(len(db['issues']), 1)
-        self.assertEqual(len(db['claims']), 1)
-        saved = json.dumps(db['issues']) + json.dumps(db['comments'])
-        self.assertIn(prompt, saved)
-        self.assertIn(str(self.repo), saved)
+        self.assertEqual(len(self.dbs()['issues']), 1)
+        self.assertEqual(len(self.dbs()['claims']), 1)
 
-    def test_completed_auto_task_is_replaced_with_new_intent(self):
+    def test_completed_auto_task_is_replaced(self):
         self.hook('prompt', prompt='Finish the first task')
-        self.assert_denied(self.edit())
-        db = self.dbs()
-        self.assertEqual(len(db['issues']), 1)
+        self.assert_allowed(self.edit(), '100')
         self.update_db(issues={}, claims={})
         self.hook('prompt', prompt='Start a different second task')
-        reason = self.assert_denied(self.edit())
-        db = self.dbs()
-        self.assertEqual(len(db['issues']), 1)
-        self.assertEqual(len(db['claims']), 1)
-        task = next(iter(db['issues']))
-        self.assertIn(task, reason)
+        self.assert_allowed(self.edit())
+        self.assertEqual(len(self.dbs()['claims']), 1)
         self.assertEqual(len(self.calls('create')), 2)
-        self.assertIn('Start a different second task', json.dumps(db['issues'][task]) + json.dumps(db['comments']))
+
+    def test_stale_local_token_does_not_bypass_or_duplicate_task(self):
+        self.assert_allowed(self.edit())
+        self.update_db(claims={})
+        self.assert_never_denied(self.edit())
+        self.assertEqual(len(self.dbs()['issues']), 1)
+        self.assertEqual(len(self.dbs()['claims']), 1)
+
+    def test_deleted_task_detection_does_not_depend_on_cli_wording(self):
+        self.assert_allowed(self.edit())
+        self.update_db(issues={}, claims={}, show_error='Record gone (code 7)')
+        self.assert_allowed(self.edit())
+        self.assertEqual(len(self.calls('create')), 2)
+
+    def test_concurrent_first_edits_create_only_one_task_and_claim(self):
+        self.hook('prompt', prompt='Fix concurrency')
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outputs = list(pool.map(lambda _: self.edit(), range(2)))
+        for out in outputs:
+            self.assert_never_denied(out)
+        self.assertEqual(len(self.dbs()['issues']), 1)
+        self.assertEqual(len(self.dbs()['claims']), 1)
+
+    def test_checkpoint_and_heartbeat_refresh_one_comment_and_leave_task_open(self):
+        self.hook('prompt', prompt='Implement recovery')
+        self.assert_allowed(self.edit())
+        self.hook('stop', last_assistant_message='```dibs\nnote 100: Parser fixed; next run tests\n```')
+        self.assertIn('Parser fixed', self.dbs()['comments']['1']['body'])
+        self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
+        self.hook('checkpoint', hook_event_name='PreCompact', env={'DIBS_BLOCK_BEAT_SECONDS': '3600'})
+        self.hook('checkpoint', hook_event_name='SessionEnd')
+        self.hook('checkpoint', hook_event_name='Stop')
+        db = self.dbs()
+        self.assertEqual(len(db['comments']), 1)
+        self.assertGreater(db['comments']['1']['revision'], 1)
+        self.assertIn('next run tests', db['comments']['1']['body'])
+        self.assertEqual(db['issues']['100']['state'], 'OPEN')
+        self.assertIn('100', db['claims'])
+        self.assertEqual(self.calls('complete'), [])
 
     def test_explicit_prompt_claim_gets_checkpoint_without_edit(self):
         original = 'Goal: inspect the parser. Progress: identified failing input.'
@@ -228,122 +268,139 @@ class TrackingHookTest(unittest.TestCase):
         self.hook('guard', tool_name='Read', tool_input={'file_path': str(self.repo / 'changed.txt')})
         self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
         self.hook('checkpoint', hook_event_name='Stop')
-        self.hook('checkpoint', hook_event_name='PreCompact')
         db = self.dbs()
         self.assertIn('5', db['claims'])
         self.assertEqual(db['issues']['5']['body'], original)
         self.assertEqual(len(db['comments']), 1)
-        self.assertEqual(db['comments']['1']['issue'], '5')
-        self.assertIn('sess-1', db['comments']['1']['body'])
         self.assertIn('inspect the parser', db['comments']['1']['body'].lower())
 
-    def test_external_claim_gets_checkpoint_without_edit_or_token_renewal(self):
-        original = 'Goal: review parser. Progress: found invalid input.'
-        self.update_db(claims={'5': {'token': 'unknown-mcp-token', 'agent': 'claude:tester:sess-1'}},
-                       issues={'5': {'id': 5, 'state': 'OPEN', 'revision': 1, 'body': original}})
-        self.hook('prompt', prompt='Review parser behavior')
-        self.hook('guard', tool_name='Read', tool_input={'file_path': str(self.repo / 'changed.txt')})
-        self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
-        self.hook('checkpoint', hook_event_name='Stop')
-        self.hook('checkpoint', hook_event_name='PreCompact')
-        db = self.dbs()
-        self.assertEqual(db['issues']['5']['body'], original)
-        self.assertIn('5', db['claims'])
-        self.assertEqual(len(db['comments']), 1)
-        self.assertEqual(db['comments']['1']['issue'], '5')
-        self.assertIn('Review parser behavior', db['comments']['1']['body'])
-        self.assertEqual(self.calls('heartbeat'), [])
-        self.assertNotIn('unknown-mcp-token', json.dumps(db['log']))
+    # --- contract 1 and 6: never deny, degrade to a warning ---
 
-    def test_state_directory_that_is_a_file_denies_mutation(self):
-        state_file = Path(self.tmp.name) / 'not-a-directory'
-        state_file.write_text('not a directory')
-        self.assert_denied(self.edit(env={'DIBS_BLOCK_STATE_DIR': str(state_file)}))
-        self.assertEqual(self.calls('create'), [])
-
-    def test_lost_claim_response_preserves_intent_without_inventing_token(self):
-        prompt = 'Preserve this intent after claim response loss'
-        self.hook('prompt', prompt=prompt)
-        self.update_db(lose_claim_response_once=True)
-        self.assert_denied(self.edit())
-        self.assertEqual(len(self.dbs()['claims']), 1)
-        self.assert_not_denied(self.edit())
-        self.hook('checkpoint', hook_event_name='PreCompact')
-        db = self.dbs()
-        self.assertEqual(len(db['issues']), 1)
-        self.assertIn(prompt, json.dumps(db['comments']))
-        self.assertEqual(self.calls('heartbeat'), [])
-        self.assertNotIn('tok100', json.dumps(db['log']))
-
-    def test_stale_local_token_does_not_bypass_or_duplicate_task(self):
-        self.hook('prompt', prompt='Repair the parser')
-        self.assert_denied(self.edit())
-        self.update_db(claims={})
-        self.assert_denied(self.edit())
-        self.assertEqual(len(self.dbs()['issues']), 1)
-        self.assertEqual(len(self.dbs()['claims']), 1)
-
-    def test_missing_session_or_unavailable_and_unreadable_dibs_fail_closed(self):
+    def test_never_denies_on_missing_session_invalid_json_or_dibs_down(self):
         for data, env in (({'session_id': ''}, {}), ({}, {'DIBS_CLI': '/nonexistent/dibs'})):
             with self.subTest(data=data, env=env):
-                self.assert_denied(self.edit(env=env, **data))
-        self.update_db(unreadable=True)
-        self.assert_denied(self.edit())
-        self.assertEqual(self.calls('create'), [])
-
-    def test_invalid_json_on_stdin_denies_a_guard_call(self):
+                self.assert_never_denied(self.edit(env=env, **data))
         p = subprocess.run([sys.executable, str(HOOK), 'guard'], input='{not json', text=True, capture_output=True, env=self.env)
         self.assertEqual(p.returncode, 0, p.stderr)
-        self.assert_denied(json.loads(p.stdout))
+        self.assertNotIn('"deny"', p.stdout)
 
-    def test_deleted_task_detection_does_not_depend_on_cli_wording(self):
-        self.assert_denied(self.edit())
-        self.assert_not_denied(self.edit())
-        self.update_db(issues={}, claims={}, show_error='Record gone (code 7)')
-        self.assert_denied(self.edit())
-        self.assertEqual(len(self.calls('create')), 2)
+    def test_state_directory_that_is_a_file_does_not_deny(self):
+        state_file = Path(self.tmp.name) / 'not-a-directory'
+        state_file.write_text('not a directory')
+        self.assert_never_denied(self.edit(env={'DIBS_BLOCK_STATE_DIR': str(state_file)}))
 
-    def test_read_only_and_exact_bookkeeping_exempt_but_compounds_are_not(self):
-        for tool, inp in [('Read', {'file_path': str(self.repo / 'changed.txt')}),
-                          ('Bash', {'command': 'git status --short'}),
-                          ('Bash', {'command': 'dibs todo:agent:claims --held-by=sess-1'}),
-                          ('Bash', {'command': 'sessioneer --whoami'})]:
-            with self.subTest(inp=inp):
-                self.assert_not_denied(self.hook('guard', tool_name=tool, tool_input=inp))
+    def test_unreadable_claims_output_does_not_deny(self):
+        self.update_db(unreadable=True)
+        self.assert_never_denied(self.edit())
+
+    def test_dibs_down_allows_warns_and_keeps_breadcrumb(self):
+        failing = Path(self.tmp.name) / 'fail.py'
+        failing.write_text('import sys\nprint("boom")\nsys.exit(1)\n')
+        for index, cli in enumerate((f'{sys.executable} {failing}', '/nonexistent/dibs')):
+            with self.subTest(cli=cli):
+                session = f'down-{index}'
+                self.hook('prompt', session_id=session, prompt=f'Offline work {index}')
+                out = self.hook('guard', session_id=session, tool_name='Edit', env={'DIBS_CLI': cli},
+                                tool_input={'file_path': str(self.repo / 'changed.txt')})
+                self.assertIsNotNone(out)
+                self.assertNotEqual(out.get('hookSpecificOutput', {}).get('permissionDecision'), 'deny')
+                self.assertIn('Dibs', out['systemMessage'])
+                b = self.breadcrumb(session)
+                self.assertEqual(b['prompt'], f'Offline work {index}')
+                self.assertEqual(b['cwd'], str(self.repo))
+                self.assertNotIn('auto', json.loads(self.state_file(session).read_text()))
         self.assertEqual(self.calls('create'), [])
-        self.assert_denied(self.hook('guard', tool_name='Bash', tool_input={'command': 'git status; touch changed.txt'}))
 
-    def test_tmp_repository_is_not_blanket_scratch(self):
-        self.assert_denied(self.edit())
+    # --- contract 2: subagents ---
 
-    def test_concurrent_first_edits_create_only_one_task_and_claim(self):
-        self.hook('prompt', prompt='Fix concurrency')
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            outputs = list(pool.map(lambda _: self.edit(), range(2)))
-        self.assertTrue(any(o and o.get('hookSpecificOutput', {}).get('permissionDecision') == 'deny' for o in outputs))
-        self.assertEqual(len(self.dbs()['issues']), 1)
-        self.assertEqual(len(self.dbs()['claims']), 1)
+    def test_subagent_calls_print_nothing_call_nothing_write_nothing(self):
+        for tool, inp in (('Edit', {'file_path': str(self.repo / 'changed.txt')}), ('Bash', {'command': 'touch f'})):
+            with self.subTest(tool=tool):
+                self.settle(self.hook('guard', tool_name=tool, tool_input=inp, agent_id='agent-7'))
+        self.assertEqual(self.dbs()['log'], [])
+        self.assertFalse(self.state.exists())
 
-    def test_checkpoint_and_heartbeat_refresh_one_comment_and_leave_task_open(self):
-        self.hook('prompt', prompt='Implement recovery')
-        self.assert_denied(self.edit())
-        self.hook('stop', last_assistant_message='```dibs\nnote 100: Parser fixed; next run tests\n```')
-        before = self.dbs()['comments']['1']['body']
-        self.assertIn('Parser fixed', before)
-        self.hook('heartbeat', env={'DIBS_BLOCK_BEAT_SECONDS': '0'})
-        self.hook('checkpoint', hook_event_name='PreCompact', env={'DIBS_BLOCK_BEAT_SECONDS': '3600'})
-        self.hook('checkpoint', hook_event_name='SessionEnd')
-        self.hook('checkpoint', hook_event_name='Stop')
-        db = self.dbs()
-        self.assertEqual(len(db['comments']), 1)
-        self.assertGreater(db['comments']['1']['revision'], 1)
-        self.assertIn('Parser fixed', db['comments']['1']['body'])
-        self.assertIn('next run tests', db['comments']['1']['body'])
-        self.assertTrue(before)
-        self.assertEqual(db['issues']['100']['state'], 'OPEN')
-        self.assertIn('100', db['claims'])
-        self.assertEqual(self.calls('complete'), [])
-        self.assertEqual(self.calls('release'), [])
+    # --- contract 3 and 7: tool scope ---
+
+    def test_non_mutating_tools_and_scratch_paths_are_silent(self):
+        xdg = self.env['XDG_RUNTIME_DIR']
+        for tool, inp in (('Read', {'file_path': str(self.repo / 'changed.txt')}), ('Grep', {'pattern': 'x'}),
+                          ('Glob', {'pattern': '*'}), ('WebFetch', {'url': 'https://example.test/'}),
+                          ('Write', {'file_path': '/tmp/scratch.txt'}), ('Edit', {'file_path': '/tmp/a/b.txt'}),
+                          ('MultiEdit', {'file_path': xdg + '/x'}), ('NotebookEdit', {'file_path': xdg + '/n.ipynb'})):
+            with self.subTest(tool=tool, inp=inp):
+                self.settle(self.hook('guard', tool_name=tool, tool_input=inp))
+        self.assertEqual(self.calls('create'), [])
+
+    def test_all_edit_tools_outside_tmp_are_mutating(self):
+        for index, tool in enumerate(('Edit', 'Write', 'MultiEdit', 'NotebookEdit')):
+            with self.subTest(tool=tool):
+                self.assert_allowed(self.hook('guard', session_id=f'tool-{index}', tool_name=tool,
+                                              tool_input={'file_path': str(self.repo / 'changed.txt')}))
+        self.assertEqual(len(self.calls('create')), 4)
+
+    def test_read_only_session_causes_no_create_and_no_state_needed(self):
+        for command in ['git status', 'ls -la', 'cat f | wc -l', 'git log --oneline | head'] * 3:
+            self.settle(self.bash(command, session='ro'))
+        self.assertEqual(self.calls('create'), [])
+
+    # --- contract 4: Bash classification ---
+
+    def test_bash_not_mutating(self):
+        xdg = self.env['XDG_RUNTIME_DIR']
+        commands = ["grep 'a|b' f", 'rg "x;y" src', 'git status', 'git log --oneline | head', 'ls -la', 'cat f | wc -l',
+                    'rm /tmp/x', 'rm -rf /tmp/dir/y', f'touch {xdg}/z', 'echo hi > /dev/null', 'ls 2>&1',
+                    'cmd 2>/dev/null', 'echo x > /tmp/out.txt', 'echo "a > b"', 'python3 script.py', 'make test',
+                    'git fetch', 'docker ps', 'curl https://example.test/', 'echo "rm f"', "grep 'git push' f"]
+        for index, command in enumerate(commands):
+            with self.subTest(command=command):
+                self.settle(self.bash(command, session=f'ro-{index}'))
+        self.assertEqual(self.calls('create'), [])
+
+    def test_bash_mutating(self):
+        commands = ['echo x > f', 'echo x >> f', 'rm f', 'rm /tmp/x f', 'mv a b', 'cp a b', 'tee f', 'sed -i s/a/b/ f',
+                    'touch f', 'mkdir d', "git commit -m 'x'", 'git push', 'git merge x', 'git reset --hard',
+                    'git checkout x', 'git add f', 'git rebase main', 'git stash', 'git cherry-pick x',
+                    'docker compose up -d', 'docker compose down', 'npm install', 'composer install',
+                    'curl -X POST https://example.test/', 'curl -d a=b https://example.test/',
+                    'git status; touch f', 'ls && rm f', 'true | tee f']
+        for index, command in enumerate(commands):
+            with self.subTest(command=command):
+                before = len(self.calls('create'))
+                self.assert_allowed(self.bash(command, session=f'mut-{index}'))
+                self.assertEqual(len(self.calls('create')), before + 1)
+
+    # --- contract 8: recover lists orphaned breadcrumbs ---
+
+    def dead_pid(self):
+        child = subprocess.Popen([sys.executable, '-c', 'pass'])
+        child.wait()
+        return child.pid
+
+    def write_state(self, session, **state):
+        self.state.mkdir(exist_ok=True)
+        (self.state / f'{session}.json').write_text(json.dumps(state))
+
+    def crumb(self, pid, prompt='Half done refactor', cwd='/work/orphan', branch='feat-x'):
+        return {'prompt': prompt, 'cwd': cwd, 'branch': branch, 'ts': int(time.time()), 'pid': pid}
+
+    def test_recover_lists_dead_session_breadcrumbs_and_skips_the_rest(self):
+        self.write_state('dead-sess', breadcrumb=self.crumb(self.dead_pid()), claims={})
+        self.write_state('live-sess', breadcrumb=self.crumb(os.getpid(), prompt='LIVEPROMPT'), claims={})
+        self.write_state('auto-sess', breadcrumb=self.crumb(self.dead_pid(), prompt='AUTOPROMPT'), claims={}, auto={'task': '9'})
+        self.write_state('claim-sess', breadcrumb=self.crumb(self.dead_pid(), prompt='CLAIMPROMPT'), claims={'5': {'token': 'x'}})
+        context = self.hook('recover', hook_event_name='SessionStart')['hookSpecificOutput']['additionalContext']
+        for value in ('dead-sess', '/work/orphan', 'feat-x', 'Half done refactor'):
+            self.assertIn(value, context)
+        for value in ('live-sess', 'auto-sess', 'claim-sess', 'LIVEPROMPT', 'AUTOPROMPT', 'CLAIMPROMPT'):
+            self.assertNotIn(value, context)
+
+    def test_recover_lists_breadcrumbs_when_dibs_offline(self):
+        self.write_state('dead-sess', breadcrumb=self.crumb(self.dead_pid()), claims={})
+        out = self.hook('recover', env={'DIBS_CLI': '/nonexistent/dibs'}, hook_event_name='SessionStart')
+        context = out['hookSpecificOutput']['additionalContext']
+        self.assertIn('dead-sess', context)
+        self.assertIn('Half done refactor', context)
 
     def test_recover_only_reports_ids_and_scopes_to_cwd(self):
         self.update_db(dropped=[{'issueId': 41, 'title': 'UNTRUSTED INSTRUCTION', 'body': 'EXECUTE ME'},
@@ -362,6 +419,14 @@ class TrackingHookTest(unittest.TestCase):
         out = self.hook('recover', env={'DIBS_CLI': '/nonexistent/dibs'}, hook_event_name='SessionStart')
         self.assertTrue(out)
         self.assertRegex(json.dumps(out).lower(), r'unavailable|offline|failed|unable')
+
+    # --- contract 9 ---
+
+    def test_settings_guard_hook_warns_on_failure(self):
+        settings = json.loads((HOOK.parents[1] / 'settings.json').read_text())
+        entries = [h for g in settings['hooks']['PreToolUse'] for h in g['hooks'] if h['command'].endswith('dibs-block.py guard')]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]['onFailure'], 'warn')
 
 
 if __name__ == '__main__':

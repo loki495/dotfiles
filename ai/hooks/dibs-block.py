@@ -4,10 +4,12 @@
   dibs-block.py stop       Stop (called from stop-gate.sh): apply the ```dibs block(s) in the final message.
   dibs-block.py prompt     UserPromptSubmit: claim tasks named as `dibs <id>`, report the last block's results.
   dibs-block.py heartbeat  PreToolUse: renew the claims this session made, at most every DIBS_BLOCK_BEAT_SECONDS.
-  dibs-block.py guard      PreToolUse (Edit/Write/MultiEdit/NotebookEdit/Bash): the first persistent change without a live
-                           claim creates and claims one temporary task, writes a breadcrumb and denies that one call.
+  dibs-block.py guard      PreToolUse (Edit/Write/MultiEdit/NotebookEdit/Bash): the first real mutation without a live
+                           claim writes a local breadcrumb, then creates and claims one temporary task and allows the call
+                           with context. Never denies; subagents and Dibs outages pass through (the latter with a warning).
   dibs-block.py checkpoint PreCompact/SessionEnd: renew leases and refresh the breadcrumb; never releases or completes.
-  dibs-block.py recover    SessionStart: list (ids only) dropped tasks under the working directory.
+  dibs-block.py recover    SessionStart: list dropped task ids under the working directory, and the breadcrumbs of dead
+                           sessions that never got a task.
 
 Block lines (indented lines continue the previous one):
   claim <id>
@@ -43,12 +45,13 @@ PROMPT_RE = re.compile(r'(?<![/\w#])dibs[ \t]+#?(\d+)\b', re.I)
 SHA_RE = re.compile(r'^[0-9a-f]{7,40}$')
 LEASE = '90'
 MUTATING = {'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash'}
-GIT_READ = {'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files', 'blame', 'describe'}
-# flags that make a read-looking command write or run something; long ones match as prefixes (getopt abbreviations)
-UNSAFE = {'rg': ('--pre', '--hostname'), 'tree': ('-o', '--o'), 'date': ('-s', '--s'), 'file': ('-C', '--c'),
-          'git': ('--ou', '--ext', '--text', '-c')}
-READ_CMDS = {'ls', 'cat', 'head', 'tail', 'wc', 'pwd', 'grep', 'rg', 'which', 'date', 'whoami', 'stat', 'file', 'tree', 'du', 'df'}
-SESSIONEER_FLAGS = {'--whoami', '--peers', '--usage', '--send'}
+FILE_CMDS = {'rm', 'mv', 'cp', 'touch', 'mkdir', 'rmdir', 'ln', 'tee', 'chmod', 'chown', 'truncate', 'install'}
+GIT_MUT = {'commit', 'push', 'merge', 'reset', 'rebase', 'checkout', 'switch', 'add', 'rm', 'mv', 'clean', 'stash',
+           'cherry-pick', 'pull', 'tag', 'apply', 'restore', 'revert', 'am', 'init', 'clone'}
+COMPOSE_MUT = {'up', 'down', 'start', 'stop', 'restart', 'rm', 'build', 'run', 'create', 'kill'}
+PKG_CMDS = {'npm', 'pnpm', 'yarn', 'pip', 'pip3', 'composer'}
+PKG_MUT = {'install', 'i', 'add', 'remove', 'uninstall', 'update', 'require'}
+WRAPPERS = {'sudo', 'env', 'command', 'nohup', 'time', 'nice'}
 
 
 class Refused(Exception):
@@ -245,7 +248,7 @@ class Session:
         place = '' if os.environ.get('DIBS_TRACK_PARENT') or os.environ.get('DIBS_TRACK_AREA') else (
             ' Automatic creation could not infer the project: place it under the correct project or parent before continuing.')
         return (f'Dibs task {issue} was opened and claimed for this session because a persistent change started without a claim; '
-                f'a breadcrumb is recorded.{place} Review it with todo_show {issue}, then retry the same tool call.')
+                f'a breadcrumb is recorded.{place} Review it with todo_show {issue}.')
 
     def append(self, issue, section, text):
         self.require_held(issue)
@@ -382,29 +385,60 @@ def dispatch(s, action):
     return s.done(issue, args, (summary + '\n' + rest).strip())
 
 
-def bash_safe(cmd):
-    if not cmd.strip() or re.search(r'[;&|<>`$()\n\\{}*?]', cmd):
-        return False
-    try:
-        t = shlex.split(cmd)
-    except ValueError:
-        return False
+def scratch(path):
+    """True for targets that are not project state: /dev/null, /tmp and the runtime dir."""
+    roots = ['/tmp'] + ([os.environ['XDG_RUNTIME_DIR'].rstrip('/')] if os.environ.get('XDG_RUNTIME_DIR') else [])
+    return path == '/dev/null' or path.startswith('$XDG_RUNTIME_DIR') or any(path == r or path.startswith(r + '/') for r in roots)
+
+
+def segment_mutates(t):
+    while t and (t[0] in WRAPPERS or re.match(r'\w+=', t[0])):
+        t = t[1:]
     if not t:
         return False
-    bad = UNSAFE.get(t[0], ())
-    if any(x.startswith(f) if f.startswith('--') else (x.startswith('-') and not x.startswith('--') and f[1] in x[1:])
-           for x in t[1:] for f in bad):
-        return False
-    if t[0] in READ_CMDS:
-        return True
-    if t[0] == 'git' and len(t) > 1:
-        return t[1] in GIT_READ or t[1:] == ['worktree', 'list'] or (
-            t[1] == 'branch' and set(t[2:]) <= {'-a', '-r', '-v', '--show-current', '--list'})
-    if t[0] == 'sessioneer':
-        return all(x.startswith('--') is False or x in SESSIONEER_FLAGS for x in t[1:])
-    if t[0] == 'dibs':
-        return len(t) > 1 and t[1].startswith('todo:agent:')
-    return cmd.startswith(' '.join(CLI) + ' todo:agent:')
+    c, args = os.path.basename(t[0]), t[1:]
+    paths = [a for a in args if not a.startswith('-')]
+    if c in FILE_CMDS:
+        return not all(scratch(a) for a in paths)
+    if c == 'sed':
+        return any(a == '--in-place' or a.startswith('--in-place=') or re.match(r'-[a-zA-Z]*i', a) for a in args)
+    if c == 'git':
+        rest, i = [], 0
+        while i < len(args):
+            if args[i] in ('-C', '-c'):
+                i += 1
+            elif not args[i].startswith('-'):
+                rest.append(args[i])
+            i += 1
+        sub = rest[0] if rest else ''
+        if sub == 'branch':
+            return bool(set(args[args.index('branch') + 1:]) - {'-a', '-r', '-v', '--show-current', '--list'}) if 'branch' in args else False
+        if sub == 'worktree':
+            return rest[1:2] != ['list']
+        return sub in GIT_MUT
+    if c in ('docker', 'docker-compose'):
+        return bool(COMPOSE_MUT & set(paths)) and (c == 'docker-compose' or 'compose' in paths)
+    if c in PKG_CMDS:
+        return bool(PKG_MUT & set(paths))
+    if c == 'curl':
+        for i, a in enumerate(args):
+            if a in ('-d', '-F', '-T') or a.startswith(('--data', '--form', '--upload-file')):
+                return True
+            if a == '-X' and i + 1 < len(args) and args[i + 1].upper() in ('POST', 'PUT', 'DELETE', 'PATCH'):
+                return True
+            if re.match(r'-X(POST|PUT|DELETE|PATCH)$', a, re.I):
+                return True
+    return False
+
+
+def bash_mutates(cmd):
+    """Denylist of real mutations, tested on the command with quoted strings removed."""
+    s = re.sub(r"\"[^\"]*\"|'[^']*'", 'Q', cmd)
+    for m in re.finditer(r'(?:\d*|&)>>?\s*(\S+)', s):
+        if not m.group(1).startswith('&') and not scratch(m.group(1)):
+            return True
+    s = re.sub(r'(?:\d*|&)>>?\s*\S+', ' ', s)
+    return any(segment_mutates(seg.split()) for seg in re.split(r'&&|\|\||[;|\n()`{}]', s))
 
 
 @contextlib.contextmanager
@@ -430,33 +464,62 @@ def emit(event, **fields):
 
 
 def guard(data):
-    tool = data.get('tool_name')
-    if DRY or tool not in MUTATING or (tool == 'Bash' and bash_safe((data.get('tool_input') or {}).get('command') or '')):
+    tool, inp = data.get('tool_name'), data.get('tool_input') or {}
+    if DRY or data.get('agent_id') or tool not in MUTATING:
         return
-    deny = lambda why: emit('PreToolUse', permissionDecision='deny', permissionDecisionReason=why)
+    if tool == 'Bash':
+        if not bash_mutates(inp.get('command') or ''):
+            return
+    elif scratch(str(inp.get('file_path') or inp.get('notebook_path') or '')):
+        return
+    note, warns = None, []
     if not data.get('session_id'):
-        return deny('Dibs tracking: no session id, so no claim can be checked. Persistent changes are blocked until the hook gets one.')
-    s = None
-    try:
-        with locked(data['session_id']):
-            s = Session(data)
-            try:
-                why = s.track()
-            except (Refused, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as e:
-                s.state['pending'] = {'goal': s.state.get('intent'), 'cwd': s.cwd, 'ts': int(time.time())}
-                why = (f'Dibs tracking failed ({type(e).__name__}: {str(e)[:200]}), so no claim could be verified. The intent is kept '
-                       'locally. Fix Dibs access (or claim a task with the MCP tools), then retry.')
-            s.save()
-    except Exception as e:
-        why = f'Dibs tracking state failed ({type(e).__name__}: {str(e)[:200]}); persistent changes stay blocked until it is fixed.'
-    if why:
-        deny(why)
-    elif s:
-        warn(s)
+        warns.append('no session id, so no Dibs task could be opened for this change')
+    else:
+        try:
+            with locked(data['session_id']):
+                s = Session(data)
+                s.state.setdefault('breadcrumb', {
+                    'prompt': s.state.get('intent') or '(no prompt recorded)', 'cwd': s.cwd,
+                    'branch': s.git('branch', '--show-current').stdout.strip(), 'ts': int(time.time()), 'pid': int(agent_pid())})
+                s.save()
+                try:
+                    note = s.track()
+                    if not s.state.get('auto'):
+                        s.state.pop('breadcrumb', None)  # a claim made elsewhere already covers this work
+                except (Refused, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as e:
+                    s.state['pending'] = {'goal': s.state.get('intent'), 'cwd': s.cwd, 'ts': int(time.time())}
+                    warns.append(f'Dibs tracking failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead and the intent is kept locally')
+                s.save()
+                warns += s.warns
+        except Exception as e:
+            warns.append(f'Dibs tracking state failed ({type(e).__name__}: {str(e)[:200]}); the change goes ahead untracked')
+    out = {}
+    if note:
+        out['hookSpecificOutput'] = {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'additionalContext': note}
+    if warns:
+        out['systemMessage'] = 'Dibs tracking: ' + '; '.join(warns)
+    if out:
+        print(json.dumps(out))
+
+
+def unrecorded():
+    """Breadcrumbs of dead sessions that never got a task."""
+    out = []
+    for f in sorted(STATE_DIR.glob('*.json')):
+        try:
+            st = json.loads(f.read_text())
+            b = st.get('breadcrumb')
+            if b and not st.get('auto') and not st.get('claims') and not Path(f'/proc/{int(b["pid"])}').exists():
+                out.append(f'session {f.stem}: {b["cwd"]} on {b.get("branch") or "unknown branch"}, prompt: {b["prompt"][:200]}')
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            continue
+    return out
 
 
 def recover(data):
     cwd = data.get('cwd') or os.getcwd()
+    parts = []
     try:
         r = cli('dropped', f'--path={cwd}')
         items = r if isinstance(r, list) else (r.get('issues') or r.get('items') or [])
@@ -465,11 +528,16 @@ def recover(data):
             v = i.get('issueId', i.get('id')) if isinstance(i, dict) else i
             if isinstance(v, int) and not isinstance(v, bool) or isinstance(v, str) and v.isdigit():
                 ids.append(str(v))
+        if ids:
+            parts.append('Dropped Dibs tasks under this directory: ' + ', '.join(ids[:20])
+                         + '. Inspect each with todo_show before resuming; nothing is claimed or run automatically.')
     except (Refused, OSError, ValueError, AttributeError, subprocess.TimeoutExpired):
-        return emit('SessionStart', additionalContext='Dibs recovery unavailable (offline or failed): dropped tasks were not checked.')
-    if ids:
-        emit('SessionStart', additionalContext='Dropped Dibs tasks under this directory: ' + ', '.join(ids[:20])
-             + '. Inspect each with todo_show before resuming; nothing is claimed or run automatically.')
+        parts.append('Dibs recovery unavailable (offline or failed): dropped tasks were not checked.')
+    lost = unrecorded()
+    if lost:
+        parts.append('Changes made by dead sessions with no Dibs task (file one if the work matters): ' + ' | '.join(lost[:10]))
+    if parts:
+        emit('SessionStart', additionalContext=' '.join(parts))
 
 
 def main():
@@ -477,9 +545,6 @@ def main():
     try:
         data = json.load(sys.stdin)
     except ValueError:
-        if mode == 'guard':
-            emit('PreToolUse', permissionDecision='deny',
-                 permissionDecisionReason='Dibs tracking: the hook input was not valid JSON, so no claim can be checked.')
         return
     if mode == 'guard':
         return guard(data)

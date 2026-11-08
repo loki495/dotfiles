@@ -443,7 +443,7 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/dibs-block.py guard",
-            "onFailure": "block"
+            "onFailure": "warn"
           }
         ]
       }

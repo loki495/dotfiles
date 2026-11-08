@@ -1,5 +1,9 @@
 # Global Developer Context — Andres
 
+**Status line [rule 1226].** End every reply with exactly one of: "Safe to archive this session." /
+"Continue in this session: <what and why>." / "Continue in a different session: <which, and why>." /
+"Waiting on Andres: <input needed>." / "Waiting on other work: <what>." / "All planned work is done."
+
 These rules apply to every agent session on this machine (Claude Code, Codex, agy, opencode,
 anything else), regardless of project. One shared rule set; agent-specific mechanics (hooks, UI,
 tool names) live only in that agent's entrypoint (`ai/CLAUDE.md`, `ai/AGENTS.md`, opencode's
@@ -9,8 +13,7 @@ named skill, command or agent means the equivalent in your tool.
 **Where the rules live.** The rules are Dibs `rule` records, exported to `ai/rules.md` (public) and
 `~/.dotfiles-private/ai/rules.private.md` (private); `[rule N]` below is a record id. In Claude Code
 the `rule-inject` hook delivers the relevant 1 to 3 rules at the moment they apply (once per
-context, by id and revision; the first `git commit` and `git push` are denied with their rules,
-re-run to proceed). Other agents read the two export files before substantive work and grep them
+context, by id and revision; a `git commit`/`git push` gets its rules as context). Other agents read the two export files before substantive work and grep them
 by id. Longer procedures live in skills (`git-workflow`, `peer-sessions`, `orchestrator-worker`,
 `ai-config`, `ac495-infrastructure`, ...): read the skill when its topic comes up.
 

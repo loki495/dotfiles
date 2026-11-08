@@ -31,6 +31,15 @@ if [ "$has_real_docs" = 0 ] && ! grep -Eqi 'docs:[[:space:]]*n/a' <<<"$cmd" && g
   emit deny "The commit message says docs were updated, but no documentation file (.md, .rst, docs/) is staged. Stage the docs, or drop that claim."
 fi
 
+# Rule 737: no Dibs task/plan numbers in committed docs or messages. Rule 738: no Claude-Session trailer.
+dibsref='dibs[[:space:]]+(task[[:space:]]+|plan[[:space:]]+|id[[:space:]]+)?#?[0-9]+|todo_(show|claim|complete)[[:space:]]+[0-9]+'
+if grep -Eqi "$dibsref" <<<"$cmd" || { git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -Eqi "$dibsref"; }; then
+  emit deny "Rule 737: the commit message or a staged .md file cites a Dibs task, plan or issue number. Dibs is local state; say what the thing is instead."
+fi
+if grep -Eqi '^[[:space:]]*Claude-Session:' <<<"$cmd"; then
+  emit deny "Rule 738: remove the Claude-Session trailer from the commit message (Co-Authored-By stays)."
+fi
+
 notes=()
 if [ "$has_real_docs" = 0 ] && ! grep -Eqi 'docs:[[:space:]]*(updated|n/a)' <<<"$cmd"; then
   notes+=("No doc or test file is in this commit. If the change makes a doc wrong or needs a test, include it in the same commit; otherwise add a line 'Docs: n/a (reason)'.")

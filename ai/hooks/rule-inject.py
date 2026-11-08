@@ -5,7 +5,7 @@ One script for PreToolUse, PostToolUse, SessionStart and UserPromptSubmit. Rules
 exports ai/rules.md and ~/.dotfiles-private/ai/rules.private.md (RULE_FILES overrides, ':'-separated),
 never from a live Dibs call. A rule is sent only if its id@revision is absent from the delivered set
 $RULE_STATE_DIR (default $XDG_RUNTIME_DIR/dibs-rules, else ~/.cache/dibs-rules)/<session>-<agent_id|main>.
-`git commit` and `git push` are denied once with their rules as the reason; the re-run proceeds.
+`git commit` and `git push` get their rules as context like any other command.
 Everything else is plain additionalContext. Any failure is silent (exit 0): this hook never blocks
 on its own trouble.
 """
@@ -22,16 +22,17 @@ CAP = 9000  # additionalContext is capped at 10,000 characters
 HEADING = re.compile(r"^## (\d+)@(\d+) (.*)$")
 
 GIT = r"(^|[^\w-])git(\s+-\S+(\s+[^-\s]\S*)?)*\s+(%s)(\s|$)"
-BASH = [  # (regex on the command, rule ids, deny once)
-    (GIT % "commit", [732, 737, 738], True),
-    (GIT % "push", [734, 735, 730], True),
-    (GIT % "merge|rebase|worktree|cherry-pick|stash|reset", [731, 733, 736, 739], False),
-    (r"\b(pest|phpunit)\b", [740, 741, 742], False),
-    (r"\b(artisan|composer|pint|phpstan|rector)\b", [750], False),
-    (r"\bcurl\b", [745], False),
-    (r"\b(mysql|mariadb|sqlite3|tinker|migrate)\b", [929], False),
-    (r"\bsessioneer\s+--usage\b", [747], False),
+BASH = [  # (regex on the command, rule ids)
+    (GIT % "commit", [732, 737, 738]),
+    (GIT % "push", [734, 735, 730]),
+    (GIT % "merge|rebase|worktree|cherry-pick|stash|reset", [731, 733, 736, 739]),
+    (r"\b(pest|phpunit)\b", [740, 741, 742]),
+    (r"\b(artisan|composer|pint|phpstan|rector)\b", [750]),
+    (r"\bcurl\b", [745]),
+    (r"\b(mysql|mariadb|sqlite3|tinker|migrate)\b", [929]),
+    (r"\bsessioneer\s+--usage\b", [747]),
 ]
+REMINDER = "Rule 1226: end your reply with one status line (Safe to archive this session. / Continue in this session: ... / Waiting on Andres: ... / All planned work is done.)."
 TEST_FILE = re.compile(r"(^|/)tests?/|(^|/)test_|_test\.|\.test\.|\.spec\.|Test\.php$")
 TOOLS = {  # tool name -> rule ids
     "Agent": [926, 1468], "Task": [926, 1468],
@@ -90,21 +91,20 @@ def git_root_has_compose(path):
 
 
 def match(data):
-    """(rule ids, deny once) the event is about."""
+    """The rule ids the event is about."""
     ev, tool, inp = data.get("hook_event_name"), data.get("tool_name", ""), data.get("tool_input") or {}
     if ev == "UserPromptSubmit":
-        return ([928] if str(data.get("prompt", "")).startswith("[sessioneer peer:") else []), False
+        return [928] if str(data.get("prompt", "")).startswith("[sessioneer peer:") else []
     if ev != "PreToolUse":
-        return [], False
+        return []
     if tool in TOOLS:
-        return TOOLS[tool], False
+        return TOOLS[tool]
     if tool == "Bash":
-        cmd, ids, deny = str(inp.get("command", "")), [], False
-        for rx, rule_ids, once in BASH:
+        cmd, ids = str(inp.get("command", "")), []
+        for rx, rule_ids in BASH:
             if re.search(rx, cmd):
                 ids += [i for i in rule_ids if i not in ids]
-                deny = deny or once
-        return ids, deny
+        return ids
     path = str(inp.get("file_path") or inp.get("notebook_path") or "")
     if tool in ("Edit", "Write", "MultiEdit", "NotebookEdit") and path:
         ids = []
@@ -116,8 +116,8 @@ def match(data):
             ids += [924, 737]
         if os.path.basename(path) in ("CLAUDE.md", "AGENTS.md"):
             ids += [925]
-        return list(dict.fromkeys(ids)), False
-    return [], False
+        return list(dict.fromkeys(ids))
+    return []
 
 
 def work_order(obj):
@@ -159,21 +159,19 @@ def main():
             with open(path, "a") as f:
                 f.writelines(f"{r['id']}@{r['revision']}\n" for r in rules if r.get("text"))
         return
-    ids, deny = match(data)
-    if not ids:
-        return
+    ids = match(data)
     rules, have = load_rules(), delivered(path)
     fresh = [i for i in ids if i in rules and f"{i}@{rules[i]['rev']}" not in have]
-    if not fresh:
-        return
-    with open(path, "a") as f:
-        f.writelines(f"{i}@{rules[i]['rev']}\n" for i in fresh)
+    if fresh:
+        with open(path, "a") as f:
+            f.writelines(f"{i}@{rules[i]['rev']}\n" for i in fresh)
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
-    if deny:
-        out("PreToolUse", "permissionDecision", "deny", permissionDecisionReason=
-            f"Rules for this action (delivered once; re-run the same command to proceed):\n\n{body}")
-    else:
-        out(ev, "additionalContext", f"Rules for this action:\n\n{body}")
+    if ev == "UserPromptSubmit":
+        body = REMINDER + (f"\n\nRules for this action:\n\n{body}" if body else "")
+    elif body:
+        body = f"Rules for this action:\n\n{body}"
+    if body:
+        out(ev, "additionalContext", body)
 
 
 if __name__ == "__main__":

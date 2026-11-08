@@ -40,6 +40,28 @@ class StopGateTest(unittest.TestCase):
             proc = self.run_hook('echo "[]"', extra={'last_assistant_message': 'Report.\n' + line})
             self.assertEqual(proc.stdout.strip(), '', line)
 
+    def status_run(self, msg, **extra):
+        return self.run_hook('echo "[]"', extra={'last_assistant_message': msg, **extra})
+
+    def test_phrase_in_last_three_nonempty_lines_passes_ignoring_trailing_blanks(self):
+        ph = 'Waiting on Andres: a decision.'
+        for msg in (ph, f'a\nb\n{ph}\n\n\n', f'a\n{ph}\nx\n\ny\n', f'a\n{ph}\nx\ny'):
+            self.assertEqual(self.status_run(msg).stdout.strip(), '', repr(msg))
+
+    def test_phrase_earlier_than_the_last_three_nonempty_lines_blocks_with_1226(self):
+        ph = 'All planned work is done.'
+        for msg in (f'{ph}\nb\nc\nd', f'{ph}\n\nb\n\nc\nd\n\n', f'I said "{ph}" earlier.\nb\nc\nd'):
+            out = json.loads(self.status_run(msg).stdout)
+            self.assertEqual(out['decision'], 'block', repr(msg))
+            self.assertIn('1226', out['reason'])
+
+    def test_misplaced_phrase_is_not_blocked_when_stop_hook_active(self):
+        proc = self.status_run('All planned work is done.\nb\nc\nd', stop_hook_active=True)
+        self.assertEqual(proc.stdout.strip(), '')
+
+    def test_absent_message_is_not_blocked(self):
+        self.assertEqual(self.run_hook('echo "[]"').stdout.strip(), '')
+
     HELD = 'echo \'[{"issueId":7,"agentName":"claude:a:sess-1","paths":[]}]\''
 
     def test_allows_when_no_claim_is_held(self):
