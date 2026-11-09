@@ -5,7 +5,9 @@ description: Continue another Sessioneer session's unfinished work from its comp
 
 # Take over a session
 
-Input: `/takeover <agent> [profile] <session_id>`. The agent names the **source** session, not the agent running this skill. Two arguments mean the default profile. A profile applies only to Claude Code; reject it for other agents. Use the full conversation ID, or an unambiguous prefix, as the stable identity. A Sessioneer display name is only a lookup aid.
+Input: `/takeover <agent> [profile] <session_id> [message]`. The agent names the **source** session, not the agent running this skill. Two arguments before any message mean the default profile. The session ID is the first token that looks like a conversation ID (a UUID or hex prefix, or OpenCode's `ses_...`); everything after it is the optional message. A profile applies only to Claude Code; reject it for other agents. Use the full conversation ID, or an unambiguous prefix, as the stable identity. A Sessioneer display name is only a lookup aid.
+
+The optional **message** is Andres's own instruction to you, the receiver, and applies first: read it before the source, carry it out as part of continuing (for example "only finish the tests" or "don't touch the migration"), and record it in the successor's Dibs checkpoint. It is not part of the source conversation, does not change which session you recover, and never overrides the approval requirements below.
 
 This is a work handoff to a new conversation. `sessioneer --take-over` is a different command: it moves a running terminal Claude conversation to headless mode and does not review or transfer its work.
 
