@@ -5,7 +5,8 @@ Reference for the `orchestrator-worker` skill; read it when the decision tree in
 ## Launching Workers
 
 **General principle**: launch the worker as an isolated, non-interactive invocation
-scoped to the project directory, with its own explicit model, and a prompt built from
+scoped to the project directory, with a supported explicit fresh-worker model (a full-history
+fork inherits its parent model/effort), and a prompt built from
 the [worker prompt template](roles-and-workers.md#worker-prompt-template) above. Prefer this over
 simulating the worker inline in the orchestrator's own context — the point is to keep
 the expensive orchestrator context free of grunt-work tool output, and to run the
@@ -24,8 +25,9 @@ Claude Code is the one exception, since the orchestrator is usually already runn
 inside it: use the `Agent` tool directly rather than shelling out to `claude -p`.
 Pick a `subagent_type` (a purpose-built agent, or `general-purpose`), pass the worker
 prompt as `prompt`, and use the `model` parameter to pin the cheaper tier — this
-override works for a real subagent launch but is silently ignored for
-`subagent_type: "fork"` (see [Model Tiering](model-routing.md#model-tiering)). Runs synchronously by
+override applies only where that tool supports it. Codex full-history forks inherit model/effort
+and cannot accept overrides; use fresh/no-history workers for selection. See
+[Model Tiering](model-routing.md#model-tiering). Runs synchronously by
 default (the report comes back in the tool result); use `subagent_type: "fork"` with
 background execution when launching workers in parallel (see below) so their tool
 output doesn't fill the orchestrator's own context.

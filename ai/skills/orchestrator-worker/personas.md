@@ -22,13 +22,13 @@ Tiers are the names in `model-routing.md`; pick agent, model and effort from tha
 | Reviewer | advanced | diff, brief, conventions; nothing else | findings, ranked | disposable |
 | Closer | mechanical | plan, diff, docs list | docs, atlas hint, closed tasks and claims | disposable |
 
-Frontier needs the user's approval first (rule 1067), also for a persona.
+Frontier needs the user's approval first (rule 926), also for a persona.
 
 ## Rules for every persona
 
 - **State travels through Dibs, never chat.** Each persona step is a temporary child task of the plan,
   label `persona <name>`, whose body is the contract for that step (inputs, Done-when, return). Close
-  it when done (keep Dibs lean, rule 757). A persona reads only its task, the plan and the brief
+  it when done (keep Dibs lean, rule 729). A persona reads only its task, the plan and the brief
   sections it is allowed to see.
 - **Information firewall.** The brief has two sections, `## Contract` (public shapes, example inputs
   and outputs, error behaviour, limits) and `## Implementation notes` (approach, files, trade-offs,
@@ -219,4 +219,4 @@ Prompt:
 
     You are the CLOSER. Using the plan, the diff and the brief, update the docs and tests list the
     change requires, the atlas hint, the plan body and checkpoints, close the temporary persona tasks
-    and release claims (rules 730, 732). Do not change code. List anything you could not do.
+    and release claims (rule 730). Do not change code. List anything you could not do.

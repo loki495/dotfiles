@@ -44,7 +44,7 @@ KEY_ID = {k: 5000 + i for i, k in enumerate(KEYS)}  # one rule per key, text TEX
 KEY_EXPORT = ''.join(f'## {i}@1 Rule: {k}\nTEXT-{k}\n' for k, i in KEY_ID.items())
 QUOTA_JSON = '{"agents":{"claude":{"profiles":{"personal":{"ok":true,"quota":{"session":{"pct":%s},"week_all":{"pct":%s}}},' \
              '"work":{"ok":true,"quota":{"session":{"pct":1},"week_all":{"pct":96}}}}}}}'
-QUOTA_MSG = 'Quota at %s%%: rule 747. Start no new steps; park the work with a handoff.'
+QUOTA_MSG = 'Quota at %s%%: rule 728. Start no new steps; park the work with a handoff.'
 
 
 def make_stub(path, out='', rc=0, counter=None, args=None):

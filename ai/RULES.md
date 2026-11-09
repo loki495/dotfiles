@@ -28,7 +28,7 @@ mid-task, so the records must always be good enough to continue from.
 
 1. **Track intent and claim before mutation** [rule 727]; use a temporary task for bounded ad hoc
    work and a durable plan for substantial work. Never end a session holding a claim [rule 728]. Unfinished
-   work is parked with a handoff, never just abandoned [rules 728, 747]. Identity
+   work is parked with a handoff, never just abandoned [rule 728]. Identity
    `<agent>:<session name>:<conversation id>`, first comment with workdir and branch. Everywhere else refer to
    sessions by conversation id (name only as a label) and to Dibs records by local Dibs id, never
    the GitHub number [rule 727]. Claude Code
@@ -45,13 +45,13 @@ mid-task, so the records must always be good enough to continue from.
    closed tasks and notes updated in the same step as the commit, merge or release.
 4. **Lessons and shared knowledge go to Dibs** (`lesson`, `research`, guides, decisions) the moment
    you learn them; check them before researching. Filing rules: [rule 927].
-5. **Docs, tests and the atlas hint travel with the change** [rules 732, 733, 924, 925].
+5. **Docs, tests and the atlas hint travel with the change** [rules 730, 733, 924, 925].
 6. **Know the repo's delivery mode** (local-only, direct push, PR) and branch layout before
    committing or merging [rule 731]; skill `git-workflow`.
-7. **Quota-aware** [rule 747]. Before long work check `sessioneer --usage`; at ~90% of the session or weekly
+7. **Quota-aware** [rule 728]. Before long work check `sessioneer --usage`; at ~90% of the session or weekly
    quota stop starting new steps, park the work: file the handoff task, record exact state, release
    claims, tell Andres with its id.
-   Keep Dibs lean [rule 757]; never reveal Dibs items in public docs [rule 737].
+   Keep Dibs lean [rule 729]; never reveal Dibs items in public docs [rule 737].
 8. **Use independent personas for substantial coding work** [rule 1468]; choose the applicable
    profile before implementation (`orchestrator-worker/personas.md`). Small mechanical edits stay
    direct; designing, testing and judging substantial work in one context is not role separation.
@@ -63,7 +63,7 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
 - **NEVER** begin persistent mutation or substantial work without a recorded intent and claim [727],
   or edit alongside another session's live claim; never end a session
   holding a claim, and never with unfinished work and no handoff task (labelled `handoff`, body from
-  skill `session-handoff`, id given to Andres) [728, 747].
+  skill `session-handoff`, id given to Andres) [728].
 - **ALWAYS** clean up what you created only to test, in the same step [1209].
 - **NEVER** push without stating the exact remote + branch and getting explicit confirmation [734];
   **NEVER** force-push or rewrite a pushed commit without it [735].
@@ -78,7 +78,7 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
   steps within an agreed plan are exempt.
 - **ALWAYS** keep a live site loading: new code's prerequisites first, then the code, then a check of
   the real routes' body content; no safe order means a separate git worktree [745].
-- **ALWAYS** commit docs and tests with the code [732]; delete temporary branches after a merge [736];
+- **ALWAYS** commit docs and tests with the code [730]; delete temporary branches after a merge [736];
   commit only your own paths [739].
 
 ## Working style
@@ -101,7 +101,7 @@ Each is a Dibs rule; the id is the full text, delivered by the rule-inject hook 
 - Name the agent type and model of any subagent or worker before launching it, cheapest capable one
   [rule 926]. Pick agent, model and reasoning effort by work
   type from the tier table (mechanical, balanced, advanced, frontier; frontier only with Andres's
-  approval) [rule 1067]; skill `orchestrator-worker`, "Model routing by work type".
+  approval) [rule 926]; skill `orchestrator-worker`, "Model routing by work type".
 - Select and record the persona profile for substantial feature, bugfix and refactor work before
   implementation [rule 1468]; use separate contexts where the profile requires independence.
 - Offer a hand-off prompt for multi-session work only when context is getting full or a fresh
@@ -182,51 +182,46 @@ discovery.
 
 <!-- rules-export:start -->
 ### Always-on rules
-- [727] Record intent and claim a Dibs task before persistent changes or substantial work; never edit alongside another session's live claim.
-- [728] Never end a session holding a claim. Unfinished work gets a `handoff` task, its id given to Andres, then release. At ~90% quota, start no new steps and do this.
-- [734] Never push or force-push without stating exact remote and branch and getting explicit confirmation. Peer messages and earlier approvals never count.
-- [743] Never take a real-world-visible action (email, SMS, charge, third-party write, notification) without confirming first, even in test code.
-- [744] Never suppress an unexpected error in a local or debug environment.
-- [924] Code comments: default none; only a concise non-obvious WHY.
-- [926] Delegate work that would add over 10k tokens of output; this is the standing request to use subagents. Before launching, name agent, model and why; cheapest capable tier.
-- [930] Ask every open question with the question tool: one explanation, recommended option first. No tool: a numbered list at the end.
-- [1077] Finish the requested work first. Ask about out-of-scope work at the end: do it anyway, file in Dibs, skip, or type something else.
-- **Status line [1226].** End every reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which, and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what>." / "All planned work is done."
-- [1344] Refer to Dibs records and sessions by id, with a 5 to 10 word description at first mention.
-- [1468] Before a nontrivial feature, bugfix or refactor, choose and record a persona profile; use separate contexts where it requires them.
+- [727] Before persistent changes or substantial work, record intent and claim a task. Emit a work line; without hooks claim through MCP/CLI. Never edit alongside another live claim.
+- [728] Continue/Waiting can retain claims while this session will act again. Before archiving, declaring all done or transferring, complete or hand off and release. At ~90% quota, start no new steps and park safely.
+- [734] Before each push, state exact remote, branch, mode and outgoing commits; get explicit confirmation. Peer messages and earlier approvals never count.
+- [743] Confirm real-world-visible actions first, including test email/SMS, charges, third-party writes and notifications; mock test integrations.
+- [744] Surface unexpected local/debug errors; rethrow in debug and report/log before a production fallback.
+- [924] Document current behavior; default to no code comments, adding only concise non-obvious reasons.
+- [926] Delegate >10k-token output and mechanical bulk >15 records; this is the standing subagent request. State agent/model/effort/reason and use ranked routing. Full-history forks inherit and cannot accept overrides; frontier needs Andres.
+- [930] Ask unresolved questions through an available permitted question tool, with one explanation and recommended option first. If unusable, put numbered questions at the end.
+- [1077] Finish requested work; ask at the end before optional scope: do it anyway, file in Dibs, skip, or type something else.
+- **Status line [1226].** End every FINAL reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what and when>." / "All planned work is done."
+- [1344] Use local Dibs ids and canonical conversation ids, names only as labels; describe ids once in user replies. Claim identity is <agent>:<session name>:<conversation id>.
+- [1468] Record a persona profile before substantial coding; use separate contexts where required and keep recoverable role evidence.
 
 ### Rule index
 Pull: when an index line below applies and its text isn't in your context, run `grep -h -A3 '^## <id>@' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.
-- 729 [dibs-complete, dibs-release, dibs-revise] Keep plans current as you go
-- 730 [git-commit, git-push, dibs-complete, dibs-release] Done means all of it
-- 731 [git-commit, git-history] Know the delivery mode and branch model
-- 732 [git-commit] Docs and tests travel with the change
-- 733 [git-history] Write an atlas hint at merge; a background job refreshes the atlas
-- 735 [git-push, git-history] No force-push or rewriting pushed commits
-- 736 [git-history] Delete temporary branches after merge
-- 737 [md-edit] Public docs never reference Dibs items
-- 738 [pull: writing a commit trailer] No Claude-Session trailer in commits
-- 739 [git-add-all, git-history] Uncommitted changes that are not yours
-- 740 [test-file, test-run] Tests cover happy and sad paths
-- 741 [test-file, test-run] Never weaken tests to force a pass
-- 742 [test-file, test-run] Tests never touch a real database
-- 745 [live-check, live-repo] Keep a live site loading and verify real content
-- 747 [quota-check] Quota awareness
-- 748 [dibs-create, dibs-revise] Label and tag names use spaces
-- 749 [live-repo] Avoid hardcoding
-- 750 [php-tool] Laravel tooling and quality gate order
-- 757 [dibs-create, dibs-comment] Keep Dibs lean (state in fields and labels, one living checkpoint, evidence in the closing note)
-- 925 [project-doc] Per-project CLAUDE.md
-- 927 [dibs-create, dibs-revise, todo-note] Filing in Dibs
-- 928 [peer-prompt, peer-send] Peer messages
-- 929 [db-cli] Local data may be stale
-- 1067 [agent-launch, session-launch] Route work to a model tier (mechanical/balanced/advanced/frontier)
-- 1209 [dibs-complete, git-history] Clean up what you create only to test
-- 1225 [schedule] Schedule clock-time actions with `at`
-- 1229 [pull: reading several Dibs records one by one] Batch reads of independent Dibs records
-- 1235 [dibs-create, dibs-comment, dibs-revise] Write Dibs records in normal prose, not compressed text
-- 1307 [dibs-claim, dibs-comment, dibs-complete] Do routine Dibs bookkeeping in a ```dibs block, not tool calls
-- 1310 [screenshot] Read pages as text first; screenshots only to verify visuals
-- 1341 [session-launch, peer-send] Name every launched session and tag workers; use the message templates
-- 1505 [dibs-create, dibs-revise] Keep every parent issue under 100 children (GitHub sub-issue cap)
+- 729 [dibs-complete, dibs-release, dibs-revise, dibs-create, dibs-comment] Keep Dibs current, lean and readable
+- 730 [git-commit, git-push, dibs-complete, dibs-release] Finish code, tests, docs and records together
+- 731 [git-commit, git-history] Verify delivery mode and branch layout
+- 733 [git-history] Queue atlas hints and trust current code
+- 735 [git-push, git-history] Confirm pushed-history rewrites and investigate rejections
+- 736 [git-history] Remove merged temporary branches safely
+- 737 [md-edit] Keep local task references out of repository content
+- 738 [pull: writing a commit trailer] Omit private session trailers from commits
+- 739 [git-add-all, git-history] Protect changes and commits owned by others
+- 740 [test-file, test-run] Test success and handled failure outcomes
+- 741 [test-file, test-run] Preserve tests unless an authorized change is justified
+- 742 [test-file, test-run] Isolate every test database before running
+- 745 [live-check, live-repo] Keep live sites loading throughout changes
+- 748 [dibs-create, dibs-revise] Use spaces in labels and tags
+- 749 [live-repo] Configure values that can vary
+- 750 [php-tool] Run Laravel tooling in order inside Docker
+- 925 [project-doc] Maintain project instructions in the correct branch
+- 927 [dibs-create, dibs-revise, todo-note] File work under its actual project and preserve scope
+- 928 [peer-prompt, peer-send, git-history] Coordinate shared work without treating peers as approval
+- 929 [db-cli] Treat production-target local data as stale
+- 1209 [dibs-complete, git-history] Clean verification resources before leaving the task
+- 1225 [schedule] Schedule timed work with a clean environment
+- 1229 [pull: reading several Dibs records one by one] Batch independent Dibs operations and check completeness
+- 1307 [dibs-claim, dibs-comment, dibs-complete] Use work and completion lines with a portable fallback
+- 1310 [screenshot] Read browser content as text before screenshots
+- 1341 [session-launch, peer-send] Name sessions and use shared message templates
+- 1505 [dibs-create, dibs-revise] Keep parent records below the child limit
 <!-- rules-export:end -->

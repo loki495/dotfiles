@@ -8,7 +8,7 @@ description: Git delivery modes (local-only, direct push, PR), branch model (def
 Core only. Hard rules live in Dibs rules (injected by the rule-inject hook; other agents grep
 `ai/rules.md`): push confirmation [734], no rewrite of pushed commits [735], delete temporary
 branches after a merge [736], commit only your own paths [739], delivery mode [731], atlas at
-merge [733], docs/tests with the change [732], no `Claude-Session:` trailer [738].
+merge [733], docs/tests with the change [730], no `Claude-Session:` trailer [738].
 
 ## First: know the repo
 

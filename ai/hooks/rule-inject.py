@@ -309,7 +309,7 @@ def run_event(data, ev, session, path):
         pct = quota_pct(os.path.dirname(path))
         if pct is not None and pct >= QUOTA_LIMIT and "quota-warned" not in have:
             new.append("quota-warned")
-            parts.append(f"Quota at {int(pct)}%: rule 747. Start no new steps; park the work with a handoff.")
+            parts.append(f"Quota at {int(pct)}%: rule 728. Start no new steps; park the work with a handoff.")
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
         parts.append(f"Rules for this action:\n\n{body}")

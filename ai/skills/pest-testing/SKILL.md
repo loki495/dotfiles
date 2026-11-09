@@ -95,10 +95,24 @@ This is a hard rule, not a style preference:
 
 - Tests must never be **deleted**, have their **assertions weakened**, or be
   **skipped/marked incomplete** in order to make a failing suite pass — without Andres's
-  explicit confirmation first.
+  explicit confirmation first, except for the independent test-builder procedure below.
 - If a test fails, the default action is to investigate and fix the underlying code,
   or flag the conflict clearly and ask how to proceed. Editing the test to match
   broken behavior is not an acceptable shortcut.
 - This applies whether you're working interactively or as part of the pre-commit hook
   flow — if Pest fails at commit time, fix the code or stop and ask; don't touch the
   test to get a green checkmark.
+
+## General test ownership and database isolation (every framework)
+
+The general safety rules apply in every stack; Pest syntax/traits above remain Laravel-specific.
+Never let tests touch a real or production database. Use an isolated test database or dedicated
+test schema, with a bootstrap guard that aborts before tests if the configured connection resembles
+a real one. Verify the guard and connection before running; RefreshDatabase alone is not isolation.
+
+Only the independent test-builder persona may change/remove an assertion for a valid requested
+contract change. It considers requests from designer, reviewer, interpreter, runner or implementer,
+records its reason in Dibs and has the orchestrator report the change to Andres. If it declines and
+the requester insists, ask Andres. No other persona edits a test to force a pass, including pre-commit
+failures. The general rule still requires Andres's confirmation for weakening/skipping/bypassing tests
+outside this exception; fix the code or ask. Happy/sad path requirements stay stack-neutral.

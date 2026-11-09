@@ -8,9 +8,8 @@ description: Protocol for multi-step or multi-session work with a Dibs plan, wor
 Tool-agnostic: Claude Code, opencode, Codex and agy can each be orchestrator or worker. This is the
 default way multi-step work happens, not something to invoke on request. Hard rules live in Dibs
 rules (injected by the rule-inject hook; other agents grep `ai/rules.md`): claim before working
-[727], never end holding a claim [728], keep plans current [729], done means all of it [730],
-name agent and model before launching and delegation cost [926], quota [747], keep Dibs lean [757], filing [927],
-model tiers [1067], independent personas for substantial work [1468].
+[727], complete or hand off before leaving [728], keep Dibs current/lean/readable [729], finish code/tests/docs/records [730],
+ranked model routing and delegation [926], filing [927], independent personas [1468].
 
 The loop: investigate, plan, delegate if warranted (cheapest capable model, one bounded task per
 worker), workers complete or block and ask, the orchestrator answers or re-plans, then review,
@@ -18,6 +17,8 @@ verify, complete. The orchestrator optimizes for correctness; a worker may stop 
 orchestrator listens.
 
 ## Decision tree
+
+Before claims, Dibs bookkeeping or session disposition, read `work-tracking.md` completely.
 
 1. **Size the request** (small: do it; medium: one batched question round and a short draft; large:
    Dibs plan with a running draft) → `plans-and-state.md`, "Sizing a request".

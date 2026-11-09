@@ -22,7 +22,9 @@ run different-cost models — this is the point of the split, not an incidental 
   tools without making the comparison itself expensive.
 
 **A fork is not a lever for model cost.** A fork always runs on the orchestrating
-session's own model — a `model` override passed to a fork is ignored. Forking saves
+session's own model and reasoning effort. In Codex, a full-history fork cannot accept
+model/effort overrides; select a fresh/no-history worker for supported overrides. Other tools
+follow their declared launch capabilities; never assume an ignored override succeeded. Forking saves
 tokens a different way: it inherits full context and shares the prompt cache, so
 there's no cold-start re-derivation the way a fresh agent has. Choose between a fork
 and a fresh/cross-tool worker based on which cost actually dominates for the task at
@@ -123,7 +125,8 @@ workers were inheriting the orchestrator's Opus model.
 
 - Delegate when the work would put roughly 10k+ tokens of tool output in the orchestrator's
   context, not because it is "multi-step". Do 3 or fewer calls inline.
-- Pass `model` explicitly on every `Agent` launch; never rely on inheritance.
+- For fresh workers, set model/effort explicitly using supported parameters. Full-history forks
+  inherit model/effort and cannot accept overrides in Codex; never pass unsupported parameters.
 - **Lightweight worker** (the default for bounded in-process tasks): a self-contained
   prompt of about 400 words (goal, absolute paths, acceptance criteria, what to return in
   300 words or less). It skips this protocol, the claim/heartbeat/complete cycle, and
@@ -138,3 +141,19 @@ workers were inheriting the orchestrator's Opus model.
 The orchestration protocol itself must not depend on a particular model's identity —
 the same project should be able to swap worker models later (a free tier, a stronger
 coding model, a different provider) without changing anything else.
+
+## Standing delegation request and bounded-worker contract
+
+Rule 926 is the standing request to use subagents for qualifying work, within the current tool's
+launch constraints. Delegate expected output above roughly 10k tokens and mechanical bulk work above
+about 15 records; do up to three calls inline. A task's advanced reasoning requirements still control
+its tier: bulk input does not make design/review mechanical. Verify available agent/model/quota from
+the tool's actual listing; follow this file's ranked lists and never downgrade advanced/frontier work.
+Before every launch, state and record agent, model, effort, mechanism and why. Frontier needs Andres's
+approval and a usage check; planning/larger/longer sessions keep their existing go-ahead requirement.
+An already authorized launch needs no repeated permission. Compare context re-derivation against a
+fresh cheaper worker; forks inherit context/model/effort and do not provide a cheaper model.
+Give bounded workers self-contained briefs (goal, absolute allowed paths, acceptance, return format;
+about 400 words) and returns of at most 300 words. They skip the full protocol/Dibs cycle; the parent
+records results in one batched update. Independent cross-tool/persona workers follow their assigned
+claim protocol. Verify a sample of mechanical bulk results and batch independent tool calls.

@@ -58,10 +58,10 @@ around it.
 
 ### Task claims
 
-**Claude Code with the dotfiles hooks: use the ```` ```dibs ```` block [rule 1307].** Write `dibs <id>` to claim
-before editing; put `note`, `append`, `done` and `atlas` lines in a block at the end of the reply. The hook
-applies them at Stop and renews the claim. The MCP calls below are the path for other agents, workers
-without the hooks, and anything the block refuses.
+**Read `work-tracking.md` for exact work/completion syntax and all claim/recovery checks.**
+With Claude hooks, emit `[work <id or new> | <description> | <type>]` before related work;
+use fenced bookkeeping or `[complete]` only when its evidence is valid. A task id in a prompt alone
+does not prove a claim. Other agents actually claim and complete through MCP/CLI.
 
 `todo_claim` binds a claim to the worker's OS process (see Dibs `docs/agent-interface.md`); two workers
 cannot claim one task, and a dead process's claim is recoverable. Keep the capability token for

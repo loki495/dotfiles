@@ -15,14 +15,17 @@ needs cleaning up. No files on disk.
 
 ## When to write one
 
-- Near quota (rule 747): write it **before** the session can no longer run tools. A session cut
+- Near quota (rule 728): write it **before** the session can no longer run tools. A session cut
   off mid-turn cannot write anything, so this is a 90%-time job, not an end-of-session one.
-- Waiting on Andres: a decision, a real-world action, a check only he can do.
-- Blocked on another session's claim, a PR, a deploy or a review.
+- Parking while waiting on Andres: a decision, real-world action or check only he can do.
+- Parking while blocked on another session's claim, PR, deploy or review.
 - Ending with anything uncommitted, untested, unmerged, or undocumented.
 
-The session releases its claims (rule 728) and files the handoff. The handoff task is what the
-receiver claims, not the abandoned task.
+Continue-in-this-session and both Waiting statuses may retain/renew claims while this same
+session will act again; they do not themselves park/transfer work. When parking or transferring,
+file the handoff first, give Andres its id, then release claims with exact next steps. The handoff
+is what the receiver claims, not the abandoned task. Read `orchestrator-worker/work-tracking.md`
+for final-status, quota, recovery and no-hook MCP/CLI checks.
 
 ## Create it
 
