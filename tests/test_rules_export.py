@@ -197,8 +197,22 @@ class RenderTest(unittest.TestCase):
     def test_pull_line_is_exact_and_has_no_literal_dibs_reference(self):
         self.assertEqual(re_.PULL_LINE,
                          "Pull: when an index line below applies and its text isn't in your context, run "
-                         "`grep -h -A3 '^## <id>@' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.")
+                         "`awk '/^## /{p=($2 ~ /^<id>@/)} p' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.")
         self.assertIsNone(re.search(r'todo_show\s+\d', re_.PULL_LINE))
+
+    def test_pull_awk_command_prints_the_whole_rule_only(self):
+        # grep -A3 cut off rule bodies longer than 3 lines; awk prints until the next heading.
+        text = ('## 5@1 A\na1\na2\na3\na4\na5\n\n## 55@2 B\nb1\nb2\n\n## 6@1 C\nc1\n')
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'rules.md')
+            Path(path).write_text(text)
+            program = "/^## /{p=($2 ~ /^5@/)} p"
+            out = subprocess.run(['awk', program, path], capture_output=True, text=True, check=True).stdout
+        self.assertIn('## 5@1 A', out)
+        self.assertIn('a5', out)
+        self.assertNotIn('b1', out)
+        self.assertNotIn('55@2', out)
+        self.assertNotIn('c1', out)
 
     def test_render_index_lines_sorted_without_revisions_or_always_rules(self):
         rules = [R(30, 'pull', pull='writing a trailer', rev=7), R(20, 'trigger', ['git-commit', 'test-run'], title='Tests  never\n touch it', rev=9),
