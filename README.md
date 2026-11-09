@@ -566,8 +566,9 @@ All projects:
 - **Claim required** (`dibs-block.py guard`, PreToolUse on all tools): write
   `[work <id or new> | <description> | <type>]` on its own line before related work.
   Types are `code`, `tests`, `docs`, `git`, `db`, `live-site`, `dibs`, `infra`, and
-  `research`, combined with `+`. The hook claims the task (or creates a temporary one)
-  and delivers its rules. A change with fresh rules is held once for review and retry;
+  `research`, combined with `+`. The hook claims the task (or creates a temporary one),
+  delivers its rules, and includes the claim's capability token in the same context, so the
+  session can call `todo_complete`, `todo_release` and `todo_comment` on its own claim. A change with fresh rules is held once for review and retry;
   an unclaimed change is denied twice, then tracked in a temporary task with a warning.
   Reads, scratch paths, subagents, and Dibs outages pass through. Work lines inside code
   fences are ignored. For a read, a claim made outside the hook may still incur the bounded

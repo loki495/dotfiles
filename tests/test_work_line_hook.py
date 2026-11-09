@@ -207,6 +207,9 @@ class WorkLineClaimTest(WorkBase):
         tid = self.say('[work new | Rework the importer | code+tests]')
         out = self.read(tid)
         self.assertIn(NEW, self.ev(out)['additionalContext'])
+        token = json.loads((self.state / 'sess-1.json').read_text())['claims'][str(NEW)]
+        self.assertIn('Capability token for MCP calls on this claim', self.ev(out)['additionalContext'])
+        self.assertIn(token, self.ev(out)['additionalContext'])
         create = self.calls('create')
         self.assertEqual(len(create), 1)
         self.assertIn('--temporary', create[0])

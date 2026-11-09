@@ -146,6 +146,8 @@ class TrackingHookTest(unittest.TestCase):
         self.assertEqual(event['permissionDecision'], 'allow')
         if task:
             self.assertIn(task, event['additionalContext'])
+            self.assertIn('Capability token for MCP calls on this claim', event['additionalContext'])
+            self.assertIn('tok' + task, event['additionalContext'])
         self.assertIn('breadcrumb', event['additionalContext'].lower())
         return event['additionalContext']
 

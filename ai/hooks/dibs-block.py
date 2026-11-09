@@ -255,8 +255,10 @@ class Session:
         self.register(issue, a['goal'], a['key'])
         place = '' if os.environ.get('DIBS_TRACK_PARENT') or os.environ.get('DIBS_TRACK_AREA') else (
             ' Automatic creation could not infer the project: place it under the correct project or parent before continuing.')
+        token = self.state['claims'][issue]
         return (f'Dibs task {issue} was opened and claimed for this session because a persistent change started without a claim; '
-                f'a breadcrumb is recorded.{place} Review it with todo_show {issue}.')
+                f'a breadcrumb is recorded.{place} Review it with todo_show {issue}. '
+                f'Capability token for MCP calls on this claim (todo_complete, todo_release, todo_comment): {token}')
 
     def append(self, issue, section, text):
         self.require_held(issue)
@@ -605,7 +607,9 @@ def guard(data):
                         s.save()
                         s.warns.append(f'work line refused: {e}')
                         continue
-                    notices.append(f'Dibs task {issue} claimed for this session.')
+                    token = s.state['claims'].get(issue)
+                    notices.append(f'Dibs task {issue} claimed for this session.' +
+                                   (f' Capability token for MCP calls on this claim (todo_complete, todo_release, todo_comment): {token}' if token else ''))
                     rules = RULES.rules_for_types(types.split('+'), s.id, data.get('agent_id'), data.get('tool_use_id'))
                     if rules:
                         rule_texts.extend(rules)
