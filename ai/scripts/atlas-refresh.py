@@ -302,9 +302,13 @@ def refresh(repo, subsystem):
     exact session this call created. Netting that out leaves an unattended refresh with
     nothing of its own to clean up later.
     """
-    prompt = (f"Headless atlas refresh. Run /feature-atlas-subsystem {subsystem} for this repo's atlas: refresh that one "
-              "subsystem in place, stamp it at HEAD, patch the parent. Edit no source file and nothing else.")
+    prompt = (f"Session name: [worker] atlas refresh {subsystem}. Model/effort: sonnet, medium.\n"
+              f"Headless atlas refresh. Run /feature-atlas-subsystem {subsystem} for this repo's atlas: refresh that one "
+              "subsystem in place, stamp it at HEAD, patch the parent. Edit no source file and nothing else. "
+              "Run any agent in the foreground and end your turn only after the parent is patched: this session is "
+              "stopped as soon as the turn ends, which would abort a background agent.")
     p = subprocess.run(["sessioneer", "--wait", "--json", "--timeout", "1800", "--workdir", repo, "--model", "sonnet",
+                        "--set-name", f"[worker] atlas refresh {subsystem}",
                         "--effort", "medium", "--mode", "auto", "--profile", CLAUDE_PROFILE, prompt], capture_output=True, text=True)
     try:
         session = (json.loads(p.stdout or "{}") or {}).get("session")
