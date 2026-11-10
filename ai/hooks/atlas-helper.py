@@ -56,12 +56,12 @@ def load_atlas(repo):
     for t in dibs("todo:agent:list", "--knowledge")["tasks"]:
         if DM.ATLAS_LABEL not in t.get("labels", []) or t.get("state") != "OPEN":
             continue
-        d = dibs("todo:agent:show", str(t["id"]))
+        d = dibs("todo:agent:show", str(t["id"]), "--all-comments")
         r, branch, sha = DM.parse_atlas(d.get("body", ""))
         if not r or os.path.realpath(r) != repo:
             continue
         comments = d.get("comments", {})
-        if not isinstance(comments, dict) or comments.get("lastPage", 1) > 1:
+        if not isinstance(comments, dict) or comments.get("complete") is not True or comments.get("lastPage", 1) > 1:
             raise ValueError("atlas comments incomplete")
         subs = []
         for c in comments.get("items", []):

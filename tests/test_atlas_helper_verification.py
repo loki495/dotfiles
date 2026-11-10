@@ -20,15 +20,16 @@ class AtlasHelperVerificationTest(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.repo = self.temp.name
 
-    def run_helper(self, body, diff_code=0, page=1, last_page=1, withheld=False):
+    def run_helper(self, body, diff_code=0, page=1, last_page=1, withheld=False, complete=True):
         def run(args, **kwargs):
             if args[0] == 'fake-dibs':
                 if args[1:] == ['todo:agent:list', '--knowledge']:
                     result = {'tasks': [{'id': 7, 'state': 'OPEN', 'labels': ['feature atlas']}]}
                 else:
+                    self.show_args = list(args[1:])
                     result = {'id': 7, 'body': f'Repo: {self.repo}\nBranch: master\nVerified at: abcdef0\n',
                               'comments': {'items': [] if body is None else [{'body': body, 'withheld': withheld}],
-                                           'page': page, 'lastPage': last_page}}
+                                           'page': page, 'lastPage': last_page, 'complete': complete}}
                 return mock.Mock(returncode=0, stdout=json.dumps(result), stderr='')
             if args[0] == 'git':
                 if 'symbolic-ref' in args:
@@ -77,6 +78,15 @@ class AtlasHelperVerificationTest(unittest.TestCase):
         body = 'subsystem: core\nverified-at: abcdef0\nowned_paths: src/\n'
         self.assert_unverifiable(self.run_helper(body, page=1, last_page=2))
 
+    def test_atlas_comments_without_complete_marker_are_unverifiable(self):
+        body = 'subsystem: core\nverified-at: abcdef0\nowned_paths: src/\n'
+        self.assert_unverifiable(self.run_helper(body, complete=False))
+
+    def test_helper_requests_all_comments(self):
+        body = 'subsystem: core\nverified-at: abcdef0\nowned_paths: src/\n'
+        self.run_helper(body)
+        self.assertEqual(self.show_args, ['todo:agent:show', '7', '--all-comments'])
+
     def test_withheld_atlas_comment_makes_ownership_unverifiable(self):
         body = 'subsystem: core\nverified-at: abcdef0\nowned_paths: src/\n'
         self.assert_unverifiable(self.run_helper(body, withheld=True))
@@ -105,7 +115,7 @@ class AtlasHelperVerificationTest(unittest.TestCase):
             else:
                 data = {'id': 7, 'body': f'Repo: {self.repo}\nBranch: master\nVerified at: {stamp}\n',
                         'comments': {'items': [{'body': f'subsystem: core\nverified-at: {stamp}\nowned_paths: {pathspec}\n'}],
-                                     'page': 1, 'lastPage': 1}}
+                                     'page': 1, 'lastPage': 1, 'complete': True}}
             return mock.Mock(returncode=0, stdout=json.dumps(data), stderr='')
         for pathspec in (':(glob)tests/**', ':(bogus)tests/**'):
             with self.subTest(pathspec=pathspec):
@@ -155,7 +165,7 @@ class AtlasHelperVerificationTest(unittest.TestCase):
                     body = f'subsystem: core\nverified-at: {stamp}\nowned_paths: :(glob)tests/**\n'
                     plain = f'subsystem: plain\nverified-at: {stamp}\nowned_paths: tests/**\n'
                     data = {'id': 7, 'body': f'Repo: {self.repo}\nBranch: master\nVerified at: {stamp}\n',
-                            'comments': {'items': [{'body': body}, {'body': plain}], 'page': 1, 'lastPage': 1}}
+                            'comments': {'items': [{'body': body}, {'body': plain}], 'page': 1, 'lastPage': 1, 'complete': True}}
                 return mock.Mock(returncode=0, stdout=json.dumps(data), stderr='')
             raise AssertionError(args)
         def touched(filename):
