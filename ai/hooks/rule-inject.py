@@ -238,9 +238,17 @@ def read_quota(profile):
         return None
 
 
-def quota_pct(state_dir):
+def profile_name():
+    """This session's Claude profile: RULE_QUOTA_PROFILE, else from CLAUDE_CONFIG_DIR (.claude-work is work, .claude is personal)."""
+    if os.environ.get("RULE_QUOTA_PROFILE"):
+        return os.environ["RULE_QUOTA_PROFILE"]
+    base = os.path.basename(os.environ.get("CLAUDE_CONFIG_DIR", "").rstrip("/"))
+    m = re.fullmatch(r"\.claude-(.+)", base)
+    return m.group(1) if m else "personal"
+
+
+def quota_pct(state_dir, profile):
     """Highest quota percentage, or None; the reading is cached so prompts do not each run the binary."""
-    profile = os.environ.get("RULE_QUOTA_PROFILE") or "personal"
     cache = os.path.join(state_dir, "quota-" + re.sub(r"[^A-Za-z0-9_-]", "_", profile))
     try:
         stamp, pct = json.load(open(cache))
@@ -291,6 +299,10 @@ def run_event(data, ev, session, path):
                 os.remove(f)
             out("SessionStart", "additionalContext",
                 "Context reset: pass contextReset: true on your next todo_claim so Dibs sends the rule texts again.")
+        else:
+            out("SessionStart", "additionalContext",
+                f"Claude profile: {profile_name()} (CLAUDE_CONFIG_DIR={os.environ.get('CLAUDE_CONFIG_DIR') or '~/.claude'}). "
+                "Quota warnings apply only when they name this profile.")
         return
     if ev == "PostToolUse":
         if data.get("tool_name") == "mcp__dibs__todo_claim":
@@ -306,10 +318,11 @@ def run_event(data, ev, session, path):
     parts = []
     if ev == "UserPromptSubmit":
         parts.append(REMINDER)
-        pct = quota_pct(os.path.dirname(path))
+        profile = profile_name()
+        pct = quota_pct(os.path.dirname(path), profile)
         if pct is not None and pct >= QUOTA_LIMIT and "quota-warned" not in have:
             new.append("quota-warned")
-            parts.append(f"Quota at {int(pct)}%: rule 728. Start no new steps; park the work with a handoff.")
+            parts.append(f"Quota at {int(pct)}% for profile {profile} (this session's own): rule 728. Start no new steps; park the work with a handoff.")
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
         parts.append(f"Rules for this action:\n\n{body}")

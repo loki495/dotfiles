@@ -618,8 +618,8 @@ All projects:
   a denial. Every prompt gets a reminder of the rule-1226 status line with all six phrases. A
   `todo_create` or `todo_revise` call whose label names contain a hyphen gets a "Label names use
   spaces, not hyphens" warning on every such call. On each prompt the hook reads the quota
-  (`$SESSIONEER_BIN --usage`, profile `RULE_QUOTA_PROFILE`, default `personal`, cached 300 s) and, at
-  90% or more, adds a rule-728 warning once per session and agent. A `todo_claim` response that
+  (`$SESSIONEER_BIN --usage`, profile from `RULE_QUOTA_PROFILE`, else `CLAUDE_CONFIG_DIR` (`~/.claude-work` is `work`), else `personal`; cached 300 s) and, at
+  90% or more, adds a rule-728 warning naming the profile once per session and agent. SessionStart on startup tells Claude which profile it is in. A `todo_claim` response that
   carries rule texts marks them delivered, and SessionStart after compact/clear/resume empties the set
   and reminds Claude to pass `contextReset: true`. It is silent and exits 0 whenever the exports are
   missing or the input is malformed.

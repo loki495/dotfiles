@@ -44,7 +44,7 @@ KEY_ID = {k: 5000 + i for i, k in enumerate(KEYS)}  # one rule per key, text TEX
 KEY_EXPORT = ''.join(f'## {i}@1 Rule: {k}\nTEXT-{k}\n' for k, i in KEY_ID.items())
 QUOTA_JSON = '{"agents":{"claude":{"profiles":{"personal":{"ok":true,"quota":{"session":{"pct":%s},"week_all":{"pct":%s}}},' \
              '"work":{"ok":true,"quota":{"session":{"pct":1},"week_all":{"pct":96}}}}}}}'
-QUOTA_MSG = 'Quota at %s%%: rule 728. Start no new steps; park the work with a handoff.'
+QUOTA_MSG = 'Quota at %s%% for profile %s (this session\'s own): rule 728. Start no new steps; park the work with a handoff.'
 
 
 def make_stub(path, out='', rc=0, counter=None, args=None):
@@ -77,6 +77,7 @@ class HookBase(unittest.TestCase):
                     'RULE_PRIVATE_KEYS': str(self.tmp / 'nokeys.json'),
                     'SESSIONEER_BIN': str(self.tmp / 'no-such-sessioneer')}
         self.env.pop('RULE_QUOTA_PROFILE', None)
+        self.env.pop('CLAUDE_CONFIG_DIR', None)
 
     def write_triggers(self, public, private):
         (self.tmp / 'trig.json').write_text(json.dumps(public))
@@ -149,7 +150,9 @@ class RuleInjectTest(HookBase):
             self.assertIn('contextReset: true', out['additionalContext'])
             self.assertIsNotNone(self.bash('git commit -m x'), source)
         self.bash('git commit -m x')
-        self.assertIsNone(self.run_hook(hook_event_name='SessionStart', source='startup'))
+        out = self.run_hook(hook_event_name='SessionStart', source='startup')
+        self.assertIn('Claude profile: personal', out['additionalContext'])
+        self.assertNotIn('contextReset', out['additionalContext'])
         self.assertIsNone(self.bash('git commit -m x'))
 
     def test_sets_are_per_session_and_per_subagent(self):
@@ -494,16 +497,16 @@ class QuotaCheckTest(HookBase):
 
     def test_at_or_above_90_warns_with_the_exact_text_and_runs_usage(self):
         self.stub(QUOTA_JSON % (95, 10))
-        self.assertIn(QUOTA_MSG % 95, self.ctx())
+        self.assertIn(QUOTA_MSG % (95, 'personal'), self.ctx())
         self.assertEqual(self.argsf.read_text().strip(), '--usage')
 
     def test_the_week_figure_counts_and_the_max_is_reported(self):
         self.stub(QUOTA_JSON % (10, 92))
-        self.assertIn(QUOTA_MSG % 92, self.ctx())
+        self.assertIn(QUOTA_MSG % (92, 'personal'), self.ctx())
 
     def test_exactly_90_warns(self):
         self.stub(QUOTA_JSON % (90, 0))
-        self.assertIn(QUOTA_MSG % 90, self.ctx())
+        self.assertIn(QUOTA_MSG % (90, 'personal'), self.ctx())
 
     def test_89_does_not(self):
         self.stub(QUOTA_JSON % (89, 89))
@@ -534,7 +537,19 @@ class QuotaCheckTest(HookBase):
     def test_profile_comes_from_rule_quota_profile(self):
         self.stub(QUOTA_JSON % (1, 1))
         self.env['RULE_QUOTA_PROFILE'] = 'work'
-        self.assertIn(QUOTA_MSG % 96, self.ctx())
+        self.assertIn(QUOTA_MSG % (96, 'work'), self.ctx())
+
+    def test_profile_comes_from_the_config_dir(self):
+        self.stub(QUOTA_JSON % (1, 1))
+        self.env['CLAUDE_CONFIG_DIR'] = '/home/x/.claude-work/'
+        self.assertIn(QUOTA_MSG % (96, 'work'), self.ctx())
+        out = self.run_hook(hook_event_name='SessionStart', source='startup')
+        self.assertIn('Claude profile: work', out['additionalContext'])
+
+    def test_a_plain_config_dir_is_the_personal_profile(self):
+        self.stub(QUOTA_JSON % (95, 0))
+        self.env['CLAUDE_CONFIG_DIR'] = '/home/x/.claude'
+        self.assertIn(QUOTA_MSG % (95, 'personal'), self.ctx())
 
     def test_unusable_readings_are_silent(self):
         cases = [('not json', 0), ('', 0), ('{}', 0), (QUOTA_JSON % (99, 99), 3),
@@ -559,7 +574,7 @@ class QuotaCheckTest(HookBase):
         self.stub(QUOTA_JSON % (95, 0))
         ctx = self.ctx()
         self.assertIn('1226', ctx)
-        self.assertIn(QUOTA_MSG % 95, ctx)
+        self.assertIn(QUOTA_MSG % (95, 'personal'), ctx)
 
 
 LATE = 'This rule arrived after the call ran. Check that call and your earlier work in this session against it, and fix what it missed.'
