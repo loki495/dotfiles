@@ -125,6 +125,12 @@ Do not replace an unanswered decision with a Waiting line. Waiting on Andres als
 actions, review artifacts and future dates. Waiting on other work means this session must act after
 that dependency; a replacement that can continue cold without it instead permits Safe to archive.
 
+Before a `Continue in a different session` status, ask Andres with the question tool whether to
+start that session now with the right prompt. On yes: file the handoff (`session-handoff`: state,
+next steps, what Andres must do, cleanup, docs/atlas), release every claim, launch the new session
+with a prompt naming the handoff id and telling it to verify the claims are free and this session is
+archived before working, then archive this session. On no, end with the status line only.
+
 Before Safe to archive or All planned work is done, complete/release claims, update records and
 clean test resources. Continue in a different session requires a handoff then release. For unfinished
 work that is being parked, create one temporary task labelled `handoff` using the `session-handoff`

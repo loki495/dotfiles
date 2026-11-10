@@ -206,11 +206,12 @@ Do:
 2. Start each job with `env -i HOME=/home/andres PATH=/home/andres/.local/bin:/usr/local/bin:/usr/bin`, use absolute paths and log output.
 3. Report the `atq` job id/time in the reply and task. Use the skill’s short-wait alternatives when appropriate.
 
-## 1226@7 Rule: End every final reply with a session status
+## 1226@8 Rule: End every final reply with a session status
 When: Ending any FINAL reply, including workers.
 Do:
 1. End with exactly one: “Safe to archive this session.” / “Continue in this session: <what and why>.” / “Continue in a different session: <which and why>.” / “Waiting on Andres: <input needed>.” / “Waiting on other work: <what and when>.” / “All planned work is done.”
 2. Follow status, question, claim, cleanup and handoff checks in `orchestrator-worker/work-tracking.md`; relay worker verdicts.
+3. Before a `Continue in a different session` status, ask Andres with the question tool whether to start that session now with the right prompt. If yes: file the handoff (`session-handoff`), release every claim, start the new session with a prompt that names the handoff id and tells it to confirm the claims are free and this session is archived before working, then archive this session. Never leave it holding claims.
 
 ## 1229@4 Rule: Batch independent Dibs operations and check completeness
 When: Reading or mutating several independent Dibs records.
