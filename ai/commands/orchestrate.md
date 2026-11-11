@@ -3,7 +3,7 @@ description: Run a whole Dibs plan: launch a worker per task, verify each one's 
 disable-model-invocation: true
 ---
 
-Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and remaining quota): launch a worker session per task (right agent, model, effort), in parallel where tasks don't block each other, verify each one's evidence against its done requirements, send it back until it is really done, archive it, and loop until the plan is finished. `/next` does one task; this does the plan.
+Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and remaining quota): launch a worker session per task (right agent, model, effort), in parallel where tasks don't block each other, verify each one's evidence against its done requirements, send it back until it is really done, archive it, and loop until the plan is finished. `/rotate` decides one next step; this does the whole plan.
 
 **Arguments:** $ARGUMENTS (a plan id; with none, the plan of a task this session holds a claim on, else ask)
 
@@ -12,8 +12,8 @@ Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and
 ## 1. Read the plan and check there is room
 
 - `todo_show` the plan and every open child (`todo_list`, batch `todo_show`). Note for each task: its work order, `tier`, `repos`, dependencies/blockers, `decision needed` flags, and its **done requirements** (acceptance criteria, tests, docs, atlas, evidence expected). A task with no stated done requirements: derive them from the rules (docs and tests with the change, atlas stamp, closed tasks) and write them into the task before launching.
-- Measure like `/next` step 1: context size and `sessioneer --usage` for every agent and profile.
-- **Not GO** (skill `session-flow` state table, numbers in its `thresholds.conf`): do not start the loop here. Clean up as `/next` step 2 (claims, records, nothing pushed), then ROTATE: launch a new orchestrator with the prompt `/orchestrate <id>. Answers already given: <decisions>`, receiver chosen under "Choose the receiver" from the **advanced** tier (orchestrating means judging evidence). End with **"Safe to archive this session."** only once nothing is held. When every agent that could run the work is in PARK, stop, say when quota resets, and do not launch.
+- Decide like `/rotate` step 1: `sessioneer --next --json`, falling back to context size and `sessioneer --usage` for every agent and profile.
+- **Not GO** (skill `session-flow` state table, numbers in its `thresholds.conf`): do not start the loop here. Clean up as `/rotate` step 2 (claims, records, nothing pushed), then ROTATE: launch a new orchestrator with the prompt `/orchestrate <id>. Answers already given: <decisions>`, receiver chosen under "Choose the receiver" from the **advanced** tier (orchestrating means judging evidence). End with **"Safe to archive this session."** only once nothing is held. When every agent that could run the work is in PARK, stop, say when quota resets, and do not launch.
 
 ## 2. Ask before assuming (once, up front)
 

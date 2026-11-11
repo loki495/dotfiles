@@ -58,7 +58,7 @@ is the shortest path back.
     Docs/atlas: <what is still stale, and where>
     Resume: sessioneer --agent <agent> --resume <id> "..." — or "any agent can continue from this task"
 
-In Claude Code, `/handoff` runs this procedure; the receiver choice, the prompt shapes and when to ask versus carry questions are in skill `session-flow`. A small job with nothing to carry gets a short self-contained prompt instead of a Dibs task.
+In Claude Code, `/rotate` files this handoff and starts the receiver; the receiver choice, the prompt shapes and when to ask versus carry questions are in skill `session-flow`. A small job with nothing to carry gets a short self-contained prompt instead of a Dibs task.
 
 **The handoff is a delta, not a summary.** The plan is the durable record of why the work exists;
 the handoff carries what changed since the plan was last read and what a cold session must know

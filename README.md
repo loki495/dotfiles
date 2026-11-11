@@ -443,11 +443,11 @@ than per tool.
   `thresholds.conf` (read by the context-budget hook), the receiver choice and the duty to archive the
   sessions you spawned; its Codex wrapper is `codex-skills/claude-import-session-flow`.
 - `commands/` — `cherry-pick-to`, `commits`, `dibs`, `job-search-audit`, `project-bootstrap`, `ship`
-  (commit and ship using each repo's own flow), `handoff` (current-state hand-off
-  for a fresh session), `takeover` (reads a source session's complete conversation and Dibs state,
-  safely takes ownership, then archives it), `next` (checks context and quota, cleans up, asks every
-  open question, then continues the plan here or launches a Sonnet/Opus continuation in the right
-  account profile), and the three-command `feature-atlas` toolchain (full
+  (commit and ship using each repo's own flow), `rotate` (asks `sessioneer --next` whether to
+  continue, checkpoint, rotate, park or wait, cleans up, asks every open question, then continues
+  the plan here or hands off to a fresh session it launches), `takeover` (the dead-session path:
+  reads a session that ended without a handoff, takes ownership safely, then archives it), and the
+  three-command `feature-atlas` toolchain (full
   scan, single subsystem, audit report), which keeps each project's feature
   inventory as a Dibs issue plus one comment per subsystem (`.ai/feature-atlas/`
   files when Dibs is unreachable).

@@ -76,7 +76,7 @@ mid-plan mean check claim status first, never overwrite or finish someone else's
 ### Scratch work
 
 Session hand-offs are `todo_create(temporary: true)` tasks labelled `handoff`, parented to the plan; body
-template, receiver protocol and discovery query live in skill `session-handoff` (`/handoff` runs it).
+template, receiver protocol and discovery query live in skill `session-handoff` (`/rotate` files one).
 Durable decisions stay on the plan. Temporary tasks are deleted on completion, excluded from plan and
 atlas accounting; consume temporary children first; `NOT_PLANNED` discards. Throwaway scripts and diffs
 stay in the session scratchpad, not Dibs.

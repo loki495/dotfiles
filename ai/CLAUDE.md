@@ -9,10 +9,10 @@ file only adds what is specific to Claude Code. Read the shared rules first.
 ## Context window management
 
 Every call re-reads the whole context. Decide continue, park or rotate by skill `session-flow`
-(state table; numbers in its `thresholds.conf`), and ask any offer with AskUserQuestion. The
-context-budget hook reads the same thresholds file. `/takeover claude [profile] <session_id>` is for a
-session that ended without a handoff. Avoid `/model` switches and plugin reloads in a big session
-(each forces a full cache rewrite).
+(state table; numbers in its `thresholds.conf`), and ask any offer with AskUserQuestion. `/rotate`
+runs that decision and the launch; `/takeover claude [profile] <session_id>` is only for a session
+that ended or died without a handoff. The context-budget hook reads the same thresholds file. Avoid
+`/model` switches and plugin reloads in a big session (each forces a full cache rewrite).
 
 ## Hooks
 
