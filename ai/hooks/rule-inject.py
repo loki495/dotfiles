@@ -10,7 +10,9 @@ ai/rules.md and ~/.dotfiles-private/ai/rules.private.md (RULE_FILES overrides), 
 call. A rule is sent only if its id@revision is absent from the delivered set $RULE_STATE_DIR (default
 $XDG_RUNTIME_DIR/dibs-rules, else ~/.cache/dibs-rules)/<session>-<agent_id|main>. Everything is plain
 additionalContext. Two checks ride along: a hyphenated Dibs label name gets a warning, and a prompt
-gets a quota warning once usage (`$SESSIONEER_BIN --usage`, cached 300 s) reaches 90%.
+gets a quota warning once `sessioneer --next --json` says this conversation must park (or rotate for
+quota), falling back to `$SESSIONEER_BIN --usage` (cached 300 s) reaching 90% when no decision is
+readable.
 Any failure is silent (exit 0): this hook never blocks on its own trouble.
 """
 import contextlib
@@ -66,6 +68,7 @@ TOOLS = {  # tool name -> trigger key
 }
 LABEL_TOOLS = {"mcp__dibs__todo_create": ("labelNames", "newLabelName"), "mcp__dibs__todo_revise": ("addLabels",)}
 QUOTA_LIMIT, QUOTA_TTL = 90, 300
+FLOW_TIMEOUT = 3
 
 
 TYPE_KEYS = {"code": ["live-repo"], "tests": ["test-file", "test-run"],
@@ -262,6 +265,49 @@ def quota_pct(state_dir, profile):
     return pct
 
 
+def read_decision(session):
+    """The flow decision for this conversation (state, why, trigger), or None when the binary cannot answer."""
+    target = os.environ.get("SESSIONEER_SELF") or session
+    if not target:
+        return None
+    try:
+        r = subprocess.run([os.environ.get("SESSIONEER_BIN") or "sessioneer", "--next", str(target), "--json"],
+                           capture_output=True, text=True, timeout=FLOW_TIMEOUT)
+        decision = json.loads(r.stdout) if r.returncode == 0 else None
+        if isinstance(decision, dict) and isinstance(decision.get("state"), str) and decision["state"]:
+            return decision
+        return None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+
+def flow_decision(state_dir, session):
+    """This conversation's flow decision, cached so a prompt costs at most one call."""
+    target = re.sub(r"[^A-Za-z0-9_-]", "_", os.environ.get("SESSIONEER_SELF") or session)
+    cache = os.path.join(state_dir, "flow-" + target)
+    try:
+        stamp, decision = json.load(open(cache))
+        if time.time() - stamp < QUOTA_TTL:
+            return decision
+    except (OSError, ValueError, TypeError):
+        pass
+    decision = read_decision(session)
+    with open(cache, "w") as f:
+        json.dump([time.time(), decision], f)
+    return decision
+
+
+def flow_warning(decision, profile):
+    """The prompt's warning when the decision parks this session or rotates it for quota; None otherwise."""
+    if not isinstance(decision, dict):
+        return None
+    state, trigger = decision.get("state"), decision.get("trigger")
+    if state != "PARK" and not (state == "ROTATE" and trigger == "quota"):
+        return None
+    return (f"Flow decision {state} for profile {profile}: {decision.get('why') or 'no reason given'}. "
+            "Rule 728: start no new steps; hand off and let a fresh session continue.")
+
+
 def work_order(obj):
     """The workOrder dict inside a todo_claim tool_response of any wrapping (dict, JSON string, content blocks)."""
     if isinstance(obj, str):
@@ -319,10 +365,17 @@ def run_event(data, ev, session, path):
     if ev == "UserPromptSubmit":
         parts.append(REMINDER)
         profile = profile_name()
-        pct = quota_pct(os.path.dirname(path), profile)
-        if pct is not None and pct >= QUOTA_LIMIT and "quota-warned" not in have:
+        decision = flow_decision(os.path.dirname(path), session)
+        if decision is None:
+            pct = quota_pct(os.path.dirname(path), profile)
+            warning = (f"Quota at {int(pct)}% for profile {profile} (this session's own): rule 728. "
+                       "Start no new steps; park the work with a handoff."
+                       if pct is not None and pct >= QUOTA_LIMIT else None)
+        else:
+            warning = flow_warning(decision, profile)
+        if warning and "quota-warned" not in have:
             new.append("quota-warned")
-            parts.append(f"Quota at {int(pct)}% for profile {profile} (this session's own): rule 728. Start no new steps; park the work with a handoff.")
+            parts.append(warning)
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
         parts.append(f"Rules for this action:\n\n{body}")

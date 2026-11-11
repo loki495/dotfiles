@@ -358,6 +358,15 @@
             "command": "$HOME/.claude/hooks/stop-gate.sh"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/flow-offer.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [

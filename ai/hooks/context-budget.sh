@@ -3,8 +3,9 @@
 # prompt cache expired rewrites all of it at cache-write price. So:
 #  - idle past the cache TTL with a big context: block the prompt once (re-send to go on),
 #    so the choice between paying the rewrite and a fresh session is deliberate;
-#  - context over budget: suggest a handoff and a fresh session (skill session-flow).
-# Slash commands pass through untouched so /handoff, /clear etc. always work.
+#  - context over budget: suggest a rotation to a fresh session (skill session-flow).
+# The `sessioneer --next --json` decision answers first; the thresholds arithmetic is the fallback when
+# that call fails. Slash commands pass through untouched so /rotate, /clear etc. always work.
 # Numbers come from the session-flow thresholds file; CLAUDE_CTX_* variables override them.
 thresholds=${SESSION_FLOW_THRESHOLDS:-$(dirname "$(readlink -f "$0")")/../skills/session-flow/thresholds.conf}
 # shellcheck source=/dev/null
@@ -45,14 +46,30 @@ idle=$(( ($(date +%s) - then_s) / 60 ))
 k=$(( ctx / 1000 ))
 if (( idle >= idle_min && ctx >= idle_floor )) && [[ $(cat "$marker" 2>/dev/null) != "$ts" ]]; then
   printf '%s' "$ts" >"$marker"
-  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Re-send to continue, or follow skill session-flow (state ROTATE): file a /handoff and start a fresh session. Keep the Dibs task current before switching." \
+  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Re-send to continue, or follow skill session-flow (state ROTATE): run /rotate and start a fresh session. Keep the Dibs task current before switching." \
     '{decision: "block", reason: $r}'
+  exit 0
+fi
+
+# The CLI's own decision covers context, idle time and quota together; only a rotate or a park asks
+# anything of the prompt. Any other state stays silent even when the arithmetic below would warn.
+decision=$(timeout 3 "${SESSIONEER_BIN:-sessioneer}" --next "${SESSIONEER_SELF:-$session}" --json 2>/dev/null)
+state=$(jq -r '.state // empty' <<<"$decision" 2>/dev/null)
+why=$(jq -r '.why // empty' <<<"$decision" 2>/dev/null)
+if [[ -n $state ]]; then
+  case "$state" in
+    ROTATE|PARK)
+      jq -n --arg m "Flow decision ${state}: ${why:-no reason given}." \
+        --arg c "Per skill session-flow (state ${state}): ${why:-no reason given}. Finish the current step, then ask with AskUserQuestion whether to rotate to a fresh session (/rotate). Do not offer it as plain text. /clear is also available after the rotation." \
+        '{systemMessage: $m, hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}'
+      ;;
+  esac
   exit 0
 fi
 
 if (( ctx >= budget )); then
   jq -n --arg m "Context is ${k}k tokens (budget $(( budget / 1000 ))k); every call re-reads all of it." \
-    --arg c "Context is ${k}k tokens, over the $(( budget / 1000 ))k budget. Per skill session-flow (state ROTATE): finish the current step, then ask with AskUserQuestion whether to hand off and start a fresh session (/handoff). Do not offer it as plain text. /clear is also available after the handoff." \
+    --arg c "Context is ${k}k tokens, over the $(( budget / 1000 ))k budget. Per skill session-flow (state ROTATE): finish the current step, then ask with AskUserQuestion whether to hand off and start a fresh session (/rotate). Do not offer it as plain text. /clear is also available after the rotation." \
     '{systemMessage: $m, hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}'
 fi
 exit 0

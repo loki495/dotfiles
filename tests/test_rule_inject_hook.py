@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -47,12 +48,18 @@ QUOTA_JSON = '{"agents":{"claude":{"profiles":{"personal":{"ok":true,"quota":{"s
 QUOTA_MSG = 'Quota at %s%% for profile %s (this session\'s own): rule 728. Start no new steps; park the work with a handoff.'
 
 
-def make_stub(path, out='', rc=0, counter=None, args=None):
+def make_stub(path, out='', rc=0, counter=None, args=None, next_out=None, next_rc=None, args_log=None):
     lines = ['#!/bin/sh']
     if counter:
         lines.append(f'echo x >> {counter}')
     if args:
         lines.append(f'echo "$@" > {args}')
+    if args_log:
+        lines.append(f'echo "$@" >> {args_log}')
+    if next_out is not None:
+        lines += ['for a in "$@"; do', '  if [ "$a" = --next ]; then',
+                  f'    printf \'%s\' {shlex.quote(next_out)}',
+                  f'    exit {rc if next_rc is None else next_rc}', '  fi', 'done']
     lines += [f"printf '%s' '{out}'", f'exit {rc}']
     Path(path).write_text('\n'.join(lines) + '\n')
     os.chmod(path, 0o755)
@@ -482,14 +489,20 @@ class LabelHyphenWarningTest(HookBase):
 class QuotaCheckTest(HookBase):
     def setUp(self):
         super().setUp()
-        self.counter, self.argsf = self.tmp / 'count', self.tmp / 'args'
+        self.counter, self.argsf, self.log = self.tmp / 'count', self.tmp / 'args', self.tmp / 'log'
 
     def stub(self, out, rc=0):
-        make_stub(self.tmp / 'sessioneer', out, rc, self.counter, self.argsf)
+        make_stub(self.tmp / 'sessioneer', out, rc, self.counter, self.argsf, args_log=self.log)
         self.env['SESSIONEER_BIN'] = str(self.tmp / 'sessioneer')
 
     def runs(self):
         return len(self.counter.read_text().split()) if self.counter.exists() else 0
+
+    def usage_runs(self):
+        """Calls that asked --usage: the reading is cached, so one per window however the decision is fetched."""
+        if not self.log.exists():
+            return 0
+        return sum(1 for line in self.log.read_text().splitlines() if '--usage' in line.split())
 
     def ctx(self, **kw):
         out = self.prompt('hello', **kw)
@@ -525,13 +538,13 @@ class QuotaCheckTest(HookBase):
         self.ctx()
         self.ctx()
         self.ctx(session_id='s2')
-        self.assertEqual(self.runs(), 1)
+        self.assertEqual(self.usage_runs(), 1)
 
     def test_a_low_reading_is_cached_too(self):
         self.stub(QUOTA_JSON % (5, 5))
         self.ctx()
         self.ctx()
-        self.assertEqual(self.runs(), 1)
+        self.assertEqual(self.usage_runs(), 1)
         self.assertNotIn('Quota at', self.ctx())
 
     def test_profile_comes_from_rule_quota_profile(self):
@@ -575,6 +588,57 @@ class QuotaCheckTest(HookBase):
         ctx = self.ctx()
         self.assertIn('1226', ctx)
         self.assertIn(QUOTA_MSG % (95, 'personal'), ctx)
+
+
+PARK_DECISION = '{"ok":true,"state":"PARK","why":"quota at 91% and no receiver has room","trigger":"quota"}'
+GO_DECISION = '{"ok":true,"state":"GO","why":"context 90000, quota 12%","trigger":"none"}'
+
+
+class NextQuotaTest(HookBase):
+    """Intent: the prompt's quota warning follows `sessioneer --next --json` for this conversation; --usage
+    is only the fallback when the decision cannot be read (the cases QuotaCheckTest already pins)."""
+
+    def setUp(self):
+        super().setUp()
+        self.calls = self.tmp / 'calls'
+
+    def stub(self, next_out, usage_out='', usage_rc=1):
+        body = ['#!/bin/sh', f'echo "$@" >> {self.calls}',
+                'for a in "$@"; do', '  if [ "$a" = --next ]; then',
+                f'    printf \'%s\' {shlex.quote(next_out)}', '    exit 0', '  fi', 'done',
+                f"printf '%s' {shlex.quote(usage_out)}", f'exit {usage_rc}']
+        path = self.tmp / 'sessioneer'
+        path.write_text('\n'.join(body) + '\n')
+        os.chmod(path, 0o755)
+        self.env['SESSIONEER_BIN'] = str(path)
+
+    def calls_made(self):
+        if not self.calls.exists():
+            return []
+        return [line.split() for line in self.calls.read_text().splitlines() if line.strip()]
+
+    def ctx(self, **kw):
+        out = self.prompt('hello', **kw)
+        return out['additionalContext'] if out else ''
+
+    def test_a_park_decision_warns_once_with_the_state_and_rule_728_without_usage(self):
+        self.stub(PARK_DECISION)
+        first = self.ctx()
+        self.assertIn('PARK', first)
+        self.assertIn('728', first)
+        self.assertNotIn('PARK', self.ctx())
+
+    def test_the_decision_is_asked_for_this_conversation_as_json(self):
+        self.stub(PARK_DECISION)
+        self.ctx()
+        self.assertEqual(self.calls_made()[0][0], '--next')
+        self.assertCountEqual(self.calls_made()[0], ['--next', 's1', '--json'])
+
+    def test_a_go_decision_has_no_quota_warning_even_when_usage_reports_91(self):
+        self.stub(GO_DECISION, QUOTA_JSON % (91, 10), 0)
+        context = self.ctx()
+        self.assertNotIn('Quota', context)
+        self.assertNotIn('728', context)
 
 
 LATE = 'This rule arrived after the call ran. Check that call and your earlier work in this session against it, and fix what it missed.'

@@ -1,6 +1,7 @@
 """Offline installer regression tests; run only in a disposable container."""
 import ctypes
 import io
+import json
 import os
 from pathlib import Path
 import shutil
@@ -703,6 +704,28 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
                                 env=self.env | {'DOTFILES_ROOT': str(REPO)}, text=True, capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((self.home / '.claude-work').exists())
+
+
+class StopHookRegistrationTests(unittest.TestCase):
+    """ai/settings.json must register the flow-offer Stop hook once, after the stop gate, and ship the script."""
+
+    FLOW = '$HOME/.claude/hooks/flow-offer.sh'
+    GATE = '$HOME/.claude/hooks/stop-gate.sh'
+
+    def stop_commands(self):
+        settings = json.loads((REPO / 'ai/settings.json').read_text())
+        return [hook['command'] for group in settings['hooks']['Stop'] for hook in group['hooks']]
+
+    def test_the_stop_hooks_register_flow_offer_once_after_the_stop_gate(self):
+        commands = self.stop_commands()
+        self.assertEqual(commands.count(self.FLOW), 1)
+        self.assertIn(self.GATE, commands)
+        self.assertLess(commands.index(self.GATE), commands.index(self.FLOW))
+
+    def test_the_flow_offer_script_exists_and_is_executable(self):
+        hook = REPO / 'ai' / 'hooks' / 'flow-offer.sh'
+        self.assertTrue(hook.is_file(), f'{hook} is missing')
+        self.assertTrue(os.access(hook, os.X_OK), f'{hook} is not executable')
 
 
 if __name__ == '__main__':
