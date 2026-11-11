@@ -118,7 +118,7 @@ Temperature is left at each tool's default.
 ### Cost gates and lightweight workers
 
 Decided 2026-10-07 from a 7-day transcript audit (the full numbers and the model-by-phase
-rule are in `CLAUDE.md`, "Model choice, turns, and delegation cost"): a worker's cold
+rule are in `model-routing.md`, "Model routing by work type", and rule 926): a worker's cold
 start (this skill is ~15k tokens, plus the plan, task, and research/lesson lookups) and
 four-plus Dibs calls per task cost more than they save on a small task, and in-process
 workers were inheriting the orchestrator's Opus model.
@@ -132,7 +132,7 @@ workers were inheriting the orchestrator's Opus model.
   300 words or less). It skips this protocol, the claim/heartbeat/complete cycle, and
   the research/lesson lookups. The orchestrator checks the research cache before
   launching, reviews the result, and records the phase in one `todo_comment` and one
-  `todo_complete` per task. Use the full worker template below only for long-running,
+  `todo_complete` per task. Use the full worker template in `roles-and-workers.md` only for long-running,
   cross-tool, or parallel workers where a live claim is what prevents a collision.
 - The orchestrator session is short-lived: plan and dispatch, then hand off. Review of
   the result happens from the diff, in a fresh session if the orchestrator's context is

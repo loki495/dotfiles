@@ -48,9 +48,8 @@ different architecture entirely.
 
 ## Avoid hardcoding
 
-General rule (settings/config/env/language files over literals) is in
-`~/.claude/CLAUDE.md`'s "Avoid hardcoding" section — this note is the OpenCart-
-specific mechanism. Content, thresholds, labels, and anything customizable should
+Rule 749 (use settings/config/env/language values instead of literals) states the
+general rule — this note is the OpenCart-specific mechanism. Content, thresholds, labels, and anything customizable should
 come from the database or a module's settings (typically `theme_settings`) — not
 hardcoded in templates/controllers. This matters more here than in a typical
 single-site project because these OpenCart sites are often multi-site/multi-theme

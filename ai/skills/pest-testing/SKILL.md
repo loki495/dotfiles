@@ -28,9 +28,9 @@ own `.claude/project.md`).
 
 ## Happy paths and sad paths
 
-This is the Pest-specific application of the general rule in the top-level
-`CLAUDE.md` ("Test coverage — happy paths and sad paths"), which applies to every
-test framework and project type, not just Pest/Laravel.
+This is the Pest-specific application of rules 740 and 741 (cover the success and
+the handled-failure outcomes; never weaken a test to get a pass), which apply to
+every test framework and project type, not just Pest/Laravel.
 
 - Every action/feature under test needs both: the happy path (valid input, expected
   success) **and** sad paths (invalid input, failed validation, unauthorized access,
