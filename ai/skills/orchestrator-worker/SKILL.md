@@ -8,7 +8,7 @@ description: Protocol for multi-step or multi-session work with a Dibs plan, wor
 Tool-agnostic: Claude Code, opencode, Codex and agy can each be orchestrator or worker. This is the
 default way multi-step work happens, not something to invoke on request. Hard rules live in Dibs
 rules (injected by the rule-inject hook; other agents grep `ai/rules.md`): claim before working
-[727], complete or hand off before leaving [728], keep Dibs current/lean/readable [729], finish code/tests/docs/records [730],
+[727], session state table and handoff before leaving [728], keep Dibs current/lean/readable [729], finish code/tests/docs/records [730],
 ranked model routing and delegation [926], filing [927], independent personas [1468].
 
 The loop: investigate, plan, delegate if warranted (cheapest capable model, one bounded task per
@@ -54,6 +54,6 @@ Before claims, Dibs bookkeeping or session disposition, read `work-tracking.md` 
 
 - Plans live in Dibs only, never local plan files; the plan body is the maintained document,
   comments hold concise evidence, one living checkpoint per claim.
-- Quota: check `sessioneer --usage` before long work; at about 90% park the work with a handoff
-  (skill `session-handoff`).
+- Continue, park, rotate and cleanup: skill `session-flow` (state table, `thresholds.conf`, receiver
+  choice, clearing spawned sessions); handoffs: skill `session-handoff`.
 - Reads of Dibs records: `todo_show` returns 1500 characters of body by default; batch with `ids`.

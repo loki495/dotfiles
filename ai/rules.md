@@ -8,11 +8,11 @@ Do:
 2. Emit `[work <id or new> | <description> | <type>]` before related work. Without hooks, claim through MCP/CLI.
 3. Never edit alongside another live claim; maintain checkpoints/heartbeat. Quick read-only questions need no task.
 
-## 728@6 Rule: Complete or hand off before leaving a session
-When: Working, leaving or nearing quota.
+## 728@7 Rule: Follow the session-flow state table before continuing or leaving a session
+When: Working, continuing, leaving or nearing quota.
 Do:
-1. Read `orchestrator-worker/work-tracking.md` and `session-handoff`; checkpoint throughout, check usage before long work and periodically. At ~90%, start no new steps; finish or park safely.
-2. Continue-in-this-session/Waiting may retain claims. Before Archive/All-done/transfer, complete or hand off then release.
+1. At each step boundary read skill `session-flow` (state table, `thresholds.conf`) and decide GO, WARM TIGHT, CHECKPOINT, PARK, ROTATE, WAIT or DONE. Read `orchestrator-worker/work-tracking.md` and `session-handoff` for records and handoffs; checkpoint throughout and check `sessioneer --usage` before long work and periodically. At the park quota limit, start no new steps; finish or park safely.
+2. Continue-in-this-session/Waiting may retain claims. Before Archive/All-done/transfer, complete or hand off then release; the stop gate blocks a final status that still holds claims.
 3. Give Andres the handoff id; report unclaimed work and safely archived replacements.
 
 ## 729@6 Rule: Keep Dibs current, lean and readable
@@ -181,11 +181,12 @@ Do:
 2. State production SQL/migrations separately; local execution proves nothing about production. Known-stale repositories/branches must only read real third-party APIs.
 3. For personal/local-only projects without production, assume local data current unless project docs say otherwise.
 
-## 930@3 Rule: Ask unresolved questions through the available question tool
-When: A decision remains after checking records/code and sensible defaults.
+## 930@4 Rule: Ask unresolved questions through the available question tool
+When: A decision remains after checking records/code and sensible defaults, or you would propose continuing in a new session.
 Do:
 1. Use an available question tool as its instructions permit; explain the decision once, give concrete options, and put a marked recommended choice first.
-2. If no usable tool exists, number questions at the reply’s end. Resolve required uncertainty; state defaults instead of asking answerable questions.
+2. Never leave a question or a continue-in-a-new-session offer as plain text such as "waiting for you to pick"; in Sessioneer the tool call appears as a prompt band. Only when no usable tool exists, number questions at the reply’s end. Resolve required uncertainty; state defaults instead of asking answerable questions.
+3. Ask before writing a handoff while quota allows; at the carry quota limit in `session-flow` thresholds, carry the open questions in the handoff and the receiver asks them. Answers already given go under Decisions made.
 
 ## 1077@3 Rule: Ask about optional work after finishing the request
 When: A rule suggests work beyond the requested scope.
@@ -206,12 +207,12 @@ Do:
 2. Start each job with `env -i HOME=/home/andres PATH=/home/andres/.local/bin:/usr/local/bin:/usr/bin`, use absolute paths and log output.
 3. Report the `atq` job id/time in the reply and task. Use the skill’s short-wait alternatives when appropriate.
 
-## 1226@8 Rule: End every final reply with a session status
+## 1226@9 Rule: End every final reply with a session status
 When: Ending any FINAL reply, including workers.
 Do:
 1. End with exactly one: “Safe to archive this session.” / “Continue in this session: <what and why>.” / “Continue in a different session: <which and why>.” / “Waiting on Andres: <input needed>.” / “Waiting on other work: <what and when>.” / “All planned work is done.”
 2. Follow status, question, claim, cleanup and handoff checks in `orchestrator-worker/work-tracking.md`; relay worker verdicts.
-3. Before a `Continue in a different session` status, ask Andres with the question tool whether to start that session now with the right prompt. If yes: file the handoff (`session-handoff`), release every claim, start the new session with a prompt that names the handoff id and tells it to confirm the claims are free and this session is archived before working, then archive this session. Never leave it holding claims.
+3. Before a `Continue in a different session` status, follow the ROTATE steps in skill `session-flow`: ask with the question tool, file the handoff, release every claim, launch the receiver, archive this session. Before `Safe to archive` or `All planned work is done`, archive the sessions you spawned. Never leave it holding claims.
 
 ## 1229@4 Rule: Batch independent Dibs operations and check completeness
 When: Reading or mutating several independent Dibs records.
@@ -261,3 +262,10 @@ Do:
 1. Count all direct children, including closed ones, using `todo_list(parentId, state=ALL, perPage=1)` and its total.
 2. At 80, stop adding direct children; choose/create a themed sub-parent labelled `parent`.
 3. Never exceed 100; split full containers and move children with `todo_revise(parentId)` to repair stuck parent links.
+
+## 1772@1 Rule: Archive the sessions you spawned before finishing
+When: Launching a session or worker, or ending a session or continuation with a final status.
+Do:
+1. Record each session or worker you launch (name and conversation id) in the task checkpoint at launch.
+2. Before "Safe to archive this session." or "All planned work is done.", archive every session or worker you launched, including ones you replaced, once it is idle and holds no claim (`sessioneer --kill <name or id>`, never `--force` on a working or blocked one). A spawned session still working makes the status Waiting on other work.
+3. Never archive another agent's session. Details in skill `session-flow`, "Clear what you spawned".

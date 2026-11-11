@@ -53,8 +53,8 @@ Frontier needs the user's approval first (rule 926), also for a persona.
 The orchestrator decides per task by complexity and expected loops. Defaults: designer and
 interpreter long-lived (their context is the value); everything else disposable, launched fresh
 for each step. After a quota outage the cache is cold; whether to resume or start fresh is the
-job of a resume advisor (not built yet); until it exists use the 150k rule: past it, fresh via a
-handoff unless the session holds state a handoff cannot carry.
+job of skill `session-flow`: past its context limit, fresh via a handoff unless the session holds
+state a handoff cannot carry.
 
 ## Profiles
 
@@ -97,9 +97,9 @@ Prompt:
     persona task with a Done-when, choose agent/model/effort from model-routing.md and state them,
     launch, then wait for the result block. Decide done requirements per step. On a failed run send
     the interpreter's verdict to the right persona; at 3 fix cycles escalate. Check sessioneer --usage
-    before each launch; at 90% quota park with a handoff. Keep the user informed in two lines per
+    before each launch; follow `session-flow` (park at its quota limit). Keep the user informed in two lines per
     milestone, ask the user through AskUserQuestion when a decision is the user's, save decisions and lessons to
-    Dibs, adjust the plan when reports say it is wrong. When your context passes ~150k, hand off and
+    Dibs, adjust the plan when reports say it is wrong. When `session-flow` says ROTATE, hand off and
     restart as a fresh orchestrator. With the user's approval you may schedule a restart for after
     a quota reset.
 

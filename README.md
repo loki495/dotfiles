@@ -439,6 +439,9 @@ than per tool.
 - `skills/` — Laravel, Livewire, Pest, OpenCart, Rector, DB, frontend and git
   conventions, plus infrastructure/backup runbooks and an orchestrator-worker
   pattern for multi-agent runs.
+  `skills/session-flow/` holds the one continue, park, rotate and cleanup state table, its
+  `thresholds.conf` (read by the context-budget hook), the receiver choice and the duty to archive the
+  sessions you spawned; its Codex wrapper is `codex-skills/claude-import-session-flow`.
 - `commands/` — `cherry-pick-to`, `commits`, `dibs`, `job-search-audit`, `project-bootstrap`, `ship`
   (commit and ship using each repo's own flow), `handoff` (current-state hand-off
   for a fresh session), `takeover` (reads a source session's complete conversation and Dibs state,
@@ -591,11 +594,12 @@ All projects:
   A repeated stop allows with a warning to avoid loops. `DIBS_STOP_GATE=off` skips the gate
   after applying bookkeeping; Dibs outages allow with a warning. A recently registered,
   user-owned entry in `dibs-stop-gate-skip` skips one-off sessions entirely.
-- **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): over budget (default 250k,
-  `CLAUDE_CTX_BUDGET`) it warns and tells Claude to offer `/handoff` then a fresh `/takeover` session
-  (or `/clear` after the handoff); after an idle gap
-  (default 60 min, `CLAUDE_CTX_IDLE_MIN`) with context over `CLAUDE_CTX_IDLE_FLOOR` (default 100k) it
-  blocks the prompt once; re-send to continue. Slash commands always pass through.
+- **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): reads its numbers from
+  `ai/skills/session-flow/thresholds.conf` (the single thresholds file of the `session-flow` skill; the
+  `CLAUDE_CTX_BUDGET`, `CLAUDE_CTX_IDLE_MIN` and `CLAUDE_CTX_IDLE_FLOOR` variables override it). Over
+  the rotate limit (default 250k) it warns and tells Claude to ask, with the question tool, whether to
+  hand off and start a fresh session; after an idle gap (default 60 min) with context over the idle
+  floor (default 100k) it blocks the prompt once; re-send to continue. Slash commands always pass through.
 - **Rule inject** (`hooks/rule-inject.py`; PreToolUse on Bash, file edits, Agent, the Dibs
   create/revise/claim/complete/release tools; PostToolUse on `todo_claim`; SessionStart;
   UserPromptSubmit): turns an event into trigger keys and injects the rules the key map names. Rules arriving on an allowed tool call include a notice to check that call and earlier work. The

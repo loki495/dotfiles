@@ -11,6 +11,9 @@ Before substantive project work, read these completely, in order:
    Code gets the relevant ones injected by a hook; you have no such hook, so read both files and
    re-check the rules for a `git commit`, `git push`, test or doc edit before doing it.
 3. `~/dotfiles/ai/CLAUDE.private.md` when it exists (home-network notes).
+4. `~/dotfiles/ai/skills/session-flow/SKILL.md` and its `thresholds.conf`: when to continue, park or
+   rotate, how to ask, and which sessions you must archive before finishing. Also know the Dibs tools
+   and the `sessioneer` commands listed there.
 
 Do not copy rule text into other files; link to the record id. Translate product-specific
 terminology as follows:

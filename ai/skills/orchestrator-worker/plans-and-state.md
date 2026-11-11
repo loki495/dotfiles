@@ -135,9 +135,8 @@ steps. The chat holds the discussion, the draft holds the state, so finalizing r
 and starts a fresh Opus session from it. Create a `plan`-labelled issue automatically once work is
 explicitly multi-phase or an audit expected to span sessions; when resuming cold, look for an
 in-progress plan on the objective (`todo_list` / `todo_context`, `label=plan`) and ask which to
-resume. Check `sessioneer --usage` before long work; near 90% of the session or weekly quota, park
-the work: file the handoff task (skill `session-handoff`), record the exact state in the plan and
-release claims.
+resume. Check `sessioneer --usage` before long work and follow skill `session-flow` (park or rotate
+with a handoff, record the exact state in the plan, release claims).
 
 ## Planning
 

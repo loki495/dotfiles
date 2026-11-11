@@ -13,8 +13,7 @@ Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and
 
 - `todo_show` the plan and every open child (`todo_list`, batch `todo_show`). Note for each task: its work order, `tier`, `repos`, dependencies/blockers, `decision needed` flags, and its **done requirements** (acceptance criteria, tests, docs, atlas, evidence expected). A task with no stated done requirements: derive them from the rules (docs and tests with the change, atlas stamp, closed tasks) and write them into the task before launching.
 - Measure like `/next` step 1: context size and `sessioneer --usage` for every agent and profile.
-- **Context too big** (over about 150k, or already past the orchestrator limit): do not start the loop here. Clean up as `/next` step 2 (claims, records, nothing pushed), then launch a new orchestrator: `sessioneer --workdir <dir> --agent <a> --model <m> --effort <e> --mode auto "/orchestrate <id>. Answers already given: <decisions>"`, picked from the **advanced** tier of the model-routing list (orchestrating means judging evidence); confirm with Andres first if that is frontier. End with **"Safe to archive this session."** only once nothing is held.
-- **Quota too tight** (every agent that could run the work is at 90% or more of `session` or `week_all`): stop, say when it resets, do not launch.
+- **Not GO** (skill `session-flow` state table, numbers in its `thresholds.conf`): do not start the loop here. Clean up as `/next` step 2 (claims, records, nothing pushed), then ROTATE: launch a new orchestrator with the prompt `/orchestrate <id>. Answers already given: <decisions>`, receiver chosen under "Choose the receiver" from the **advanced** tier (orchestrating means judging evidence). End with **"Safe to archive this session."** only once nothing is held. When every agent that could run the work is in PARK, stop, say when quota resets, and do not launch.
 
 ## 2. Ask before assuming (once, up front)
 
@@ -32,7 +31,7 @@ Otherwise serialize. Say the graph and the first wave in a few lines before laun
 
 ## 4. Launch each worker
 
-Per task pick **agent, model, effort** using the tier table in the `orchestrator-worker` skill (`model-routing.md`, "Model routing by work type"): the task's `tier` if set, else by work type. Judge each task on its own: the entry that fits the work best given each agent's remaining quota in `sessioneer --usage` (re-read it before each wave) and the models the whole wave asks for, so one agent isn't drained while another sits idle. The rank order is a preference, not a rule. Must be installed and list the model; skip an agent or profile at 90% or more; regardless of which agent this session is. Frontier only with Andres's approval. Name agent, model, effort and reason before launching.
+Per task pick **agent, model, effort** as `session-flow` "Choose the receiver" says: the task's `tier` if set, else by work type. Re-read `sessioneer --usage` before each wave and weigh the models the whole wave asks for, so one agent isn't drained while another sits idle. Name agent, model, effort and reason before launching, and record each launched worker's name and conversation id in the plan checkpoint so it can be archived ("Clear what you spawned").
 
 `sessioneer --workdir <repo or worktree> --agent <a> --model <m> --effort <e> --mode auto [--profile <p>] "<prompt>"`
 

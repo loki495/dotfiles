@@ -2,12 +2,16 @@
 # UserPromptSubmit: every call re-reads the whole context, and a prompt sent after the
 # prompt cache expired rewrites all of it at cache-write price. So:
 #  - idle past the cache TTL with a big context: block the prompt once (re-send to go on),
-#    so the choice between paying the rewrite and a fresh takeover is deliberate;
-#  - context over budget: suggest a handoff and a fresh /takeover session.
+#    so the choice between paying the rewrite and a fresh session is deliberate;
+#  - context over budget: suggest a handoff and a fresh session (skill session-flow).
 # Slash commands pass through untouched so /handoff, /clear etc. always work.
-budget=${CLAUDE_CTX_BUDGET:-250000}
-idle_min=${CLAUDE_CTX_IDLE_MIN:-60}
-idle_floor=${CLAUDE_CTX_IDLE_FLOOR:-100000}
+# Numbers come from the session-flow thresholds file; CLAUDE_CTX_* variables override them.
+thresholds=${SESSION_FLOW_THRESHOLDS:-$(dirname "$(readlink -f "$0")")/../skills/session-flow/thresholds.conf}
+# shellcheck source=/dev/null
+[[ -r $thresholds ]] && . "$thresholds"
+budget=${CLAUDE_CTX_BUDGET:-${CTX_ROTATE:-250000}}
+idle_min=${CLAUDE_CTX_IDLE_MIN:-${IDLE_MIN:-60}}
+idle_floor=${CLAUDE_CTX_IDLE_FLOOR:-${IDLE_FLOOR:-100000}}
 
 in=$(cat)
 prompt=$(jq -r '.prompt // ""' <<<"$in")
@@ -41,14 +45,14 @@ idle=$(( ($(date +%s) - then_s) / 60 ))
 k=$(( ctx / 1000 ))
 if (( idle >= idle_min && ctx >= idle_floor )) && [[ $(cat "$marker" 2>/dev/null) != "$ts" ]]; then
   printf '%s' "$ts" >"$marker"
-  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Re-send to continue, or file a /handoff and start a fresh session with /takeover claude [profile] ${session} (omit profile for the default account). Keep the Dibs task current before switching." \
+  jq -n --arg r "Idle ${idle} min with a ${k}k-token context: the prompt cache has likely expired, so this prompt would rewrite all ${k}k tokens. Not sent. Re-send to continue, or follow skill session-flow (state ROTATE): file a /handoff and start a fresh session. Keep the Dibs task current before switching." \
     '{decision: "block", reason: $r}'
   exit 0
 fi
 
 if (( ctx >= budget )); then
   jq -n --arg m "Context is ${k}k tokens (budget $(( budget / 1000 ))k); every call re-reads all of it." \
-    --arg c "Context is ${k}k tokens, over the $(( budget / 1000 ))k budget. Before starting new work, briefly tell the user and offer /handoff then a fresh session running /takeover claude [profile] ${session} (omit profile for the default account). /clear is also available after the handoff. If mid-task, finish the current step first." \
+    --arg c "Context is ${k}k tokens, over the $(( budget / 1000 ))k budget. Per skill session-flow (state ROTATE): finish the current step, then ask with AskUserQuestion whether to hand off and start a fresh session (/handoff). Do not offer it as plain text. /clear is also available after the handoff." \
     '{systemMessage: $m, hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}'
 fi
 exit 0

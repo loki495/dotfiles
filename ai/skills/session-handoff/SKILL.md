@@ -46,21 +46,19 @@ is the shortest path back.
 
     Session: <agent> · <session/conversation id> · <workdir> · <branch>
     Goal: <what we are trying to achieve, one or two sentences>
+    Decisions made: <answers Andres already gave and choices settled, so the receiver does not ask again>
     Why parked: quota <session/week %> | decision needed | real-world action | blocked by <what> | done, verify
-    State: committed <sha>; uncommitted <paths>; untested <what>
+    State: committed <sha>; uncommitted <paths>; untested <what> (the receiver re-verifies it with git, tests and Dibs)
     Changed since the plan: <the delta a cold session needs — a decision just made, a dead end, a constraint found>
     Next steps: <ordered, copy-pasteable commands, the very next action first>
     Needs Andres: <the one thing only he can do> — or "nothing, any agent can continue"
-    Open questions: <unresolved or unconfirmed>
+    Open questions: <unresolved or unconfirmed; the receiver asks these with the question tool>
     Don't: <tried and ruled out, or things Andres said not to pursue, so the next session does not retry them>
     Cleanup: <temp branches/worktrees, background processes, containers, serve restarts>
     Docs/atlas: <what is still stale, and where>
     Resume: sessioneer --agent <agent> --resume <id> "..." — or "any agent can continue from this task"
 
-In Claude Code, `/handoff` runs this procedure, recommends the agent, model, effort and profile for
-the next session from `model-routing.md`, asks Andres whether to start it now, and prints (or
-launches with) the paste-ready prompt; the fields above are the ones it fills in. A small job with
-nothing to carry gets a short self-contained prompt instead of a Dibs task.
+In Claude Code, `/handoff` runs this procedure; the receiver choice, the prompt shapes and when to ask versus carry questions are in skill `session-flow`. A small job with nothing to carry gets a short self-contained prompt instead of a Dibs task.
 
 **The handoff is a delta, not a summary.** The plan is the durable record of why the work exists;
 the handoff carries what changed since the plan was last read and what a cold session must know

@@ -3,7 +3,7 @@ description: Check context and quota, clean up, then continue here or launch a f
 disable-model-invocation: true
 ---
 
-Check this session's context and quota, clean up, then take the next step: continue here, or launch a fresh session with the right profile, model and a minimal prompt.
+Check this session's context and quota, clean up, then take the next step by the `session-flow` state table: continue here, or launch a fresh session.
 
 **Arguments:** $ARGUMENTS (optional: a plan id, or a short description of the next piece of work when there is no Dibs plan)
 
@@ -28,24 +28,12 @@ Do these now even if they "should already be done"; report in one line what was 
 
 ## 3. Ask before assuming
 
-Collect every question that stops the next step from being done without assumptions: leftovers from this session (undecided items, unconfirmed behaviour, anything uncommitted that is not clearly yours) and anything the next step's work order leaves open (read it with `todo_next` / `todo_show` first, without claiming). Ask every one with the question tool (Claude: AskUserQuestion; Codex: its user-input tool, else a numbered list at the end of the reply), one explanation per question, the recommended answer marked. There is no limit on questions or rounds: if the tool caps a call, make several calls and keep going until nothing is left to assume. Do not continue or launch until the answers are in.
+Follow skill `session-flow`, "Questions": collect every question that stops the next step (leftovers of this session and anything the next step's work order leaves open; read it with `todo_next` / `todo_show` first, without claiming) and ask each one with the question tool, recommended answer first, in as many rounds as needed. Do not continue or launch until the answers are in; at the carry quota limit, carry them in the handoff instead.
 
 ## 4. Decide where the next step runs
 
-- **Room here** (context under about 150k, and the chosen profile's `session` under 80% and `week_all` under 80%): continue in this session. For a plan, `todo_next` on the plan, `todo_claim` the step, follow its work order.
-- **Otherwise** launch a continuation. Choose:
-  - **Profile:** the account the work belongs to: `work` for the Work area or a repo of the current job, else `personal`. Pass `--profile <name>` only when it differs from this shell's `CLAUDE_CONFIG_DIR`. If that profile's `session` is at 90% or more, do not launch: say when it resets and wait or ask Andres.
-  - **Model:** the step's `tier` from the work order, taken from the same list for the chosen agent (Opus-class only if it says planning or judging). No tier: balanced, and say so.
-  - **Agent:** judge it from the step itself: which agent and model in the tier list (`orchestrator-worker`, `model-routing.md`, "Model routing by work type") fits this work best, given how much quota each agent has left in `sessioneer --usage` and how heavy the step is on it. Any agent can launch any agent; rank order is a preference, not a rule, so pick a lower entry when it fits better or spreads load off a nearly spent quota. Skip an agent at 90% or more. `--agent codex` for Codex (no `--profile`, `--mode` only `plan`/`full`, effort only a level its model lists). Say which you chose and why.
-  - **Workdir:** the repo the step names (its `repos` field), else this one.
-  - **Effort:** the tier's effort from the same list (`--effort`).
-  - **Mode:** `--mode auto`.
-  - A step that needs a decision (`decision needed`, a push, an Opus tier) is confirmed with Andres before launching.
+Follow skill `session-flow`: read the state from `thresholds.conf` and the inputs of step 1. GO: continue here (for a plan, `todo_next`, `todo_claim` the step, follow its work order). Anything else: choose the receiver under "Choose the receiver", confirm with Andres what that skill says needs approval, and launch.
 
-## 5. The prompt (as small as it can be while complete)
+## 5. The prompt and the launch
 
-- **Dibs plan:** a few lines, no handoff file:
-  `Call todo_next on plan <id>, claim the step it returns (agentName <agent>:<session name>:<conversation id>) and follow its work order. Before starting, ask Andres every question you have, in as many rounds as needed, and assume nothing. Answers already given: <only the decisions from step 3 the work order does not contain>.`
-- **No Dibs plan** (small work): one self-contained prompt with the goal, the repo and branch, the decisions made, the files involved, the commands to run, what is out of scope and what to ask first. Everything the new session needs and nothing it can look up itself. Write a handoff (the `handoff` command) only if the state does not fit in the prompt.
-
-Launch: `sessioneer --workdir <dir> --model <m> --effort <level> --mode auto [--profile <p>] "<prompt>"`. Report the session name, profile, model and workdir, and what you asked or answered. Do not keep working on the same step here afterwards. Finish anything still left (answer a peer, record a last checkpoint), confirm no claim is held (`todo_claim_status`), and then say plainly, as the last line: **"Safe to archive this session."** If something is still open (a claim, an unanswered question, uncommitted work that is not yours), say instead what blocks archiving and do not print that line.
+Use "Handoff and prompt" in `session-flow`. Afterwards finish anything still left (answer a peer, record a last checkpoint), clear what this session spawned ("Clear what you spawned"), confirm no claim is held (`todo_claim_status`), and then say plainly, as the last line: **"Safe to archive this session."** If something is still open (a claim, an unanswered question, uncommitted work that is not yours), say what blocks archiving instead.

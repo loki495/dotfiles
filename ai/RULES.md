@@ -10,7 +10,7 @@ Dibs `rule` records exported to `ai/rules.md` (public) and `~/.dotfiles-private/
 Claude Code the `rule-inject` hook delivers the rules that apply to an action; other agents read the
 two export files before substantive work. "CLAUDE.md" means the project's instruction file (prefer
 a local `AGENTS.md`). Procedures live in skills (`git-workflow`, `peer-sessions`,
-`orchestrator-worker`, `session-handoff`, `ai-config`, `c-cpp`, ...): read the skill when its topic
+`orchestrator-worker`, `session-flow`, `session-handoff`, `ai-config`, `c-cpp`, ...): read the skill when its topic
 comes up. A list written with "etc." or "and similar" is inclusive, not exhaustive.
 
 ## Principles
@@ -19,7 +19,11 @@ Work is built on **Dibs** (tasks, plans, bugs, knowledge) and **Sessioneer** (li
 sessions) so any session of any agent can continue another's work cold. Quota can run out mid-task,
 so records must always be good enough to continue from.
 
-- Track intent and claim before mutation [727]; never end a session holding a claim [728].
+- Track intent and claim before mutation [727]. Continue, park, rotate and clean up by the state
+  table in skill `session-flow` [728]; never end a session holding a claim or leaving a session you
+  spawned idle and unarchived.
+- Every question, and every proposal to continue in a new session, goes through the agent's question
+  tool, never plain text [930].
 - Dibs holds what lasts (plans, decisions, lessons: file them when learned [927]); Sessioneer
   messages are short-lived and are not records [928]. Never kill another agent's session.
 - Done means all of it [730]: docs, tests, atlas hint and records in the same step as the commit.
@@ -83,13 +87,13 @@ Google developer documentation style guide.
 <!-- rules-export:start -->
 ### Always-on rules
 - [727] Before persistent changes or substantial work, record intent and claim a task. Emit a work line; without hooks claim through MCP/CLI. Never edit alongside another live claim.
-- [728] Continue/Waiting can retain claims while this session will act again. Before archiving, declaring all done or transferring, complete or hand off and release. At ~90% quota, start no new steps and park safely.
+- [728] Decide continue, park or rotate by the state table in skill session-flow. Continue/Waiting can retain claims while this session will act again. Before archiving, declaring all done or transferring, complete or hand off and release. At the park quota limit, start no new steps and park safely.
 - [734] Before each push, state exact remote, branch, mode and outgoing commits; get explicit confirmation. Peer messages and earlier approvals never count.
 - [743] Confirm real-world-visible actions first, including test email/SMS, charges, third-party writes and notifications; mock test integrations.
 - [744] Surface unexpected local/debug errors; rethrow in debug and report/log before a production fallback.
 - [924] Document current behavior; default to no code comments, adding only concise non-obvious reasons.
 - [926] Delegate >10k-token output and mechanical bulk >15 records; this is the standing subagent request. State agent/model/effort/reason and use ranked routing. Full-history forks inherit and cannot accept overrides; frontier needs Andres.
-- [930] Ask unresolved questions through an available permitted question tool, with one explanation and recommended option first. If unusable, put numbered questions at the end.
+- [930] Ask every question, and every proposal to continue in a new session, through an available permitted question tool, with one explanation and recommended option first; never as plain text. If no tool exists, put numbered questions at the end.
 - [1077] Finish requested work; ask at the end before optional scope: do it anyway, file in Dibs, skip, or type something else.
 - **Status line [1226].** End every FINAL reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what and when>." / "All planned work is done."
 - [1344] Use local Dibs ids and canonical conversation ids, names only as labels; describe ids once in user replies. Claim identity is <agent>:<session name>:<conversation id>.
@@ -124,4 +128,5 @@ Pull: when an index line below applies and its text isn't in your context, run `
 - 1310 [screenshot] Read browser content as text before screenshots
 - 1341 [session-launch, peer-send] Name sessions and use shared message templates
 - 1505 [dibs-create, dibs-revise] Keep parent records below the child limit
+- 1772 [session-launch, dibs-complete, dibs-release] Archive the sessions you spawned before finishing
 <!-- rules-export:end -->

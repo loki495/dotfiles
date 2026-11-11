@@ -114,35 +114,32 @@ Agents without hooks do all bookkeeping through MCP/CLI and inspect actual resul
 
 ## Status, quota and handoff
 
+The state table, thresholds, question handling, receiver choice and spawned-session cleanup are in
+skill `session-flow`; the handoff body is in `session-handoff`. This section keeps only the
+bookkeeping around them.
+
 Every FINAL reply, including workers/orchestrators, ends with exactly one status phrase from rule
 1226. Parameterized statuses explain what/why, input needed, destination or wait dependency/time.
 Do not append the phrase to every progress commentary. The orchestrator relays worker verdicts.
 
 `Continue in this session`, `Waiting on Andres` and `Waiting on other work` may retain and renew
-claims while this same session will act again. Ask pending questions through an available supported
-question tool; otherwise put numbered questions at the reply’s end, followed by the required status.
-Do not replace an unanswered decision with a Waiting line. Waiting on Andres also covers real-world
-actions, review artifacts and future dates. Waiting on other work means this session must act after
-that dependency; a replacement that can continue cold without it instead permits Safe to archive.
+claims while this same session will act again. Waiting on Andres also covers real-world actions,
+review artifacts and future dates; do not replace an unanswered decision with a Waiting line (ask it
+per `session-flow`, "Questions"). Waiting on other work means this session must act after that
+dependency; a replacement that can continue cold without it instead permits Safe to archive.
 
-Before a `Continue in a different session` status, ask Andres with the question tool whether to
-start that session now with the right prompt. On yes: file the handoff (`session-handoff`: state,
-next steps, what Andres must do, cleanup, docs/atlas), release every claim, launch the new session
-with a prompt naming the handoff id and telling it to verify the claims are free and this session is
-archived before working, then archive this session. On no, end with the status line only.
-
-Before Safe to archive or All planned work is done, complete/release claims, update records and
-clean test resources. Continue in a different session requires a handoff then release. For unfinished
+Before Safe to archive or All planned work is done, complete/release claims, update records, clean
+test resources and archive the sessions this session spawned. Continue in a different session
+requires the `session-flow` ROTATE steps (ask, handoff, release, launch, archive). For unfinished
 work that is being parked, create one temporary task labelled `handoff` using the `session-handoff`
-body, give Andres its id, then release with what remains and the exact next step. Keep durable lessons/
-decisions on permanent records. Disclose work done unclaimed in closing evidence.
+body, give Andres its id, then release with what remains and the exact next step. Keep durable
+lessons/decisions on permanent records. Disclose work done unclaimed in closing evidence.
 
-Check `sessioneer --usage` before long work and periodically. At about 90% session or weekly quota,
-start no new steps; finish or safely park the current one before exhaustion. Archive a replaced own
-session only after it is idle, unclaimed and recoverable cold; never kill another agent’s active session.
-Report which conversation ids were archived and which records/replacements continue them.
+Check `sessioneer --usage` before long work and periodically. Archive a replaced own session only
+after it is idle, unclaimed and recoverable cold; never kill another agent's active session. Report
+which conversation ids were archived and which records/replacements continue them.
 
-Claude’s stop gate checks the status first, then applies completion/bookkeeping, then examines claims.
-If status was missing, repeat any completion/block lines with the corrected status. Archive/All-done/
-transfer with claims blocks once; Continue-in-this-session/Waiting renews instead. Hook bypass/failure
-warnings do not waive manual requirements for any agent.
+Claude's stop gate checks the status line first, then claims: Archive/All-done/transfer
+with a claim open blocks once; Continue-in-this-session/Waiting renews instead. If the status was
+missing, repeat any completion/block lines with the corrected status. Hook bypass/failure warnings
+do not waive manual requirements for any agent.

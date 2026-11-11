@@ -8,10 +8,11 @@ file only adds what is specific to Claude Code. Read the shared rules first.
 
 ## Context window management
 
-Every call re-reads the whole context. Past **~250k tokens**, tell Andres and offer `/handoff`
-then a fresh session with `/takeover claude [profile] <session_id>` before new work (finish the
-current step first); `/clear` is another option after the handoff. The context-budget hook enforces
-the warning. Avoid `/model` switches and plugin reloads in a big session (each forces a full cache rewrite).
+Every call re-reads the whole context. Decide continue, park or rotate by skill `session-flow`
+(state table; numbers in its `thresholds.conf`), and ask any offer with AskUserQuestion. The
+context-budget hook reads the same thresholds file. `/takeover claude [profile] <session_id>` is for a
+session that ended without a handoff. Avoid `/model` switches and plugin reloads in a big session
+(each forces a full cache rewrite).
 
 ## Hooks
 
