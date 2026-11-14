@@ -70,7 +70,7 @@ Cloudflare token can see to `~/backups/dns/<date>/` on the backups machine: one
 JSON file per zone holding the zone metadata and all of its records, plus an
 `index.txt` with one line per zone (status, record count, nameservers). Snapshots
 are hard-linked, 30 kept, published by `.partial` rename. The token stays on the
-main machine at `~/.config/cloudflare/add-zone-edit-dns`; override the path with
+main machine at `~/.dotfiles-private/cloudflare/add-zone-edit-dns`; override the path with
 `CLOUDFLARE_TOKEN_FILE`. The registrar's own nameservers are not captured.
 
 ## Personal projects (push, nightly)
