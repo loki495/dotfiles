@@ -269,3 +269,10 @@ Do:
 1. Record each session or worker you launch (name and conversation id) in the task checkpoint at launch.
 2. Before "Safe to archive this session." or "All planned work is done.", archive every session or worker you launched, including ones you replaced, once it is idle and holds no claim (`sessioneer --kill <name or id>`, never `--force` on a working or blocked one). A spawned session still working makes the status Waiting on other work.
 3. Never archive another agent's session. Details in skill `session-flow`, "Clear what you spawned".
+
+## 1853@2 Rule: Keep plans, notes and handoffs in Dibs, not as files
+When: Creating a plan, draft, checklist, review, handoff, notes or any scratch file.
+Do:
+1. Keep plans, drafts, reviews, handoffs and notes in Dibs (plan or task body, comment, temporary task), never as files in the filesystem, `~/www` or a repo.
+2. Write a file only when Andres asks for one or the project's own deliverable needs it; name it and say where. Throwaway scripts and output go in the session scratchpad or `/tmp` and are deleted in the same step.
+3. To let Andres review long material, print it in the message or put it in a Dibs comment.

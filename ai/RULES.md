@@ -98,6 +98,7 @@ Google developer documentation style guide.
 - **Status line [1226].** End every FINAL reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what and when>." / "All planned work is done."
 - [1344] Use local Dibs ids and canonical conversation ids, names only as labels; describe ids once in user replies. Claim identity is <agent>:<session name>:<conversation id>.
 - [1468] Record a persona profile before substantial coding; use separate contexts where required and keep recoverable role evidence.
+- [1853] Keep plans, drafts, reviews, handoffs and notes in Dibs, never as files; write a file only when Andres asks for one, and delete scratch files in the same step.
 
 ### Rule index
 Pull: when an index line below applies and its text isn't in your context, run `awk '/^## /{p=($2 ~ /^<id>@/)} p' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.
