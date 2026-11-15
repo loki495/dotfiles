@@ -26,7 +26,8 @@ so records must always be good enough to continue from.
   tool, never plain text [930].
 - Dibs holds what lasts (plans, decisions, lessons: file them when learned [927]); Sessioneer
   messages are short-lived and are not records [928]. Never kill another agent's session.
-- Done means all of it [730]: docs, tests, atlas hint and records in the same step as the commit.
+- Done means all of it [730]: docs, tests, atlas hint and records in the same step as the commit,
+  with the SHA, new features, lessons and other important current facts; no history.
 - Know the repo's delivery mode and branch layout before committing or merging [731].
 - Use independent personas for substantial coding work [1468]; small mechanical edits stay direct.
 

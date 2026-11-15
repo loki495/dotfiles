@@ -22,11 +22,11 @@ Do:
 2. Search before filing; maintain one checkpoint per claim and closing evidence, without status-only records or raw logs.
 3. Use readable prose, spacing and separated paragraphs/lists; preserve identifiers. Jobs deduplicate findings, update standing records and close violations.
 
-## 730@4 Rule: Finish code, tests, docs and records together
+## 730@5 Rule: Finish code, tests, docs and records together
 When: Committing, merging, releasing or reporting completion.
 Do:
 1. Read `orchestrator-worker/work-tracking.md`; search docs for old names and commit required docs/tests with code. Fix later misses openly without rewriting pushed history.
-2. Update atlas hints, Latest release and affected records; close completed tasks with actual merged SHA/tag and evidence.
+2. In the same step update docs, atlas hints, Latest release and affected records with the commit SHA, new features, lessons and other important current facts; state what is true now, never history or past-record narration. Close completed tasks with the actual merged SHA/tag and evidence.
 3. Finish housekeeping, identify/file external blockers and preserve durable lessons separately.
 
 ## 731@3 Rule: Verify delivery mode and branch layout
