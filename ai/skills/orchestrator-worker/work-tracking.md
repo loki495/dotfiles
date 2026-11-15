@@ -7,10 +7,11 @@ agents without hooks use MCP/CLI and verify the resulting claims and completion 
 ## Intent, scope, claims and recovery
 
 A persistent mutation changes lasting files, Git state, databases, services or external state.
-Scratch-only writes do not count. Substantial work still requires tracking even if read-only;
-quickly resolved read-only questions need no task. Before related work, find or create the fitting
-task and claim it. Use temporary tasks for bounded ad hoc work and durable plans with steps for
-multi-phase/cross-session work. Record goal, exact next step, workdir, branch and conversation id
+Scratch-only writes do not count. Read-only work, research and investigation need no task, however
+long; when the result will matter long term, save just that result as a lesson, research or decision
+record. Substantial work that makes persistent changes still requires tracking. Before related work,
+find or create the fitting task and claim it. Use temporary tasks for bounded ad hoc work and
+durable plans with steps for multi-phase/cross-session work. Record goal, exact next step, workdir, branch and conversation id
 before the first mutation. A private in-session todo list is not a claim or recovery record.
 
 Never edit alongside another process’s live claim (`isCurrentlyAlive: true`); coordinate or choose

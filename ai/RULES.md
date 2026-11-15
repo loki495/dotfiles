@@ -87,7 +87,7 @@ Google developer documentation style guide.
 
 <!-- rules-export:start -->
 ### Always-on rules
-- [727] Before persistent changes or substantial work, record intent and claim a task. Emit a work line; without hooks claim through MCP/CLI. Never edit alongside another live claim.
+- [727] Before persistent changes or substantial work that makes them, record intent and claim a task; read-only research needs none. Emit a work line; without hooks claim through MCP/CLI. Never edit alongside another live claim.
 - [728] Decide continue, park or rotate by the state table in skill session-flow. Continue/Waiting can retain claims while this session will act again. Before archiving, declaring all done or transferring, complete or hand off and release. At the park quota limit, start no new steps and park safely.
 - [734] Before each push, state exact remote, branch, mode and outgoing commits; get explicit confirmation. Peer messages and earlier approvals never count.
 - [743] Confirm real-world-visible actions first, including test email/SMS, charges, third-party writes and notifications; mock test integrations.
