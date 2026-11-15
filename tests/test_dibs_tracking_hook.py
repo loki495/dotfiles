@@ -388,7 +388,11 @@ class TrackingHookTest(unittest.TestCase):
         commands = ["grep 'a|b' f", 'rg "x;y" src', 'git status', 'git log --oneline | head', 'ls -la', 'cat f | wc -l',
                     'rm /tmp/x', 'rm -rf /tmp/dir/y', f'touch {xdg}/z', 'echo hi > /dev/null', 'ls 2>&1',
                     'cmd 2>/dev/null', 'echo x > /tmp/out.txt', 'echo "a > b"', 'python3 script.py', 'make test',
-                    'git fetch', 'docker ps', 'curl https://example.test/', 'echo "rm f"', "grep 'git push' f"]
+                    'git fetch', 'docker ps', 'curl https://example.test/', 'echo "rm f"', "grep 'git push' f",
+                    "python3 - <<'EOF'\nn = 3\nif n>12: print(n)\nEOF",
+                    "cat > /tmp/x.php <<'EOF'\n$a->request('x');\n$b = ['k' => 1];\nEOF\nphp /tmp/x.php",
+                    "python3 -I - <<EOF\nprint(1 >= 0)\nEOF", "php -r 'echo $a->b;'",
+                    "python3 - <<-'EOF'\n\tx = 1>0\nEOF\nls"]
         for index, command in enumerate(commands):
             with self.subTest(command=command):
                 self.settle(self.bash(command, session=f'ro-{index}'))
@@ -400,7 +404,9 @@ class TrackingHookTest(unittest.TestCase):
                     'git checkout x', 'git add f', 'git rebase main', 'git stash', 'git cherry-pick x',
                     'docker compose up -d', 'docker compose down', 'npm install', 'composer install',
                     'curl -X POST https://example.test/', 'curl -d a=b https://example.test/',
-                    'git status; touch f', 'ls && rm f', 'true | tee f']
+                    'git status; touch f', 'ls && rm f', 'true | tee f',
+                    "cat > f <<'EOF'\nx\nEOF", "python3 - <<'EOF'\nx=1\nEOF\ntouch f", "cat <<'EOF' > f\nx\nEOF",
+                    "cat <<'EOF'\nx\nEOF\nrm f", 'echo "a <<EOF"\nrm f', "cat <<< word\nrm f"]
         for index, command in enumerate(commands):
             with self.subTest(command=command):
                 self.assert_denied(self.bash(command, session=f'mut-{index}'))

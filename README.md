@@ -573,7 +573,8 @@ All projects:
   delivers its rules, and includes the claim's capability token in the same context, so the
   session can call `todo_complete`, `todo_release` and `todo_comment` on its own claim. A change with fresh rules is held once for review and retry;
   an unclaimed change is denied twice, then tracked in a temporary task with a warning.
-  Reads, scratch paths, subagents, and Dibs outages pass through. Work lines inside code
+  Reads, scratch paths, subagents, and Dibs outages pass through; heredoc bodies and code operators
+  such as `->`, `=>` and `>=` are data, never redirects. Work lines inside code
   fences are ignored. For a read, a claim made outside the hook may still incur the bounded
   transcript wait; this avoids contacting Dibs for ordinary reads. Use `[complete <id> | sha=... tests="..." | notes]` to complete
   a hook-owned claim at Stop, or release it explicitly.

@@ -466,13 +466,35 @@ def segment_mutates(t):
     return False
 
 
+REDIRECT = re.compile(r'(?<![-=>])(?:\d*|&)>>?(?!=)\s*(\S+)')
+HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(?:'([^']+)'|\"([^\"]+)\"|\\?(\w+))")
+
+
+QUOTED_NOT_DELIMITER = re.compile(r"""(?<!<<)(?<!<<-)(?<!<< )(?<!<<- )("[^"]*"|'[^']*')""")
+
+
+def strip_heredocs(cmd):
+    """Drop heredoc bodies: they are data (code, text), so a > inside one is not a redirect."""
+    out, pending = [], []
+    for line in cmd.split('\n'):
+        if pending:
+            word, dash = pending[0]
+            if (line.lstrip('\t') if dash else line) == word:
+                pending.pop(0)
+            continue
+        out.append(line)
+        masked = QUOTED_NOT_DELIMITER.sub('Q', line)
+        pending += [(m.group(2) or m.group(3) or m.group(4), bool(m.group(1))) for m in HEREDOC.finditer(masked)]
+    return '\n'.join(out)
+
+
 def bash_mutates(cmd):
-    """Denylist of real mutations, tested on the command with quoted strings removed."""
-    s = re.sub(r"\"[^\"]*\"|'[^']*'", 'Q', cmd)
-    for m in re.finditer(r'(?:\d*|&)>>?\s*(\S+)', s):
+    """Denylist of real mutations, tested on the command with heredoc bodies and quoted strings removed."""
+    s = re.sub(r"\"[^\"]*\"|'[^']*'", 'Q', strip_heredocs(cmd))
+    for m in REDIRECT.finditer(s):
         if not m.group(1).startswith('&') and not scratch(m.group(1)):
             return True
-    s = re.sub(r'(?:\d*|&)>>?\s*\S+', ' ', s)
+    s = REDIRECT.sub(' ', s)
     return any(segment_mutates(seg.split()) for seg in re.split(r'&&|\|\||[;|\n()`{}]', s))
 
 
