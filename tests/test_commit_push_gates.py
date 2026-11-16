@@ -19,7 +19,7 @@ sub = "subsystem: core\\nverified-at: %s\\nowned_paths: src/, app.py\\n" % os.en
 if a[0] == "todo:agent:list":
     print(json.dumps({"tasks": [{"id": 9, "state": "OPEN", "labels": ["feature atlas"]}]}))
 else:
-    print(json.dumps({"id": 9, "body": body, "comments": {"items": [{"body": sub}]}}))
+    print(json.dumps({"id": 9, "body": body, "comments": {"complete": True, "lastPage": 1, "items": [{"body": sub}]}}))
 '''
 
 

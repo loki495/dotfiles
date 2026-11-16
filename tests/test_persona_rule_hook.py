@@ -22,6 +22,7 @@ class PersonaRuleHookTest(unittest.TestCase):
         self.env = {**os.environ, 'RULE_FILES': str(rules), 'RULE_STATE_DIR': str(root / 'state'),
                     'RULE_TRIGGERS': str(root / 'trig.json'), 'RULE_PRIVATE_KEYS': str(root / 'nokeys.json'),
                     'SESSIONEER_BIN': str(root / 'no-such-sessioneer'), 'HOME': str(root)}
+        self.env.pop('SESSIONEER_SELF', None)
 
     def hook(self, **event):
         event.setdefault('session_id', 'persona-session')
@@ -49,7 +50,8 @@ class PersonaRuleHookTest(unittest.TestCase):
     def test_rule_is_shared_within_context_and_reinjected_after_reset(self):
         self.assert_injected(self.launch('Agent'))
         self.assertIsNone(self.launch('Task'))
-        self.assertIsNone(self.hook(hook_event_name='SessionStart', source='startup'))
+        startup = self.hook(hook_event_name='SessionStart', source='startup')
+        self.assertNotIn('contextReset', startup['additionalContext'])
         self.assertIsNone(self.launch('Agent'))
         for source in ('compact', 'clear', 'resume'):
             with self.subTest(source=source):

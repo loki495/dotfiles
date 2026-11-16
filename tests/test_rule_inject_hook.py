@@ -85,6 +85,7 @@ class HookBase(unittest.TestCase):
                     'SESSIONEER_BIN': str(self.tmp / 'no-such-sessioneer')}
         self.env.pop('RULE_QUOTA_PROFILE', None)
         self.env.pop('CLAUDE_CONFIG_DIR', None)
+        self.env.pop('SESSIONEER_SELF', None)
 
     def write_triggers(self, public, private):
         (self.tmp / 'trig.json').write_text(json.dumps(public))
