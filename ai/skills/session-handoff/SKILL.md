@@ -60,6 +60,8 @@ is the shortest path back.
 
 In Claude Code, `/rotate` files this handoff and starts the receiver; the receiver choice, the prompt shapes and when to ask versus carry questions are in skill `session-flow`. A small job with nothing to carry gets a short self-contained prompt instead of a Dibs task.
 
+After filing it, recommend the receiver (agent, model, effort, profile, workdir) and prompt shape as `session-flow` describes, then ask with the question tool, recommended option first: start it now with that choice, start it with another agent or model Andres names, or only print the prompt. Never launch without the answer. Reply with the task's local id and a paste-ready prompt: "Read and claim temporary task `<id>`, continue from Next steps, and complete it after consumption; ask about unresolved Open questions."
+
 **The handoff is a delta, not a summary.** The plan is the durable record of why the work exists;
 the handoff carries what changed since the plan was last read and what a cold session must know
 before touching anything. If it repeats the plan, link to the plan instead.
@@ -72,13 +74,16 @@ it; it may not be the only copy.
 ## Receiving one
 
 1. Find it: `todo_list label=handoff state=OPEN` — every parked session, all agents, one screen.
-2. Claim it. That is the lock; two sessions must not both act on the same handoff.
+2. Claim it. That is the lock; two sessions must not both act on the same handoff. Once it is
+   claimed, archive the source session by `session-flow`, "Archive a replaced session".
 3. Do the work. The body is meant to be self-sufficient; resume the parked session only if the
    work genuinely needs its transcript.
 4. Fold anything durable into the plan or a knowledge record first.
-5. `todo_complete` — the task is deleted. A completion summary is copied to the permanent parent
-   as a normal comment, so keep it public-safe or omit it. A handoff whose plan moved on is
-   discarded with `NOT_PLANNED`, which also deletes it.
+5. `todo_complete` after consuming any temporary children — the task is deleted, with no undo. A
+   completion summary is copied to the permanent parent as a normal comment and follows that
+   parent's mirroring policy, so keep it public-safe or omit it. A handoff whose plan moved on is
+   discarded with `NOT_PLANNED`, which also deletes it. A normal `todo_release` keeps it for another
+   session.
 
 Older than about a week: verify before acting. The repo, the branch or the decision may have
 moved on, and the plan is the authority, not the handoff.
@@ -86,22 +91,9 @@ moved on, and the plan is the authority, not the handoff.
 ## Not this
 
 - Not a plan replacement, and not a place for durable findings.
-- Not a file: no hand-off markdown in the repo, nothing to delete later.
+- Not a file: no hand-off markdown in the repo, nothing to delete later. Only when Dibs is
+  unreachable, or Andres names a file, use a private scratch file outside any repository and say where
+  it is. Never put tokens or secrets in either form.
+- Not counted: temporary records stay out of durable plan and atlas accounting and out of reconciler
+  evidence checks.
 - Not a claim: the parked session's claim is released, and the receiver's claim is on this task.
-
-## Hand-off records (moved from the plan-currency rule)
-
-Put transient session hand-off state in a temporary Dibs task (`todo_create temporary: true`), one per
-parked session, labelled `handoff`, parented to the permanent task or plan when available, rather
-than rewriting durable plan bodies or committing hand-off files. Discovery: `todo_list label=handoff
-state=OPEN`. The receiver claims it, preserves durable findings on permanent records, and completes it
-after consuming it (consume temporary children first). Normal release retains it, NOT_PLANNED discards
-it, and a completion summary copied to a permanent parent follows that parent's mirroring policy, so
-keep it public-safe or omit it. Temporary records do not count toward durable plan or atlas accounting
-and are excluded from reconciler evidence checks.
-
-When you replace a session (a parked or finished coordinator or worker, one superseded by a new
-session, one whose quota ran out), archive the old one yourself with `sessioneer --kill <name or id>`
-(`--agent <agent>` for Codex and OpenCode) once it holds no claims, is idle, and a cold session can
-continue from Dibs alone. A killed session stays resumable. Say which sessions you archived and which
-record replaces them.

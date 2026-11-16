@@ -5,7 +5,7 @@ description: Continue another Sessioneer session's unfinished work from its comp
 
 # Take over a session
 
-Use this for a session that ended or died without a handoff. A planned continuation uses a handoff and the `session-flow` ROTATE steps instead.
+Use this for a session that ended or died without a handoff, or one whose handoff is missing, stale or incomplete. A planned continuation from a live, idle session with a handoff or plan step uses `/rotate` and the `session-flow` ROTATE steps instead. Rule of thumb: a handoff or plan step the receiver can follow means rotate; only the old conversation holds the state means take over.
 
 Input: `/takeover <agent> [profile] <session_id> [message]`. The agent names the **source** session, not the agent running this skill. Two arguments before any message mean the default profile. The session ID is the first token that looks like a conversation ID (a UUID or hex prefix, or OpenCode's `ses_...`); everything after it is the optional message. A profile applies only to Claude Code; reject it for other agents. Use the full conversation ID, or an unambiguous prefix, as the stable identity. A Sessioneer display name is only a lookup aid.
 
@@ -23,7 +23,7 @@ This is a work handoff to a new conversation. `sessioneer --take-over` is a diff
 
 1. Call Dibs `todo_status` first. Find an open temporary `handoff` task whose `Session:` field identifies the source ID. Read its parent/plan, comments and claim status. Claim that handoff if available; it is the receiver's lock. If no handoff exists, find the source's task/plan and its living checkpoint. Claim the existing task when safe, or create and claim a task only when the work has no suitable record. Persist missing recovery details or durable decisions in the appropriate Dibs record so a third session can continue without either transcript.
 2. Check **all** claims held by the source conversation ID and any overlapping live claims in the worktree. Read the previous claimant's comments and transcript before attempting a Dibs takeover. A verified live claim is not yours to seize: have its owner release it, or wait for it to become safely reclaimable. For a dead or expired claim, use Dibs' supported `todo_claim` path, then comment that you took over and what state you recovered. Never edit alongside a live claimant. If Dibs is unavailable, preserve a private recovery checkpoint and do not archive a source whose claims cannot be checked.
-3. As soon as the successor record exists (the handoff or task is claimed and carries the recovery details), do not wait for the rest of the work: recheck the source's latest turn, status and claims, reconcile anything new, and when it holds no claims and is idle, archive it with `sessioneer --kill <id>` (add `--agent <agent>` where required). This preserves a resumable conversation. Do not use `--force` on a working or blocked session, answer its pending prompt as the user, or archive the session you are running. If the source is already archived, record that and continue. If it is active, coordinate or wait; keep its status and claims visible until safe. Report the canonical source ID and the Dibs record that now carries the work.
+3. As soon as the successor record exists, do not wait for the rest of the work: run `session-flow`, "Archive a replaced session", on the source. Report the canonical source ID and the Dibs record that now carries the work.
 
 ## Continue
 

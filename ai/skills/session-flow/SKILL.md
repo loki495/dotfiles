@@ -86,15 +86,57 @@ Used by ROTATE, `/rotate` and `/orchestrate`.
   different agent or model verifying where possible.
 - Launch: `sessioneer --rotate (--plan <id> | --handoff <id> | --prompt "<text>") [--agent <a>]
   [--model <m>] [--effort <level>] [--profile <p>] [--workdir <dir>] [--set-name "<name>"]`, with
-  `--dry-run` first when the prompt matters. Without the shaping options the receiver keeps this
-  session's agent, workdir, effort and profile, and it must be Claude or Codex. Report the
-  receiver's name, agent, model, effort, profile and workdir. Do not keep working on the same step
-  afterwards: the receiver does the takeover and archives this session. A push still needs Andres's
-  explicit confirmation.
+  `--dry-run` first when the prompt matters. The target defaults to this session; name one when the
+  receiver replaces another session. Without the shaping options the receiver keeps the source's
+  agent, workdir, effort and profile, and it must be Claude or Codex, so name `--agent` for any
+  other agent. A cross-agent rotate refuses `--model` and `--effort`, a tool-less session cannot
+  rotate, and the call refuses while the source holds a Dibs claim, so release claims first. Report
+  the receiver's name, agent, model, effort, profile and workdir. Do not keep working on the same
+  step afterwards: the receiver archives this session (see "Archive a replaced session"). A push
+  still needs Andres's explicit confirmation.
+- Name the source so the receiver can archive it. The `--handoff` prompt finds it in the handoff's
+  `Session:` field. For `--plan` and `--prompt`, put `Session: <agent> <conversation id>` (from
+  `sessioneer --whoami`) in the step's checkpoint comment or in the prompt text.
 - Offer path: `sessioneer --offer --handoff <id>`, `--offer --plan <id>` or `--offer "<text>"` posts
   the same rotation as a band on the dashboard for Andres to tap, and `--offer --clear` withdraws
   it. Hooks that post it themselves do so with `sessioneer --next --post`; do not duplicate an
   offer that is already live.
+
+## Clean up before leaving
+
+Before continuing past a step boundary, launching a receiver or parking, do all of these even if they
+"should already be done", and report in one line what was already clean.
+
+- **Claims:** complete (`todo_complete` with evidence) or release (`todo_release` with what is left
+  and the exact next step) every claim this session holds.
+- **Records:** update the plan body and the finished step (commit SHA, what is next, what blocks
+  it), file follow-ups, close finished tasks, update the `lesson` and `research` records the work
+  changed.
+- **Docs, tests and atlas:** anything the committed work makes wrong is fixed in the repo; touched
+  atlas subsystems get a hint, stamped with the SHA on the default branch.
+- **Files:** delete scratch files, temp scripts, `/tmp` outputs, stray state files and temporary
+  branches or worktrees this session created. Look at each before deleting; leave anything that is
+  not yours.
+- **Peers:** `sessioneer --peers`; tell any peer working on the same repo what changed.
+- **Pushes:** commits that are unpushed are reported and asked about, never pushed without Andres.
+
+## Archive a replaced session
+
+One procedure for every case where a session is replaced: a rotate receiver, a takeover, a parked
+coordinator or worker, a session whose quota ran out. The successor runs it, because a session
+cannot archive itself.
+
+1. Confirm the successor record exists: the handoff or task is claimed by you and carries the
+   recovery details, so a cold session could continue from Dibs alone.
+2. Recheck the source: its latest turn, `sessioneer --show <id>`, and its claims (`todo_claim_status`
+   for its conversation id). Reconcile anything new before going on.
+3. Archive it only when it is idle and holds no claim: `sessioneer --kill <name or conversation id>`,
+   with `--agent <agent>` for Codex and OpenCode. A killed session stays resumable.
+4. Never use `--force` on a working or blocked session, never answer its pending prompt as Andres,
+   never archive the session you are running or another agent's session. A source that is still
+   working or holds a claim stays visible: coordinate or wait, and say so.
+5. Already archived: record that and continue. Say which session you archived and which record now
+   carries the work.
 
 ## Clear what you spawned
 

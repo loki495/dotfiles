@@ -13,7 +13,7 @@ Run a whole Dibs plan (from any agent; each worker's agent is chosen by tier and
 
 - `todo_show` the plan and every open child (`todo_list`, batch `todo_show`). Note for each task: its work order, `tier`, `repos`, dependencies/blockers, `decision needed` flags, and its **done requirements** (acceptance criteria, tests, docs, atlas, evidence expected). A task with no stated done requirements: derive them from the rules (docs and tests with the change, atlas stamp, closed tasks) and write them into the task before launching.
 - Decide like `/rotate` step 1: `sessioneer --next --json`, falling back to context size and `sessioneer --usage` for every agent and profile.
-- **Not GO** (skill `session-flow` state table, numbers in its `thresholds.conf`): do not start the loop here. Clean up as `/rotate` step 2 (claims, records, nothing pushed), then ROTATE: launch a new orchestrator with the prompt `/orchestrate <id>. Answers already given: <decisions>`, receiver chosen under "Choose the receiver" from the **advanced** tier (orchestrating means judging evidence). End with **"Safe to archive this session."** only once nothing is held. When every agent that could run the work is in PARK, stop, say when quota resets, and do not launch.
+- **Not GO** (skill `session-flow` state table, numbers in its `thresholds.conf`): do not start the loop here. Clean up as `session-flow`, "Clean up before leaving", then ROTATE: launch a new orchestrator with the prompt `/orchestrate <id>. Answers already given: <decisions>`, receiver chosen under "Choose the receiver" from the **advanced** tier (orchestrating means judging evidence). End with **"Safe to archive this session."** only once nothing is held. When every agent that could run the work is in PARK, stop, say when quota resets, and do not launch.
 
 ## 2. Ask before assuming (once, up front)
 
@@ -51,7 +51,7 @@ When a worker reports done, check it yourself against the task's done requiremen
 
 **Not met:** `sessioneer --resume <conversation id> "Not done: <each unmet requirement, what you checked, what is expected>. Finish it and report evidence."` and wait again. Repeat until verified. If a worker fails the same requirement twice, raise effort, then tier (not frontier without Andres), or take it over; if still stuck, release it, file the blocker in Dibs and tell Andres.
 
-**Met:** make sure its claim is released and the task closed with the evidence, then archive the session: `sessioneer --kill <name>` (refuses a working one; stopped conversations stay resumable). Update the plan body (task done, SHA, what unblocked), recompute the ready set and launch the next wave. Back to step 4.
+**Met:** make sure its claim is released and the task closed with the evidence, then archive the worker as `session-flow`, "Clear what you spawned", says. Update the plan body (task done, SHA, what unblocked), recompute the ready set and launch the next wave. Back to step 4.
 
 ## 6. Finish
 
