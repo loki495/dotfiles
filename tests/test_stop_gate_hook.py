@@ -1,6 +1,7 @@
 """ai/hooks/stop-gate.sh: status line first, then the dibs block / [complete] lines, then a status-dependent claim check."""
 import json
 import os
+from claude_agent_fixture import use_test_process_as_claude
 from pathlib import Path
 import stat
 import subprocess
@@ -23,6 +24,7 @@ WORK = 'Waiting on other work: job 8.'
 
 class StopGateTest(unittest.TestCase):
     def setUp(self):
+        use_test_process_as_claude(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         t = Path(self.tmp.name)
@@ -38,7 +40,7 @@ class StopGateTest(unittest.TestCase):
         self.sha = subprocess.run(git + ['rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
         # never the real Dibs: the dibs-block stop step run by the gate talks to this stub
         self.safe_env = {'DIBS_CLI': f'{sys.executable} {t / "dibs-stub.py"} {self.db}', 'DIBS_BLOCK_STATE_DIR': str(t / 'bstate'),
-                         'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'), 'DIBS_ATLAS_SYNC': 'off', 'DIBS_AGENT_PID': '4242',
+                         'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'), 'DIBS_ATLAS_SYNC': 'off', 'DIBS_AGENT_PID': str(os.getpid()),
                          'SESSIONEER_SELF': 'tester'}
 
     def dbs(self):

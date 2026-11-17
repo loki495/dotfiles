@@ -2,6 +2,7 @@
 denies changes without a claim, waits for the transcript. Only against a fake Dibs CLI, temp dirs and temp rule files."""
 import json
 import os
+from claude_agent_fixture import use_test_process_as_claude
 import subprocess
 import sys
 import tempfile
@@ -38,6 +39,7 @@ def tool_entry(tid, name='Bash', inp=None):
 
 class WorkBase(unittest.TestCase):
     def setUp(self):
+        use_test_process_as_claude(self)
         self.tmp = tempfile.TemporaryDirectory(dir='/var/tmp')  # outside /tmp: /tmp edits are exempt
         self.addCleanup(self.tmp.cleanup)
         self.root = root = Path(self.tmp.name)
@@ -59,7 +61,7 @@ class WorkBase(unittest.TestCase):
         self.transcript = root / 'transcript.jsonl'
         self.transcript.write_text('')
         self.env = {**os.environ, 'DIBS_CLI': f'{sys.executable} {stub} {self.db}', 'DIBS_BLOCK_STATE_DIR': str(self.state),
-                    'DIBS_AGENT_PID': '4242', 'DIBS_ATLAS_SYNC': 'off', 'SESSIONEER_SELF': 'tester',
+                    'DIBS_AGENT_PID': str(os.getpid()), 'DIBS_ATLAS_SYNC': 'off', 'SESSIONEER_SELF': 'tester',
                     'XDG_RUNTIME_DIR': str(root / 'xdg'), 'HOME': str(root / 'home'),
                     'RULE_FILES': str(root / 'rules.md'), 'RULE_TRIGGERS': str(root / 'trig.json'),
                     'RULE_STATE_DIR': str(root / 'rstate'), 'RULE_PRIVATE_KEYS': str(root / 'nokeys.json'),
@@ -201,7 +203,7 @@ class WorkLineClaimTest(WorkBase):
         self.assertIn('--agent=claude:tester:sess-1', claim[0])
         self.assertEqual(self.calls('create'), [])
         crumb = json.loads((self.state / 'sess-1.json').read_text())['breadcrumb']
-        self.assertEqual((crumb['cwd'], crumb['branch'], crumb['pid']), (str(self.repo), 'work-test', 4242))
+        self.assertEqual((crumb['cwd'], crumb['branch'], crumb['pid']), (str(self.repo), 'work-test', os.getpid()))
 
     def test_new_line_creates_a_temporary_task_titled_with_the_description_and_claims_it(self):
         tid = self.say('[work new | Rework the importer | code+tests]')

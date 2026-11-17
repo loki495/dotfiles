@@ -261,6 +261,7 @@ python3 tests/test_token_usage.py
 python3 tests/test_rules_export.py
 python3 tests/test_rule_inject_hook.py
 python3 tests/test_dibs_block_hook.py   # stub Dibs CLI, throwaway git repo
+python3 tests/test_agent_pid.py         # isolated process-tree identity checks
 python3 tests/test_read_guard_hook.py
 ```
 
@@ -555,6 +556,7 @@ All projects:
   conflict or release failure leaves the repo queued for retry. A merge that brought in commits by anyone but the repo's configured
   user is not queued, since the refresh runs an unattended auto-mode session over the repo. Sessions never refresh a stale atlas themselves, so the push guard
   only mentions staleness in its confirmation prompt.
+- **Claude Dibs MCP** is registered by the AI tools installer in `~/.claude.json` and, when the work profile exists, `~/.claude-work/.claude.json`. The installer merges only the Dibs entry and backs up changed config. The managed launcher and Dibs block hook share `ai/scripts/agent-pid.py` to identify the same Claude process through intervening shells; their Dibs checkout is expected at `~/www/personal/dibs`.
 - **Dibs block** (`hooks/dibs-block.py`; Stop via the stop gate, UserPromptSubmit, PreToolUse on every
   tool): applies the ```` ```dibs ```` block at the end of Claude's final message (`claim <id>`,
   `note <id>: …` as the claim's one checkpoint comment, `append <id> ## Section` with indented text,

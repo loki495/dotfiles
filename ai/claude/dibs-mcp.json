@@ -1,0 +1,5 @@
+{
+  "type": "stdio",
+  "command": "${DOTFILES_ROOT}/ai/scripts/claude-dibs-mcp.py",
+  "args": []
+}

@@ -1,6 +1,7 @@
 """ai/hooks/dibs-block.py: ```dibs blocks applied at Stop, prompt-time claims, heartbeat; against a stub Dibs CLI."""
 import json
 import os
+from claude_agent_fixture import use_test_process_as_claude
 from pathlib import Path
 import subprocess
 import sys
@@ -59,6 +60,7 @@ save()
 
 class DibsBlockHookTest(unittest.TestCase):
     def setUp(self):
+        use_test_process_as_claude(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         t = Path(self.tmp.name)
@@ -79,7 +81,7 @@ class DibsBlockHookTest(unittest.TestCase):
         subprocess.run(git + ['checkout', '-q', '-'], check=True)
         self.env = {**os.environ, 'DIBS_CLI': f'{sys.executable} {t / "stub.py"} {self.db}',
                     'DIBS_BLOCK_STATE_DIR': str(t / 'state'), 'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'), 'DIBS_ATLAS_SYNC': 'off',
-                    'DIBS_AGENT_PID': '4242', 'SESSIONEER_SELF': 'tester'}
+                    'DIBS_AGENT_PID': str(os.getpid()), 'SESSIONEER_SELF': 'tester'}
 
     def hook(self, mode, env=None, **data):
         payload = {'session_id': 'sess-1', 'cwd': str(self.repo), **data}
@@ -101,7 +103,7 @@ class DibsBlockHookTest(unittest.TestCase):
         out = self.hook('prompt', prompt='work on dibs 5 please')
         self.assertIn('claimed 5', out['hookSpecificOutput']['additionalContext'])
         self.assertIn('--agent=claude:tester:sess-1', self.calls('claim')[0])
-        self.assertIn('--pid=4242', self.calls('claim')[0])
+        self.assertIn(f'--pid={os.getpid()}', self.calls('claim')[0])
 
     def test_prompt_ignores_slash_command_and_plain_text(self):
         self.assertIsNone(self.hook('prompt', prompt='/dibs 3 bugs in the parser'))

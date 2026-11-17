@@ -690,6 +690,79 @@ printf '%s\\n' '; inherits: php_only' > "$destination/queries/php/highlights.scm
         self.install_sections(checkout)
         self.assertEqual((checkout / 'ai/CLAUDE.private.md').read_text(), 'via the default run')
 
+    def test_claude_dibs_registration_preserves_private_config_and_is_rerunnable(self):
+        profile = self.home / '.claude-work'
+        profile.mkdir()
+        original = {'customSetting': {'secret': 'private-value'}, 'projects': {'/private': {'trust': True}},
+                    'mcpServers': {'private-server': {'type': 'stdio', 'command': '/private/tool',
+                                                      'args': ['private'], 'env': {'TOKEN': 'secret'}},
+                                   'dibs': {'type': 'stdio', 'command': '/old/dibs', 'args': ['old']}}}
+        configs = (self.home / '.claude.json', profile / '.claude.json')
+        for config in configs:
+            config.write_text(json.dumps(original))
+        def install():
+            result = subprocess.run(['bash', str(REPO / 'scripts/install/50-ai-tools.sh')],
+                                    env=self.env | {'DOTFILES_ROOT': str(REPO)}, text=True,
+                                    capture_output=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        install()
+        first = [json.loads(config.read_text()) for config in configs]
+        install()
+        self.assertEqual(first, [json.loads(config.read_text()) for config in configs])
+        for config in first:
+            self.assertEqual(config['customSetting'], original['customSetting'])
+            self.assertEqual(config['projects'], original['projects'])
+            self.assertEqual(config['mcpServers']['private-server'], original['mcpServers']['private-server'])
+            entry = config['mcpServers']['dibs']
+            self.assertEqual(entry.get('type', 'stdio'), 'stdio')
+            self.assertNotEqual(entry['command'], '/old/dibs')
+            self.assertTrue(entry['command'])
+
+    def test_registered_claude_launcher_and_hook_share_process_identity(self):
+        from test_dibs_block_hook import STUB, HOOK
+        result = subprocess.run(['bash', str(REPO / 'scripts/install/50-ai-tools.sh')],
+                                env=self.env | {'DOTFILES_ROOT': str(REPO)}, text=True,
+                                capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        config = self.home / '.claude.json'
+        self.assertTrue(config.exists(), 'installer must register Dibs for Claude')
+        entry = json.loads(config.read_text())['mcpServers']['dibs']
+        db = self.root / 'db.json'
+        db.write_text(json.dumps({'log': [], 'claims': {}, 'issues': {
+            '5': {'state': 'OPEN', 'body': '', 'revision': 1}}}))
+        (self.root / 'dibs-stub.py').write_text(STUB)
+        docker_log = self.root / 'docker.json'
+        self.stub('docker', "#!/usr/bin/python3\nimport json, os, sys\njson.dump({'args':sys.argv[1:], 'env':dict(os.environ)}, open(os.environ['DOCKER_LOG'], 'w'))\n")
+        driver = self.root / 'driver.py'
+        driver.write_text("""import json, os, subprocess, sys
+entry = json.loads(os.environ['ENTRY'])
+env = dict(os.environ, **entry.get('env', {}))
+command = [os.path.expandvars(entry['command'])] + [os.path.expandvars(x) for x in entry.get('args', [])]
+launch = subprocess.run(['bash', '-c', 'exec "$@"', '--', *command], env=env, text=True, capture_output=True, timeout=10)
+payload = json.dumps({'session_id':'same-session', 'cwd':os.environ['TEST_ROOT'], 'prompt':'work on dibs 5'})
+hook = subprocess.run(['bash', '-c', 'exec "$@"', '--', sys.executable, os.environ['HOOK'], 'prompt'], input=payload, env=env, text=True, capture_output=True, timeout=10)
+print(json.dumps({'pid':os.getpid(), 'launch':launch.returncode, 'launch_error':launch.stderr, 'hook':hook.returncode, 'hook_error':hook.stderr}))
+""")
+        claude = self.root / 'claude'
+        claude.symlink_to('/usr/bin/python3')
+        env = self.env | {'ENTRY': json.dumps(entry), 'DOCKER_LOG': str(docker_log), 'HOOK': str(HOOK),
+                          'DIBS_CLI': f'/usr/bin/python3 {self.root / "dibs-stub.py"} {db}',
+                          'DIBS_BLOCK_STATE_DIR': str(self.root / 'state'), 'DIBS_ATLAS_SYNC': 'off',
+                          'SESSIONEER_SELF': 'tester'}
+        env.pop('DIBS_AGENT_PID', None)
+        run = subprocess.run([str(claude), str(driver)], env=env, text=True, capture_output=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        info = json.loads(run.stdout)
+        self.assertEqual(info['launch'], 0, info['launch_error'])
+        self.assertEqual(info['hook'], 0, info['hook_error'])
+        claim = next(c for c in json.loads(db.read_text())['log'] if c[0] == 'claim')
+        self.assertIn('--pid=' + str(info['pid']), claim)
+        docker = json.loads(docker_log.read_text())
+        exported = [x for x in docker['args'] if x.startswith('DIBS_AGENT_PID=')]
+        if docker['env'].get('DIBS_AGENT_PID'):
+            exported.append('DIBS_AGENT_PID=' + docker['env']['DIBS_AGENT_PID'])
+        self.assertIn('DIBS_AGENT_PID=' + str(info['pid']), exported)
+
     def test_ai_tools_links_an_existing_claude_work_profile_too(self):
         (self.home / '.claude-work').mkdir()
         result = subprocess.run(['bash', str(REPO / 'scripts/install/50-ai-tools.sh')],

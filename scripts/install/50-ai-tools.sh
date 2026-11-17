@@ -19,6 +19,31 @@ for profile in ~/.claude ~/.claude-work; do
     backup_and_link "$profile/$d" "$DOTFILES_ROOT/ai/$d"
   done
 done
+# Claude owns its JSON state, so merge only Dibs and preserve a backup of displaced content.
+merge_claude_dibs () {
+  local target="$1" tmp backup
+  tmp=$(mktemp "$(dirname "$target")/.claude-config.XXXXXX") || return 1
+  if ! python3 "$DOTFILES_ROOT/scripts/install/claude-merge-dibs.py" "$target" "$DOTFILES_ROOT/ai/claude/dibs-mcp.json" "$DOTFILES_ROOT" > "$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  if [ -f "$target" ] && cmp -s "$target" "$tmp"; then
+    rm -f "$tmp"
+    return 0
+  fi
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    backup=$(backup_path_for "$target" "") || { rm -f "$tmp"; return 1; }
+    if [ -n "$backup" ]; then
+      mkdir -p "$(dirname "$backup")" && cp -a -- "$target" "$backup" || { rm -f "$tmp"; return 1; }
+    fi
+    [ ! -f "$target" ] || chmod --reference="$target" "$tmp"
+  fi
+  mv -f -- "$tmp" "$target"
+}
+merge_claude_dibs "$HOME/.claude.json"
+if [ -d "$HOME/.claude-work" ]; then
+  merge_claude_dibs "$HOME/.claude-work/.claude.json"
+fi
 echo_success "Claude Code config linked to ~/.claude (and ~/.claude-work when present)."
 echo_info "  - settings.json's own hook commands use \$HOME, portable to any username. Sessioneer's"
 echo_info "    hooks (committed as \$HOME/www/personal/sessioneer/...; its Install hooks may rewrite them"

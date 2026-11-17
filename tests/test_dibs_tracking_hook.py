@@ -1,6 +1,7 @@
 """Tracking hook contract (claim-or-work-line guard + breadcrumbs), exercised only against an isolated fake Dibs CLI."""
 import json
 import os
+from claude_agent_fixture import use_test_process_as_claude
 import re
 import time
 from pathlib import Path
@@ -76,6 +77,7 @@ with open(path, 'r+') as f:
 
 class TrackingHookTest(unittest.TestCase):
     def setUp(self):
+        use_test_process_as_claude(self)
         self.tmp = tempfile.TemporaryDirectory(dir='/var/tmp')  # outside /tmp: /tmp edits are exempt
         self.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
@@ -88,7 +90,7 @@ class TrackingHookTest(unittest.TestCase):
         self.db = root / 'db.json'
         self.db.write_text(json.dumps({'log': [], 'claims': {}, 'issues': {}, 'comments': {}, 'keys': {}, 'dropped': []}))
         self.env = {**os.environ, 'DIBS_CLI': f'{sys.executable} {stub} {self.db}',
-                    'DIBS_BLOCK_STATE_DIR': str(root / 'state'), 'DIBS_AGENT_PID': '4242',
+                    'DIBS_BLOCK_STATE_DIR': str(root / 'state'), 'DIBS_AGENT_PID': str(os.getpid()),
                     'DIBS_ATLAS_SYNC': 'off', 'SESSIONEER_SELF': 'tester',
                     'XDG_RUNTIME_DIR': str(root / 'xdg')}
         (root / 'xdg').mkdir()
@@ -186,7 +188,7 @@ class TrackingHookTest(unittest.TestCase):
         self.assertEqual(len(self.calls('claim')), 1)
         self.assertIn('100', db['claims'])
         b = self.breadcrumb()
-        self.assertEqual((b['prompt'], b['cwd'], b['branch'], b['pid']), (prompt, str(self.repo), 'tracking-test', 4242))
+        self.assertEqual((b['prompt'], b['cwd'], b['branch'], b['pid']), (prompt, str(self.repo), 'tracking-test', os.getpid()))
         self.assertIsInstance(b['ts'], int)
         self.assertLess(abs(b['ts'] - time.time()), 60)
 

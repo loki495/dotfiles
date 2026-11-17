@@ -70,19 +70,10 @@ def cli(cmd, *args):
 
 
 def agent_pid():
-    if os.environ.get('DIBS_AGENT_PID'):
-        return os.environ['DIBS_AGENT_PID']
-    pid = os.getppid()
-    for _ in range(8):
-        try:
-            if Path(f'/proc/{pid}/comm').read_text().strip() == 'claude':
-                return str(pid)
-            pid = int(Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[1])
-        except (OSError, ValueError, IndexError):
-            break
-        if pid <= 1:
-            break
-    return str(os.getppid())
+    spec = importlib.util.spec_from_file_location('agent_pid', Path(__file__).resolve().parent.parent / 'scripts/agent-pid.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return str(module.agent_pid(os.getppid()))
 
 
 class Session:
