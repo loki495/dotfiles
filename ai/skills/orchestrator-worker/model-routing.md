@@ -2,6 +2,28 @@
 
 Reference for the `orchestrator-worker` skill; read it when the decision tree in `SKILL.md` points here.
 
+## Agent priorities
+
+Prefer Claude for planning, architecture and mid/high-level coding; Codex is the close
+second choice. Apply the ranked lists below to new sessions and bounded workers. Keep an
+active session on its current model while it can finish its step; this preference alone is
+not a reason to restart or move its context. Quota, an unavailable model/tool or an authorized
+account boundary can require the next capable entry in the same tier.
+
+Use OpenCode, Luna, Haiku and agy for bounded mechanical work so the planning and coding
+models retain capacity for judgment. Their existing mechanical order below is unchanged.
+Examples include running established test/lint commands and summarizing results, enumerating
+files or catalog entries, applying a specified rename, and formatting known content. Choosing
+what behavior should change, diagnosing an unfamiliar failure, interpreting an ambiguous
+review finding and checking process/security races remain judgment work.
+
+Delegate mechanical work when either existing cost gate applies: roughly 10k or more tokens
+of expected tool output, or more than about 15 repetitive records. Treat this as a required
+routing decision, not a suggestion to consider after doing the work yourself. Reuse an
+available cheap runner for a fixed verification batch when that avoids another cold start.
+For a small task needing up to three calls, work inline when launching a worker would cost
+more than it saves. A large batch does not lower the reasoning tier its decisions require.
+
 ## Model Tiering
 
 The orchestrator and the worker do fundamentally different work and should normally
@@ -81,8 +103,8 @@ Temperature is left at each tool's default.
 5. agy `claude-sonnet-4-6`
 
 **advanced**: planning, architecture, audit design, subtle debugging, multi-file refactors with design choices.
-1. codex `gpt-6.1-sol`, high
-2. claude `claude-opus-5-5`, high
+1. claude `claude-opus-5-5`, high
+2. codex `gpt-6.1-sol`, high
 3. opencode `openai/gpt-6.1-sol`, high
 4. agy `claude-opus-4-6-thinking`
 
