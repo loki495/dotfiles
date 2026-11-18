@@ -41,7 +41,7 @@ class StopGateTest(unittest.TestCase):
         # never the real Dibs: the dibs-block stop step run by the gate talks to this stub
         self.safe_env = {'DIBS_CLI': f'{sys.executable} {t / "dibs-stub.py"} {self.db}', 'DIBS_BLOCK_STATE_DIR': str(t / 'bstate'),
                          'DIBS_ATLAS_HINTS': str(t / 'hints.jsonl'), 'DIBS_ATLAS_SYNC': 'off', 'DIBS_AGENT_PID': str(os.getpid()),
-                         'SESSIONEER_SELF': 'tester'}
+                         'SESSIONEER_SELF': 'tester', 'SESSIONEER_SPAWNED_CMD': 'echo {"ok":false}'}
 
     def dbs(self):
         return json.loads(self.db.read_text())
@@ -213,6 +213,44 @@ class StopGateTest(unittest.TestCase):
         self.assertIn('handoff', out['reason'])
         self.assertIn('session-handoff', out['reason'])
         self.assertIn('todo_release', out['reason'])
+
+    def spawned_run(self, line, sessions, claims='echo "[]"', **extra):
+        reply = Path(self.tmp.name) / 'spawned.json'
+        reply.write_text(json.dumps({'ok': True, 'sessions': sessions}))
+        return self.run_hook(claims, env={'SESSIONEER_SPAWNED_CMD': f'cat {reply}'},
+                             extra={'last_assistant_message': f'R.\n{line}', **extra})
+
+    def test_completion_status_with_an_idle_spawn_blocks_naming_it(self):
+        for line in (SAFE, DONE):
+            with self.subTest(line=line):
+                out = json.loads(self.spawned_run(line, [{'name': 'kid', 'status': 'idle'}]).stdout)
+                self.assertEqual(out['decision'], 'block')
+                self.assertIn('kid', out['reason'])
+                self.assertIn('--reap', out['reason'])
+
+    def test_working_blocked_and_archived_spawns_do_not_block(self):
+        kids = [{'name': 'w', 'status': 'working'}, {'name': 'b', 'status': 'blocked'},
+                {'name': 'a', 'status': 'idle', 'archived': True}]
+        self.assertEqual(self.spawned_run(SAFE, kids).stdout.strip(), '')
+
+    def test_non_completion_statuses_ignore_idle_spawns(self):
+        for line in (SAME, OTHER, ANDRES, WORK):
+            with self.subTest(line=line):
+                self.assertEqual(self.spawned_run(line, [{'name': 'kid', 'status': 'idle'}]).stdout.strip(), '')
+
+    def test_claim_and_idle_spawn_give_one_combined_message(self):
+        out = json.loads(self.spawned_run(SAFE, [{'name': 'kid', 'status': 'idle'}], claims='echo \'[{"issueId": 7}]\'').stdout)
+        self.assertEqual(out['decision'], 'block')
+        for word in ('task 7', 'kid', '[complete', '--reap'):
+            self.assertIn(word, out['reason'])
+
+    def test_refused_spawn_lookup_does_not_block(self):
+        self.assertEqual(self.run_hook('echo "[]"', extra={'last_assistant_message': f'R.\n{SAFE}'}).stdout.strip(), '')
+
+    def test_stop_hook_active_with_an_idle_spawn_allows_with_a_warning(self):
+        out = json.loads(self.spawned_run(SAFE, [{'name': 'kid', 'status': 'idle'}], stop_hook_active=True).stdout)
+        self.assertNotIn('decision', out)
+        self.assertIn('kid', out['systemMessage'])
 
     def test_claim_check_passes_the_session_id(self):
         args = Path(self.tmp.name) / 'args'

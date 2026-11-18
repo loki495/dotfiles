@@ -42,20 +42,41 @@ out=$(timeout 8 "${cmd[@]}" --held-by="$session" 2>/dev/null) \
   || warn "Stop gate skipped: Dibs unreachable or errored, so open claims were not checked."
 count=$(jq 'length' <<<"$out" 2>/dev/null) \
   || warn "Stop gate skipped: unreadable answer from Dibs, so open claims were not checked."
-[ "$count" -gt 0 ] || { [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'; exit 0; }
-
 held=$(jq -r 'map("task \(.issueId)") | join(", ")' <<<"$out")
+
+# Idle, unarchived sessions this session launched. Only completion statuses care; an unreachable or refused
+# lookup (no tracked caller, host agent down) adds nothing so the gate never blocks on missing data.
+idle=""
+case "$status" in
+  'Safe to archive this session.'|'All planned work is done.')
+    read -r -a scmd <<<"${SESSIONEER_SPAWNED_CMD:-sessioneer --spawned --json}"
+    sout=$(timeout 8 "${scmd[@]}" 2>/dev/null) || sout=""
+    idle=$(jq -r 'if .ok == true then [.sessions[]? | select(.status == "idle" and (.archived // false) != true) | .name] | join(", ") else "" end' <<<"$sout" 2>/dev/null) || idle="" ;;
+esac
+
 case "$status" in
   'Continue in this session:'|'Waiting on Andres:'|'Waiting on other work:')
     [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'
     exit 0 ;;
 esac
+if [ "$count" -eq 0 ] && [ -z "$idle" ]; then
+  [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'
+  exit 0
+fi
+
+parts=()
+[ "$count" -gt 0 ] && parts+=("holds $held")
+[ -n "$idle" ] && parts+=("has idle sessions it launched that are not archived ($idle)")
+problem=$(IFS=';'; printf '%s' "${parts[*]}" | sed 's/;/ and /')
 if [ "$active" = true ]; then
-  warn "Stopped while holding a Dibs claim ($held); release or complete it."
+  warn "Stopped while this session $problem; release, complete or archive them."
 fi
+steps=()
 if [ "$status" = 'Continue in a different session:' ]; then
-  reason="This session holds $held. File a handoff as one temporary task labelled handoff with the session-handoff skill, give Andres its id, then release with todo_release and a handoff."
+  [ "$count" -gt 0 ] && steps+=("file a handoff as one temporary task labelled handoff with the session-handoff skill, give Andres its id, then release with todo_release and a handoff")
 else
-  reason="This session holds $held. Output [complete <id> | sha=... tests=\"...\" | notes] or release with todo_release and a comment saying what is left."
+  [ "$count" -gt 0 ] && steps+=("output [complete <id> | sha=... tests=\"...\" | notes] or release with todo_release and a comment saying what is left")
 fi
+[ -n "$idle" ] && steps+=("run sessioneer --reap to archive the idle claim-free ones, or archive them as the session-flow skill describes")
+reason="This session $problem. Fix everything in one pass: $(IFS=';'; printf '%s' "${steps[*]}" | sed 's/;/; and /')."
 jq -n --arg r "$reason" '{decision: "block", reason: $r}'
