@@ -32,7 +32,14 @@ Read-only from the server's side: nothing on the live site is changed.
 
 One account cannot hold up the rest: every network step is bounded (60 s
 reachability probe, 2 h per account, 10 min rsync inactivity, 1 h per dump) and
-a failing account is recorded while the loop moves on. A run that fails or skips
+a failing account is recorded while the loop moves on. The server resets SSH
+handshakes (`kex_exchange_identification: Connection reset by peer`) when it sees
+a burst of connections, which showed up as skipped or failed accounts on
+2026-11-19 and 2026-11-20 while a manual `ssh -l <acct> inmotion2 true` worked.
+So the probe, rsync, database list and each dump are retried (`TRIES`, default 3,
+15 s then 30 s apart) and accounts are spaced by `ACCOUNT_PAUSE` (5 s). Rerun
+only the failed accounts by naming them: `~/backups/bin/backup-inmotion2 <acct> ...`.
+A run that fails or skips
 anything, or that refuses to start because the laptop has under 5 GB free, mails
 `andres@ac495.net` (override with `MAIL_TO`, `MAIL_FROM`, `MAIL_ACCOUNT`). The
 message goes over the existing SSH access into the server's Exim, so no mail
