@@ -97,6 +97,16 @@ Used by ROTATE, `/rotate` and `/orchestrate`.
 - Name the source so the receiver can archive it. The `--handoff` prompt finds it in the handoff's
   `Session:` field. For `--plan` and `--prompt`, put `Session: <agent> <conversation id>` (from
   `sessioneer --whoami`) in the step's checkpoint comment or in the prompt text.
+- Auto-continue: a plan body with its own line `Auto-continue: on` (case-insensitive; `online` or a
+  mention in a sentence is off) lets the session start the receiver itself instead of posting an
+  offer. Run `sessioneer --next --plan <id> --post --no-gates`; `--no-gates` is your affirmation that
+  the plan's gates are met (checkpoint written, records current, no claims held). Only a ROTATE with
+  a receiver starts one; the output then has `auto-continued: <receiver name>`. If it did not start,
+  `auto_continue_note` (`--json`) says why and the normal offer is posted. The plan text comes from
+  `SESSIONEER_PLAN_CMD`; unset or failing means off. The parse is strict: every `Auto-continue:` line
+  outside ``` fences must say exactly `on` (an `off` or other value anywhere turns it off). It also
+  needs `SESSIONEER_CLAIMS_CMD` set, and starts one receiver per source; a second call reports the
+  existing receiver and posts no offer.
 - Offer path: `sessioneer --offer --handoff <id>`, `--offer --plan <id>` or `--offer "<text>"` posts
   the same rotation as a band on the dashboard for Andres to tap, and `--offer --clear` withdraws
   it. Hooks that post it themselves do so with `sessioneer --next --post`; do not duplicate an
