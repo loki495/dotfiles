@@ -18,7 +18,7 @@ needs cleaning up. No files on disk.
 - Near quota (rule 728): write it **before** the session can no longer run tools. A session cut
   off mid-turn cannot write anything, so this is a 90%-time job, not an end-of-session one.
 - Parking while waiting on Andres: a decision, real-world action or check only he can do.
-- Parking while blocked on another session's claim, PR, deploy or review.
+- Parking while blocked on another session's claim, PR, deploy or review. Before a `Waiting on other work` status run `sessioneer --waiting-on NAMES` (tracked session names, never conversation ids) (the sessions you wait on); run `sessioneer --waiting-on none` when you resume.
 - Ending with anything uncommitted, untested, unmerged, or undocumented.
 
 Continue-in-this-session and both Waiting statuses may retain/renew claims while this same

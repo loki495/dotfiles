@@ -34,7 +34,7 @@ did:
 | CHECKPOINT | A step ends while running tight (`--intent step-end`), or before any leaving | Write the checkpoint, update the plan and records, release claims. |
 | PARK | Quota at `QUOTA_PARK` or more and no other agent or profile has room | File the handoff, release, say when quota resets. Offer a scheduled wake-up (`at`) only when the job exists; phase 3 adds it. |
 | ROTATE | A trigger fired (context at `CTX_ROTATE`, cold cache with big context, quota) and another agent or profile has room | File the handoff, launch the receiver, archive this session once the receiver has claimed it. |
-| WAIT | Waiting on Andres or another session (`--intent wait`), or the session is blocked | Status line only; the claim may stay. |
+| WAIT | Waiting on Andres or another session (`--intent wait`), or the session is blocked | Status line only; the claim may stay. When the wait is on other sessions, run `sessioneer --waiting-on NAMES` (tracked session names, never conversation ids) (comma separated session names) so the dashboard shows it; `sessioneer --waiting-on none` when you resume. |
 | DONE | The plan or request is finished (`--intent done`) | Closer checks, clear spawned sessions, then "Safe to archive" or "All planned work is done". |
 | UNKNOWN | No facts could be read | Measure by hand (Inputs) and decide from those. |
 
@@ -154,11 +154,12 @@ Before "Safe to archive this session." or "All planned work is done.", archive e
 this session launched: idle, claim-free ones with `sessioneer --kill <name or conversation id>` (add
 `--agent <agent>`; no `--force` on a working or blocked one). Record each launch (name and
 conversation id) in the task checkpoint at launch, because `--list` does not yet show who spawned
-a session. A session that is still working is not archived; the status is then Waiting on other work.
+a session. A session that is still working is not archived; the status is then Waiting on other work,
+and you run `sessioneer --waiting-on NAMES` for it first (`--waiting-on none` once you resume).
 A session you replaced counts too. Never archive another agent's session.
 
 ## Sessioneer commands every agent should know
 
 `sessioneer --usage`, `--whoami`, `--peers`, `--list [--json]`, `--show TARGET`, `--send TARGET "msg"`,
-`--kill TARGET`, `--next [TARGET] [--json]`, `--rotate (...)`, `--offer [--clear]`, `--take-over TARGET`,
+`--kill TARGET`, `--waiting-on NAMES|none`, `--next [TARGET] [--json]`, `--rotate (...)`, `--offer [--clear]`, `--take-over TARGET`,
 and the launch form in "Handoff and prompt". Read `peer-sessions` before messaging another session.
