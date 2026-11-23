@@ -36,8 +36,11 @@ a failing account is recorded while the loop moves on. The server resets SSH
 handshakes (`kex_exchange_identification: Connection reset by peer`) when it sees
 a burst of connections, which showed up as skipped or failed accounts on
 2026-11-19 and 2026-11-20 while a manual `ssh -l <acct> inmotion2 true` worked.
-So the probe, rsync, database list and each dump are retried (`TRIES`, default 3,
-15 s then 30 s apart) and accounts are spaced by `ACCOUNT_PAUSE` (5 s). Rerun
+So each account shares one SSH connection (`ControlMaster`, closed after the
+account) for its probe, rsync, database list and dumps, which cuts a night from
+150 or more handshakes to about 33. The probe, rsync, database list and each dump are
+also retried (`TRIES`, default 3, 15 s then 30 s apart, timestamped in the log)
+and accounts are spaced by `ACCOUNT_PAUSE` (5 s). Rerun
 only the failed accounts by naming them: `~/backups/bin/backup-inmotion2 <acct> ...`.
 A run that fails or skips
 anything, or that refuses to start because the laptop has under 5 GB free, mails
