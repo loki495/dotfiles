@@ -171,6 +171,12 @@ class BodyParsingTest(ExportBase):
         data = self.run_ok([task(1), task(2)], {1: {'body': 'No summary here\n- Hits: 4\n'}, 2: body('ok')})
         self.assertEqual(list(self.by_id(data)), [2])
 
+    def test_empty_summary_line_does_not_take_the_next_line(self):
+        data = self.run_ok([task(1), task(2), task(3)],
+                           {1: {'body': '- Summary:\n- Hits: 3\n'},
+                            2: {'body': 'Summary:   \nHits: 3, Last seen: 2026-11-01\n'}, 3: body('ok')})
+        self.assertEqual(list(self.by_id(data)), [3])
+
     def test_empty_or_missing_body_is_skipped(self):
         data = self.run_ok([task(1), task(2), task(3)], {1: {'body': ''}, 2: {}, 3: body('ok')})
         self.assertEqual(list(self.by_id(data)), [3])
@@ -213,6 +219,22 @@ class WriteTest(ExportBase):
         proc = self.run_export(list_raw='nope')
         self.assertNotEqual(proc.returncode, 0)
         self.assertFalse(self.cache.exists())
+
+    def test_list_without_a_tasks_list_keeps_the_old_cache_and_exits_nonzero(self):
+        for raw in ({'error': 'x'}, {}, {'tasks': None}, {'tasks': {}}, {'tasks': 'x'}):
+            self.cache.write_text(self.OLD)
+            proc = self.run_export(list_raw=raw)
+            self.assertNotEqual(proc.returncode, 0, raw)
+            self.assertEqual(self.cache.read_text(), self.OLD, raw)
+
+    def test_any_failing_show_call_keeps_the_old_cache_and_exits_nonzero(self):
+        for failing in (1, 2, 3):
+            self.cache.write_text(self.OLD)
+            show = {i: body(f's{i}') for i in (1, 2, 3) if i != failing}  # the stub exits 1 for the missing id
+            proc = self.run_export([task(1), task(2), task(3)], show)
+            self.assertNotEqual(proc.returncode, 0, failing)
+            self.assertEqual(self.cache.read_text(), self.OLD, failing)
+            self.assertEqual(self.leftovers(), ['lessons.json'])
 
     def test_missing_cli_exits_nonzero_and_keeps_the_old_cache(self):
         self.cache.write_text(self.OLD)

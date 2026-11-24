@@ -7,8 +7,8 @@ The cache ($LESSON_CACHE, default ~/.cache/dibs-lessons.json) holds one entry pe
 id, summary (the body's `Summary:` line), triggers (label names without `trigger `), group and area
 (the record's project), hits and last_seen (body lines `Hits: N` and `Last seen: YYYY-MM-DD`).
 The Dibs CLI prefix is $DIBS_CLI (default `docker exec -u www-data dibs-app php artisan`). When the
-list call fails the existing cache is left alone and the exit code is 2. A flock keeps two refreshes
-from running at once; the second exits 0 without doing anything.
+list call or any show call fails, the existing cache is left alone and the exit code is 2. A flock
+keeps two refreshes from running at once; the second exits 0 without doing anything.
 
 Usage: lessons-export.py
 """
@@ -48,7 +48,7 @@ def is_active(task):
 
 def parse_body(body):
     """(summary, hits, last_seen) from a lesson body; summary is None when the line is missing."""
-    summary = re.search(r"(?mi)^\s*[-*]?\s*Summary:\s*(.+?)\s*$", body or "")
+    summary = re.search(r"(?mi)^[ \t]*[-*]?[ \t]*Summary:[ \t]*(\S.*?)[ \t\r]*$", body or "")
     hits = re.search(r"(?i)\bHits:\s*(\d+)", body or "")
     seen = re.search(r"(?i)\bLast seen:\s*(\d{4}-\d{2}-\d{2})", body or "")
     return (summary.group(1) if summary else None, int(hits.group(1)) if hits else 0, seen.group(1) if seen else "")
@@ -84,20 +84,14 @@ def main():
         except OSError:
             return 0
         try:
-            tasks = cli("list", "--knowledge").get("tasks") or []
-        except (OSError, ValueError, AttributeError, RuntimeError, subprocess.SubprocessError) as e:
-            print(f"lessons-export: Dibs list failed: {e}", file=sys.stderr)
+            tasks = cli("list", "--knowledge")["tasks"]
+            if not isinstance(tasks, list):
+                raise ValueError("no tasks list")
+            lessons = [e for t in tasks if isinstance(t, dict) and isinstance(t.get("id"), int) and is_active(t)
+                       if (e := entry(t))]
+        except (OSError, ValueError, KeyError, TypeError, AttributeError, RuntimeError, subprocess.SubprocessError) as e:
+            print(f"lessons-export: Dibs read failed, cache unchanged: {e}", file=sys.stderr)
             return 2
-        lessons = []
-        for task in tasks:
-            if isinstance(task, dict) and isinstance(task.get("id"), int) and is_active(task):
-                try:
-                    e = entry(task)
-                except (OSError, ValueError, AttributeError, RuntimeError, subprocess.SubprocessError) as err:
-                    print(f"lessons-export: skipped {task['id']}: {err}", file=sys.stderr)
-                    continue
-                if e:
-                    lessons.append(e)
         write_cache(lessons)
         print(f"lessons-export: {len(lessons)} active lessons")
     return 0

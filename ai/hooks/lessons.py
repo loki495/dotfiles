@@ -15,7 +15,7 @@ import time
 HERE = os.path.dirname(os.path.realpath(__file__))
 EXPORTER = os.path.join(os.path.dirname(HERE), "scripts", "lessons-export.py")
 DEFAULT_CACHE = "~/.cache/dibs-lessons.json"
-DEFAULT_CAP, DEFAULT_TTL, SUMMARY_MAX = 5, 3600, 120
+DEFAULT_CAP, DEFAULT_TTL, DEFAULT_RETRY, SUMMARY_MAX = 5, 3600, 300, 120
 HEADER = "Lessons for this action:"
 
 
@@ -33,10 +33,14 @@ def _int_env(name, default):
 def load_cache():
     """(generated epoch or None, [valid lesson dicts]); a bad file or entry is skipped."""
     try:
-        data = json.load(open(cache_path()))
+        path = cache_path()
+        if not os.path.isfile(path):  # opening a FIFO would block the hook
+            return None, []
+        with open(path) as f:
+            data = json.load(f)
         entries = data["lessons"]
         generated = data.get("generated")
-    except (OSError, ValueError, KeyError, TypeError):
+    except Exception:  # includes RecursionError on a corrupt file; unreadable means stale
         return None, []
     if not isinstance(entries, list):
         return None, []
@@ -46,17 +50,26 @@ def load_cache():
                 and isinstance(e.get("summary"), str) and e["summary"].strip()
                 and isinstance(e.get("triggers"), list) and not e.get("draft")):
             out.append(e)
-    ok = isinstance(generated, (int, float)) and not isinstance(generated, bool)
+    ok = (isinstance(generated, (int, float)) and not isinstance(generated, bool)
+          and generated <= time.time())  # a future, infinite or NaN stamp counts as stale
     return (generated if ok else None), out
 
 
 def refresh_if_stale(generated):
-    """Start the exporter detached when the cache is missing or older than LESSON_TTL; never waits."""
+    """Start the exporter detached when the cache is missing or older than LESSON_TTL; never waits.
+
+    At most one start per LESSON_RETRY seconds, so a failing exporter is not respawned on every event."""
     if os.environ.get("LESSON_REFRESH") == "off":
         return
-    if generated is not None and time.time() - generated < _int_env("LESSON_TTL", DEFAULT_TTL):
+    if generated is not None and generated > time.time() - _int_env("LESSON_TTL", DEFAULT_TTL):
         return
+    marker, retry = cache_path() + ".refresh", _int_env("LESSON_RETRY", DEFAULT_RETRY)
     try:
+        if retry and os.path.exists(marker) and time.time() - os.path.getmtime(marker) < retry:
+            return
+        os.makedirs(os.path.dirname(marker) or ".", exist_ok=True)
+        with open(marker, "w"):
+            pass
         cmd = shlex.split(os.environ["LESSON_REFRESH_CMD"]) if os.environ.get("LESSON_REFRESH_CMD") \
             else [sys.executable, EXPORTER]
         subprocess.Popen(cmd, start_new_session=True, stdin=subprocess.DEVNULL,
@@ -73,12 +86,8 @@ def _rank(entry, project_parts):
     hits = entry.get("hits") if isinstance(entry.get("hits"), int) and not isinstance(entry.get("hits"), bool) else 0
     last = entry.get("last_seen") if isinstance(entry.get("last_seen"), str) else ""
     local = bool(_norm(entry.get("group", "")) and _norm(entry.get("group", "")) in project_parts)
-    # newest date first: invert by comparing on a descending sort of the string, ids ascending last
-    return (not local, -hits, _desc(last), entry["id"])
-
-
-def _desc(date):
-    return tuple(-ord(c) for c in date)
+    # newest date first (negated characters), undated after every dated one, ids ascending last
+    return (not local, -hits, not last, tuple(-ord(c) for c in last), entry["id"])
 
 
 def pick(keys, cwd, have):
@@ -94,6 +103,6 @@ def pick(keys, cwd, have):
     eligible.sort(key=lambda e: _rank(e, parts))
     out = []
     for e in eligible[:_int_env("LESSON_CAP", DEFAULT_CAP)]:
-        text = re.sub(r"\s+", " ", e["summary"]).strip()[:SUMMARY_MAX]
+        text = "".join(c for c in re.sub(r"\s+", " ", e["summary"]) if c.isprintable()).strip()[:SUMMARY_MAX]
         out.append((e["id"], f"[lesson {e['id']}] {text}"))
     return out

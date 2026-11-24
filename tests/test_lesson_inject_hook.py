@@ -7,12 +7,13 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from test_rule_inject_hook import HookBase, make_stub  # noqa: E402
+from test_rule_inject_hook import HOOK, HookBase, make_stub  # noqa: E402
 
 LESSON_LINE = re.compile(r'^\[lesson (\d+)\] (.*)$', re.M)
 LATE_PHRASE = 'arrived after the call ran'
@@ -33,6 +34,7 @@ class LessonBase(HookBase):
         self.env.pop('LESSON_CAP', None)
         self.env.pop('LESSON_TTL', None)
         self.env.pop('LESSON_REFRESH_CMD', None)
+        self.env.pop('LESSON_RETRY', None)
 
     def write_cache(self, lessons, generated=None):
         self.cache.write_text(json.dumps({'generated': time.time() if generated is None else generated,
@@ -119,6 +121,11 @@ class LessonInjectTest(LessonBase):
                           lesson(13, hits=2, last_seen='2026-05-05')])
         self.assertEqual(self.ids(self.bash('git commit -m x', cwd=CWD)), [12, 11, 13, 14, 10])
 
+    def test_undated_lessons_rank_after_dated_ones_at_equal_hits(self):
+        self.write_cache([lesson(1, hits=2, last_seen=''), lesson(2, hits=2, last_seen='2000-01-01'),
+                          lesson(3, hits=3, last_seen=''), lesson(4, hits=2, last_seen='')])
+        self.assertEqual(self.ids(self.bash('git commit -m x', cwd=CWD)), [3, 2, 1, 4])
+
     def test_default_cap_is_five(self):
         self.write_cache([lesson(i, hits=100 - i) for i in range(1, 9)])
         self.assertEqual(self.ids(self.bash('git commit -m x', cwd=CWD)), [1, 2, 3, 4, 5])
@@ -179,6 +186,56 @@ class LessonFormatTest(LessonBase):
         ctx = self.bash('git add -A', cwd=CWD)['additionalContext']
         self.assertEqual(len(LESSON_LINE.findall(ctx)), 5)
         self.assertLess(len(ctx), 1000)
+
+
+    def test_control_and_non_printable_characters_are_stripped(self):
+        self.write_cache([lesson(1, 'a\x1b[31mb\x00c\u202ed caf\u00e9', triggers=['git add all'])])
+        ctx = self.bash('git add -A', cwd=CWD)['additionalContext']
+        for char in ('\x1b', '\x00', '\u202e'):
+            self.assertNotIn(char, ctx)
+        self.assertIn('[lesson 1] a[31mbcd caf\u00e9', ctx.splitlines())
+
+
+class LessonTotalSizeTest(LessonBase):
+    """Group: the 10000 character limit. Lessons that do not fit are left out and stay undelivered."""
+
+    def setUp(self):
+        super().setUp()
+        self.env['LESSON_CAP'] = '30'
+
+    def big_rule(self, rule_id, size):
+        path = self.tmp / 'rules.md'
+        path.write_text(path.read_text().replace(f'TEXT-{rule_id}\n', 'R' * size + '\n'))
+
+    def assert_fits_and_marks_only_printed(self, first, again, size):
+        ctx = first['additionalContext']
+        printed = self.ids(first)
+        self.assertLessEqual(len(ctx), 10000)
+        self.assertIn('R' * size, ctx)
+        self.assertTrue(0 < len(printed) < 30, printed)
+        for _, text in LESSON_LINE.findall(ctx):
+            self.assertEqual(text[:120], 'w' * 120)  # a lesson is dropped whole, not cut short
+        state = (self.tmp / 'state' / 's1-main').read_text().split()
+        self.assertEqual(sorted(int(x.split(':')[1]) for x in state if x.startswith('lesson:')), sorted(printed))
+        second = again()
+        rest = self.ids(second)
+        self.assertEqual(sorted(printed + rest), list(range(1, 31)))
+
+    def test_lessons_that_do_not_fit_beside_rules_are_dropped_and_not_marked(self):
+        self.big_rule(732, 8000)
+        self.write_cache([lesson(i, 'w' * 120, hits=100 - i) for i in range(1, 31)])
+        first = self.bash('git commit -m x', cwd=CWD)
+        self.assertIn('TEXT-737', first['additionalContext'])
+        self.assertIn(LATE_PHRASE, first['additionalContext'])
+        self.assert_fits_and_marks_only_printed(first, lambda: self.bash('git commit -m x', cwd=CWD), 8000)
+
+    def test_prompt_with_reminder_and_large_rule_stays_within_the_limit(self):
+        self.big_rule(928, 8500)
+        self.write_cache([lesson(i, 'w' * 120, triggers=['peer prompt'], hits=100 - i) for i in range(1, 31)])
+        text = '[sessioneer peer: a \u00b7 /x \u00b7 master] hi'
+        first = self.prompt(text, cwd=CWD)
+        self.assertIn('1226', first['additionalContext'])
+        self.assert_fits_and_marks_only_printed(first, lambda: self.prompt(text, cwd=CWD), 8500)
 
 
 class LessonDedupeTest(LessonBase):
@@ -298,15 +355,22 @@ class LessonFailSilentTest(LessonBase):
             out = self.bash('git commit -m x', cwd=CWD, env={**self.env, 'LESSON_CAP': cap}, session_id='c' + cap)
             self.assertIn('TEXT-732', out['additionalContext'])
 
+    def test_a_fifo_at_the_cache_path_does_not_hang_the_hook(self):
+        os.mkfifo(self.cache)
+        event = {'session_id': 's1', 'hook_event_name': 'PreToolUse', 'tool_name': 'Bash',
+                 'tool_input': {'command': 'git commit -m x'}, 'cwd': CWD}
+        proc = subprocess.run([str(HOOK)], input=json.dumps(event), capture_output=True, text=True, env=self.env,
+                              timeout=5)
+        self.assertEqual((proc.returncode, proc.stderr), (0, ''))
+        self.assertIn('TEXT-732', proc.stdout)
+
     def test_unwritable_cache_location_is_silent(self):
         env = {**self.env, 'LESSON_CACHE': str(self.tmp / 'no' / 'such' / 'dir' / 'x.json')}
         out = self.bash('git commit -m x', cwd=CWD, env=env)
         self.assertIn('TEXT-732', out['additionalContext'])
 
 
-class LessonRefreshTest(LessonBase):
-    """Group: background refresh. Stale or missing cache starts a detached refresh; the hook never waits."""
-
+class LessonRefreshBase(LessonBase):
     def setUp(self):
         super().setUp()
         self.marker = self.tmp / 'marker'
@@ -326,6 +390,10 @@ class LessonRefreshTest(LessonBase):
     def assert_no_refresh(self):
         time.sleep(0.7)
         self.assertEqual(self.runs(wait=0), 0)
+
+
+class LessonRefreshTest(LessonRefreshBase):
+    """Group: background refresh. Stale or missing cache starts a detached refresh; the hook never waits."""
 
     def test_missing_cache_starts_a_refresh(self):
         self.bash('git commit -m x', cwd=CWD)
@@ -357,6 +425,7 @@ class LessonRefreshTest(LessonBase):
         self.assert_no_refresh()
 
     def test_cache_without_a_usable_generated_counts_as_stale(self):
+        self.env['LESSON_RETRY'] = '0'
         for gen in ('x', None):
             self.cache.write_text(json.dumps({'generated': gen, 'lessons': [lesson(1)]}))
             self.marker.unlink(missing_ok=True)
@@ -388,6 +457,97 @@ class LessonRefreshTest(LessonBase):
         self.env['LESSON_REFRESH_CMD'] = "unbalanced 'quote"
         out = self.bash('git commit -m x', cwd=CWD, session_id='s2')
         self.assertIn('TEXT-732', out['additionalContext'])
+
+    def assert_stale(self, raw):
+        self.cache.write_text(raw)
+        out = self.bash('git commit -m x', cwd=CWD)
+        self.assertIn('TEXT-732', out['additionalContext'])
+        self.assertEqual(self.runs(), 1)
+
+    def test_generated_in_the_future_counts_as_stale(self):
+        self.assert_stale(json.dumps({'generated': time.time() + 86400, 'lessons': [lesson(1)]}))
+
+    def test_generated_infinity_counts_as_stale(self):
+        self.assert_stale('{"generated": Infinity, "lessons": []}')
+
+    def test_huge_integer_generated_counts_as_stale(self):
+        self.assert_stale(json.dumps({'generated': 10 ** 400, 'lessons': [lesson(1)]}))
+
+    def test_deeply_nested_json_is_malformed_and_triggers_a_refresh(self):
+        self.assert_stale('[' * 200000)
+
+
+class LessonBackoffTest(LessonRefreshBase):
+    """Group: refresh backoff. At most one refresh per LESSON_RETRY seconds, tracked by <cache>.refresh."""
+
+    def setUp(self):
+        super().setUp()
+        self.retry_marker = Path(str(self.cache) + '.refresh')
+        self.calls = 0
+
+    def call(self, env=None):
+        self.calls += 1
+        out = self.bash('git commit -m x', cwd=CWD, session_id=f'b{self.calls}', env=env or self.env)
+        self.assertIn('TEXT-732', out['additionalContext'])
+
+    def assert_runs(self, count):
+        deadline = time.time() + 3
+        while time.time() < deadline and self.runs(wait=0) < count:
+            time.sleep(0.05)
+        time.sleep(0.7)  # an extra spawn would show up by now
+        self.assertEqual(self.runs(wait=0), count)
+
+    def age_marker(self, seconds):
+        stamp = time.time() - seconds
+        os.utime(self.retry_marker, (stamp, stamp))
+
+    def test_missing_cache_starts_only_one_refresh_and_writes_the_marker(self):
+        self.call()
+        self.call()
+        self.assert_runs(1)
+        self.assertTrue(self.retry_marker.is_file())
+
+    def test_stale_cache_starts_only_one_refresh(self):
+        self.write_cache([lesson(1)], generated=time.time() - 7200)
+        self.call()
+        self.call()
+        self.assert_runs(1)
+
+    def test_default_retry_is_300_seconds(self):
+        self.call()
+        self.assert_runs(1)
+        self.age_marker(200)
+        self.call()
+        self.assert_runs(1)
+        self.age_marker(400)
+        self.call()
+        self.assert_runs(2)
+        self.call()  # the new attempt renewed the marker
+        self.assert_runs(2)
+
+    def test_lesson_retry_env_sets_the_interval(self):
+        env = {**self.env, 'LESSON_RETRY': '30'}
+        self.call(env)
+        self.assert_runs(1)
+        self.age_marker(10)
+        self.call(env)
+        self.assert_runs(1)
+        self.age_marker(60)
+        self.call(env)
+        self.assert_runs(2)
+
+    def test_lesson_retry_zero_disables_the_backoff(self):
+        env = {**self.env, 'LESSON_RETRY': '0'}
+        self.call(env)
+        self.assert_runs(1)
+        self.call(env)
+        self.assert_runs(2)
+
+    def test_no_refresh_when_the_marker_cannot_be_written(self):
+        (self.tmp / 'afile').write_text('')
+        for retry in ('300', '0'):
+            self.call({**self.env, 'LESSON_CACHE': str(self.tmp / 'afile' / 'lessons.json'), 'LESSON_RETRY': retry})
+        self.assert_runs(0)
 
 
 if __name__ == '__main__':

@@ -38,6 +38,7 @@ DEFAULT_TRIGGERS = [os.path.join(os.path.dirname(HERE), "rules-triggers.json"),
                     os.path.expanduser("~/.dotfiles-private/ai/rules-triggers.private.json")]
 DEFAULT_PRIVATE_KEYS = "~/.dotfiles-private/ai/rule-keys.private.json"
 CAP = 9000  # additionalContext is capped at 10,000 characters
+CONTEXT_LIMIT = 10000
 HEADING = re.compile(r"^## (\d+)@(\d+) (.*)$")
 
 GIT = r"(^|[^\w-])git(\s+-\S+(\s+[^-\s]\S*)?)*\s+(%s)(\s|$)"
@@ -322,6 +323,18 @@ def lesson_lines(keys, cwd, have):
         return []
 
 
+def fitting(picked, parts):
+    """The leading lessons that keep the whole context within CONTEXT_LIMIT; the rest stay undelivered."""
+    room = CONTEXT_LIMIT - len("\n\n".join(parts)) - len(f"\n\n{LESSON_HEADER}")
+    kept = []
+    for item in picked:
+        room -= len(item[1]) + 1
+        if room < 0:
+            break
+        kept.append(item)
+    return kept
+
+
 def work_order(obj):
     """The workOrder dict inside a todo_claim tool_response of any wrapping (dict, JSON string, content blocks)."""
     if isinstance(obj, str):
@@ -393,10 +406,6 @@ def run_event(data, ev, session, path):
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
         parts.append(f"Rules for this action:\n\n{body}")
-    picked = lesson_lines(keys, data.get("cwd"), have)
-    if picked:
-        new += [f"lesson:{i}" for i, _ in picked]
-        parts.append(LESSON_HEADER + "\n" + "\n".join(line for _, line in picked))
     bad = hyphen_labels(data) if ev == "PreToolUse" else []
     if bad:
         parts.append(f"Label names use spaces, not hyphens: {', '.join(bad)}.")
@@ -409,6 +418,11 @@ def run_event(data, ev, session, path):
             f.writelines(f"{n}\n" for n in new)
     if body and ev == "PreToolUse":
         parts.append(LATE)
+    picked = fitting(lesson_lines(keys, data.get("cwd"), have), parts)
+    if picked:
+        parts.append(LESSON_HEADER + "\n" + "\n".join(line for _, line in picked))
+        with open(path, "a") as f:
+            f.writelines(f"lesson:{i}\n" for i, _ in picked)
     if parts:
         out(ev, "additionalContext", "\n\n".join(parts))
 

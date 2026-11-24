@@ -636,16 +636,18 @@ All projects:
   `[lesson <id>] <summary>` line each (summary at most 120 characters). A lesson matches when it has
   the label `trigger <key with spaces>` for one of the event's keys (`trigger git commit` for
   `git-commit`); drafts never match. Ranking: lessons whose Dibs group matches a directory in the
-  payload's `cwd` first (case and punctuation ignored), then Hits, then Last seen, then id. A lesson
+  payload's `cwd` first (case and punctuation ignored), then Hits, then Last seen (undated last), then id. A lesson
   is delivered once per context lifetime (`lesson:<id>` line in the same delivered-set file as the
   rules, so the same compact/clear reset and per-subagent sets apply). The hook never calls Dibs: it
   reads `~/.cache/dibs-lessons.json` (`LESSON_CACHE`), written by `ai/scripts/lessons-export.py`
   (Dibs CLI `todo:agent:list` plus `show` per active lesson; `DIBS_CLI` overrides the command). A
   missing cache or one older than `LESSON_TTL` seconds (default 3600) starts that exporter detached
-  without waiting (`LESSON_REFRESH_CMD` overrides the command, `LESSON_REFRESH=off` disables it).
-  A failing exporter keeps the old cache. A missing or malformed cache means no lessons and the
-  rules still go out. Measured size: five lessons of 120 characters add about 0.8 KB (803 characters measured, header included) to an event's context
-  (rules for the same event are far larger). Tests: `tests/test_lesson_inject_hook.py`,
+  without waiting (`LESSON_REFRESH_CMD` overrides the command, `LESSON_REFRESH=off` disables it), at
+  most once per `LESSON_RETRY` seconds (default 300, marker file `<cache>.refresh`). A failing
+  exporter keeps the old cache. A missing or malformed cache means no lessons and the rules still go
+  out. Lessons that would push the event's context past 10,000 characters are left out and stay
+  undelivered. Measured size: five lessons of 120 characters add about 0.8 KB (803 characters, header
+  included) to an event's context (rules for the same event are often larger). Tests: `tests/test_lesson_inject_hook.py`,
   `tests/test_lessons_export.py`. Manual check: put a lesson entry in a temporary `LESSON_CACHE`,
   pipe a PreToolUse Bash `git commit` payload into `hooks/rule-inject.py` with `LESSON_REFRESH=off`.
 

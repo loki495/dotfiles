@@ -126,8 +126,8 @@ Exports the active lesson records to the cache the `rule-inject` hook's lesson c
 records). Per lesson the cache keeps id, triggers, group and area, and from the body the `Summary:`,
 `Hits:` and `Last seen:` values; a lesson without a `Summary:` line is skipped. The Dibs command prefix
 is `DIBS_CLI` (default `docker exec -u www-data dibs-app php artisan`); the script runs `todo:agent:list
---knowledge` once and `todo:agent:show` per active lesson. If the list call fails, the old cache stays
-and the exit code is 2. A lock file stops two runs overlapping. The hook starts this script detached
-when the cache is missing or older than `LESSON_TTL` seconds (default 3600); run it by hand to refresh at once.
+--knowledge` once and `todo:agent:show` per active lesson. If the list call or any show call fails, the old
+cache stays and the exit code is 2. A lock file stops two runs overlapping. The hook starts this
+script detached when the cache is missing or older than `LESSON_TTL` seconds (default 3600); run it by hand to refresh at once.
 
 Tests: `python3 -m unittest tests.test_lessons_export`.
