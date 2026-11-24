@@ -122,6 +122,10 @@ Before continuing past a step boundary, launching a receiver or parking, do all 
 - **Records:** update the plan body and the finished step (commit SHA, what is next, what blocks
   it), file follow-ups, close finished tasks, update the `lesson` and `research` records the work
   changed.
+- **Lessons:** if an error, a correction, a blocked action or a better way came up, search Dibs, then
+  add a recurrence comment to the match or file one record labelled `lesson` and `draft` (format and
+  trigger labels: Dibs guide 2272). Drafts are never injected. Claude's stop gate asks this once per
+  session; other agents ask it themselves here.
 - **Docs, tests and atlas:** anything the committed work makes wrong is fixed in the repo; touched
   atlas subsystems get a hint, stamped with the SHA on the default branch.
 - **Files:** delete scratch files, temp scripts, `/tmp` outputs, stray state files and temporary

@@ -319,5 +319,79 @@ class StopGateTest(unittest.TestCase):
         self.assertIn('skipped', out['systemMessage'])
 
 
+class LessonPromptTest(unittest.TestCase):
+    """The once-per-session lesson check on a completion status."""
+
+    setUp = StopGateTest.setUp
+    run_hook = StopGateTest.run_hook
+    WORKED = '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Edit","input":{}}]}}'
+    HELD = 'echo \'[{"issueId":5}]\''
+
+    def stop(self, status=SAFE, transcript=WORKED, claims='echo "[]"', env=None, **extra):
+        path = Path(self.tmp.name) / 'transcript.jsonl'
+        if transcript is not None:
+            path.write_text(transcript + '\n')
+        proc = self.run_hook(claims, env=env, extra={'last_assistant_message': 'Report.\n' + status,
+                                                     'transcript_path': str(path), **extra})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return json.loads(proc.stdout) if proc.stdout.strip() else {}
+
+    def test_asks_once_per_session_on_a_completion_status(self):
+        out = self.stop()
+        self.assertEqual(out['decision'], 'block')
+        for part in ('Lesson check', 'todo_search', 'labels lesson, draft', 'trigger <key>', 'status line'):
+            self.assertIn(part, out['reason'])
+        self.assertEqual(self.stop(), {})
+        self.assertEqual(self.stop(DONE), {})
+        self.assertEqual(self.stop(session_id='sess-2')['decision'], 'block')
+
+    def test_each_completion_status_asks_even_on_a_repeated_stop(self):
+        for n, status in enumerate((SAFE, DONE, OTHER)):
+            out = self.stop(status, stop_hook_active=True, session_id=f's{n}')
+            self.assertIn('Lesson check', out.get('reason', ''), status)
+
+    def test_waiting_statuses_do_not_ask_or_use_up_the_question(self):
+        for status in (SAME, ANDRES, WORK):
+            self.assertEqual(self.stop(status), {}, status)
+        self.assertEqual(self.stop()['decision'], 'block')
+
+    def test_work_signals(self):
+        signals = ['"name":"Write"', '"name":"MultiEdit"', '"name":"NotebookEdit"', '"name":"mcp__dibs__todo_claim"',
+                   '"name":"mcp__dibs__todo_complete"', '"is_error":true']
+        for n, signal in enumerate(signals):
+            self.assertIn('decision', self.stop(transcript='{%s}' % signal, session_id=f'sig{n}'), signal)
+
+    def test_a_session_without_work_is_not_asked(self):
+        quiet = ('{"name":"Read"}', '{"name":"mcp__dibs__todo_show","is_error":false}',
+                 json.dumps({'text': 'the transcript says "name":"Edit" and "is_error":true'}))
+        for transcript in quiet:
+            self.assertEqual(self.stop(transcript=transcript), {}, transcript)
+
+    def test_missing_transcript_is_not_asked(self):
+        self.assertEqual(self.stop(transcript=None), {})
+        proc = self.run_hook('echo "[]"', extra={'last_assistant_message': SAFE})
+        self.assertEqual(proc.stdout.strip(), '')
+
+    def test_switched_off(self):
+        self.assertEqual(self.stop(env={'DIBS_LESSON_PROMPT': 'off'}), {})
+        self.assertEqual(self.stop(env={'DIBS_STOP_GATE': 'off'}), {})
+
+    def test_unwritable_state_dir_never_blocks(self):
+        blocker = Path(self.tmp.name) / 'file'
+        blocker.write_text('')
+        self.assertEqual(self.stop(env={'STOP_GATE_STATE_DIR': str(blocker / 'state')}), {})
+
+    def test_joins_the_claim_problem_in_one_message(self):
+        out = self.stop(claims=self.HELD)
+        self.assertIn('holds task 5', out['reason'])
+        self.assertIn('Lesson check', out['reason'])
+        again = self.stop(claims=self.HELD)
+        self.assertIn('holds task 5', again['reason'])
+        self.assertNotIn('Lesson check', again['reason'])
+
+    def test_unreachable_dibs_does_not_ask(self):
+        self.assertNotIn('decision', self.stop(claims='exit 1'))
+
+
 if __name__ == '__main__':
     unittest.main()

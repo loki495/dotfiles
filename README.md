@@ -597,6 +597,17 @@ All projects:
   A repeated stop allows with a warning to avoid loops. `DIBS_STOP_GATE=off` skips the gate
   after applying bookkeeping; Dibs outages allow with a warning. A recently registered,
   user-owned entry in `dibs-stop-gate-skip` skips one-off sessions entirely.
+
+  **Lesson check:** the first completion status of a session (archive, all done, or continue in a
+  different session) blocks once and asks whether an error, correction, blocked action or better way
+  occurred. The agent searches Dibs for a duplicate, then adds a recurrence comment or files a record
+  labelled `lesson` and `draft` (fields in the Dibs guide on lesson records), which is never injected.
+  It asks only when the transcript shows work (a file edit, a Dibs claim or completion tool call, or a
+  failed tool call), and joins the claim message when the gate already blocks. A marker per session in
+  `$XDG_RUNTIME_DIR/dibs-stop-gate/` (`STOP_GATE_STATE_DIR`) prevents a second question; if it cannot
+  be written, or Dibs is unreachable, nothing is asked. `DIBS_LESSON_PROMPT=off` disables it. A session
+  that edits only through shell commands or claims only through a `dibs` block, with no failed call, is
+  not asked. The injected question is about 0.8 KB (825 characters). Test: `tests/test_stop_gate_hook.py`.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): reads its numbers from
   `ai/skills/session-flow/thresholds.conf` (the single thresholds file of the `session-flow` skill; the
   `CLAUDE_CTX_BUDGET`, `CLAUDE_CTX_IDLE_MIN` and `CLAUDE_CTX_IDLE_FLOOR` variables override it). Over

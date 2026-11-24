@@ -5,6 +5,9 @@
 # A repeated stop allows with a warning. DIBS_STOP_GATE=off skips the gate; Dibs outages warn and allow.
 # A session whose exact cwd is registered in STOP_GATE_SKIP_DIR (fresh, user-owned entry) is skipped entirely.
 # DIBS_CLAIMS_CMD overrides the command (tests); it receives --held-by=<session id> appended.
+# Lesson check: the first completion status of a session whose transcript shows work (an edit, a Dibs claim or
+# completion, a failed tool call) asks once for a draft lesson. Marker in STOP_GATE_STATE_DIR; if it cannot be
+# written nothing is asked. DIBS_LESSON_PROMPT=off disables it.
 input=$(cat)
 # One-off sessions that must return exactly what they were asked (e.g. a bridge extraction) opt out by
 # registering their exact working directory in a private runtime dir, never inside the directory itself
@@ -59,7 +62,26 @@ case "$status" in
     [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'
     exit 0 ;;
 esac
+
+# True at most once per session: claiming the marker is part of the test, so ask only when about to block.
+lesson_due() {
+  [ "${DIBS_LESSON_PROMPT:-}" != off ] && [ -n "$status" ] || return 1
+  local transcript dir marker
+  transcript=$(jq -r '.transcript_path // empty' <<<"$input")
+  [ -f "$transcript" ] && [ -r "$transcript" ] || return 1
+  dir=${STOP_GATE_STATE_DIR:-${XDG_RUNTIME_DIR:-$HOME/.cache}/dibs-stop-gate}
+  marker="$dir/lesson-$(printf %s "$session" | tr -c 'A-Za-z0-9_-' _)"
+  [ ! -e "$marker" ] || return 1
+  grep -qE '"name":"(Edit|Write|MultiEdit|NotebookEdit|mcp__dibs__todo_claim|mcp__dibs__todo_complete)"|"is_error":true' "$transcript" || return 1
+  mkdir -p "$dir" 2>/dev/null && : 2>/dev/null >"$marker"
+}
+lesson="Lesson check (asked once per session): did an error, a correction, a blocked or failed action, or a better way come up that would prevent a repeat? If yes, search Dibs first (todo_search, one or two keywords, then a synonym, open and closed); add a recurrence comment to a match, else file a draft with todo_create: title 'Lesson: <do or avoid>', labels lesson, draft and fitting 'trigger <key>' labels, an idempotency key, the project's Area and Group, and body lines Summary (max 120 characters), Symptom, Cause, Do instead, Evidence, Confidence, Hits and Last seen, Expires (Dibs guide 2272). Keep the draft label and mention the id. Skip one-off facts that code or git history already record. If there is nothing, say 'No lesson to file.' Then end with your status line again, repeating any dibs block or [complete] line"
+
 if [ "$count" -eq 0 ] && [ -z "$idle" ]; then
+  if lesson_due; then
+    jq -n --arg r "$lesson." --arg m "$block_msg" '{decision: "block", reason: $r} + (if $m == "" then {} else {systemMessage: $m} end)'
+    exit 0
+  fi
   [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'
   exit 0
 fi
@@ -79,4 +101,5 @@ else
 fi
 [ -n "$idle" ] && steps+=("run sessioneer --reap to archive the idle claim-free ones, or archive them as the session-flow skill describes")
 reason="This session $problem. Fix everything in one pass: $(IFS=';'; printf '%s' "${steps[*]}" | sed 's/;/; and /')."
+lesson_due && reason="$reason Also, $lesson."
 jq -n --arg r "$reason" '{decision: "block", reason: $r}'
