@@ -609,7 +609,7 @@ def guard(data):
                 s.save()
             try:
                 held = held_before if held_before is not None else s.held()
-                notices, rule_texts, hold = [], [], False
+                notices, rule_texts, hold, claimed_types = [], [], False, []
                 for index, issue, description, types in lines:
                     try:
                         issue = process_work_claim(s, held, index, issue, description, types)
@@ -623,6 +623,7 @@ def guard(data):
                     token = s.state['claims'].get(issue)
                     notices.append(f'Dibs task {issue} claimed for this session.' +
                                    (f' Capability token for MCP calls on this claim (todo_complete, todo_release, todo_comment): {token}' if token else ''))
+                    claimed_types.extend(types.split('+'))
                     rules = RULES.rules_for_types(types.split('+'), s.id, data.get('agent_id'), data.get('tool_use_id'))
                     if rules:
                         rule_texts.extend(rules)
@@ -632,14 +633,17 @@ def guard(data):
                     s.state['work_index'] = index
                     s.state['denials'] = 0
                     s.save()
+                lessons = RULES.lessons_for_types(
+                    claimed_types, s.id, data.get('agent_id'), s.cwd,
+                    notices + rule_texts + ['; '.join(s.warns), RULES.LATE]) if claimed_types else []
                 if held:
                     s.state['denials'] = 0
                 if hold:
                     s.save()
-                    emit('PreToolUse', permissionDecision='deny', permissionDecisionReason='\n\n'.join(notices + rule_texts) + '\nPlease retry the call.')
+                    emit('PreToolUse', permissionDecision='deny', permissionDecisionReason='\n\n'.join(notices + rule_texts + lessons) + '\nPlease retry the call.')
                     return
                 if notices:
-                    context = '\n\n'.join(notices + rule_texts +
+                    context = '\n\n'.join(notices + rule_texts + lessons +
                                           (['; '.join(s.warns)] if s.warns else []) +
                                           ([RULES.LATE] if rule_texts else []))
                     s.save()

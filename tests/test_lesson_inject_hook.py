@@ -3,6 +3,7 @@
 Every run uses a temp LESSON_CACHE, temp state dir and temp HOME; refresh is off unless a test turns it on
 with a stub command. Nothing touches the real home or a real Dibs.
 """
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -11,9 +12,11 @@ import subprocess
 import sys
 import time
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_rule_inject_hook import HOOK, HookBase, make_stub  # noqa: E402
+from test_work_line_hook import WorkBase  # noqa: E402
 
 LESSON_LINE = re.compile(r'^\[lesson (\d+)\] (.*)$', re.M)
 LATE_PHRASE = 'arrived after the call ran'
@@ -548,6 +551,210 @@ class LessonBackoffTest(LessonRefreshBase):
         for retry in ('300', '0'):
             self.call({**self.env, 'LESSON_CACHE': str(self.tmp / 'afile' / 'lessons.json'), 'LESSON_RETRY': retry})
         self.assert_runs(0)
+
+class LessonsForTypesTest(LessonBase):
+    """Group: rule_inject.lessons_for_types, lessons picked by work-line type for the guard."""
+
+    def setUp(self):
+        super().setUp()
+        spec = importlib.util.spec_from_file_location('rule_inject_under_test', HOOK)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+
+    def call(self, types, session='s1', agent=None, cwd=CWD, parts=(), env=None):
+        with mock.patch.dict(os.environ, env or self.env, clear=True):
+            return self.module.lessons_for_types(types, session, agent, cwd, list(parts))
+
+    def state_ids(self, name='s1-main'):
+        path = self.tmp / 'state' / name
+        words = path.read_text().split() if path.is_file() else []
+        return sorted(int(w.split(':')[1]) for w in words if w.startswith('lesson:'))
+
+    @staticmethod
+    def printed(result):
+        return [int(m.group(1)) for m in LESSON_LINE.finditer('\n'.join(result))]
+
+    def test_returns_one_string_with_header_and_ranked_formatted_lines(self):
+        self.write_cache([lesson(1, 'x' * 300, triggers=['code'], group='other', hits=9),
+                          lesson(2, 'two\nlines\x1b', triggers=['code'], hits=1),
+                          lesson(3, triggers=['code'], hits=2), lesson(4, triggers=['code'], draft=True)])
+        self.assertEqual(self.call(['code']), ['Lessons for this action:\n[lesson 3] summary 3\n'
+                                              '[lesson 2] two lines\n[lesson 1] ' + 'x' * 120])
+
+    def test_nothing_matching_returns_an_empty_list(self):
+        self.assertEqual(self.call(['code']), [])  # no cache
+        self.write_cache([lesson(1, triggers=['docs'])])
+        for types in (['code'], [], ['research']):
+            self.assertEqual(self.call(types), [], types)
+        self.assertEqual(self.state_ids(), [])
+
+    def test_hyphenated_types_match_space_triggers(self):
+        self.write_cache([lesson(1, triggers=['live site']), lesson(2, triggers=['live-site']),
+                          lesson(3, triggers=['live repo'])])
+        self.assertEqual(self.printed(self.call(['live-site'])), [1])
+
+    def test_a_type_does_not_expand_to_its_rule_keys(self):
+        self.write_cache([lesson(1, triggers=['git commit']), lesson(2, triggers=['git'])])
+        self.assertEqual(self.printed(self.call(['git'])), [2])
+        self.assertEqual(self.state_ids(), [2])
+
+    def test_several_types_make_one_string_without_duplicates(self):
+        self.write_cache([lesson(1, triggers=['code', 'tests'], hits=3), lesson(2, triggers=['tests'], hits=2),
+                          lesson(3, triggers=['code'], hits=1)])
+        result = self.call(['code', 'tests'])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.printed(result), [1, 2, 3])
+
+    def test_cap_and_dedupe_across_calls(self):
+        self.write_cache([lesson(i, triggers=['code'], hits=10 - i) for i in range(1, 4)])
+        env = {**self.env, 'LESSON_CAP': '2'}
+        self.assertEqual(self.printed(self.call(['code'], env=env)), [1, 2])
+        self.assertEqual(self.state_ids(), [1, 2])
+        self.assertEqual(self.printed(self.call(['code'], env=env)), [3])
+        self.assertEqual(self.call(['code'], env=env), [])
+
+    def test_delivered_set_is_per_session_and_agent(self):
+        self.write_cache([lesson(1, triggers=['code'])])
+        self.call(['code'])
+        self.assertEqual(self.printed(self.call(['code'], agent='a1')), [1])
+        self.assertEqual(self.printed(self.call(['code'], session='s2')), [1])
+        self.assertEqual(self.state_ids('s1-a1'), [1])
+
+    def test_delivered_set_is_shared_with_the_hook_both_ways(self):
+        self.write_cache([lesson(1, triggers=['git', 'git commit'])])
+        self.call(['git'])
+        self.assertNotIn('[lesson', self.bash('git commit -m x', cwd=CWD)['additionalContext'])
+        self.bash('git commit -m x', cwd=CWD, session_id='s2')
+        self.assertEqual(self.call(['git'], session='s2'), [])
+
+    def test_stays_within_the_limit_with_parts_and_marks_only_what_fits(self):
+        self.write_cache([lesson(i, 'w' * 120, triggers=['code'], hits=100 - i) for i in range(1, 31)])
+        env = {**self.env, 'LESSON_CAP': '30'}
+        parts = ['p' * 5000, 'q' * 4000]
+        result = self.call(['code'], parts=parts, env=env)
+        self.assertEqual(len(result), 1)
+        self.assertLessEqual(len('\n\n'.join(parts + result)), 10000)
+        printed = self.printed(result)
+        self.assertTrue(0 < len(printed) < 30, printed)
+        self.assertEqual(self.state_ids(), sorted(printed))
+
+    def test_no_room_returns_nothing_and_marks_nothing(self):
+        self.write_cache([lesson(1, 'w' * 120, triggers=['code'])])
+        for size in (9990, 10000, 20000):
+            self.assertEqual(self.call(['code'], parts=['p' * size]), [], size)
+        self.assertEqual(self.state_ids(), [])
+
+    def test_never_raises(self):
+        self.cache.write_text('[' * 200000)
+        self.assertEqual(self.call(['code']), [])
+        self.write_cache([lesson(1, triggers=['code'])])
+        self.assertEqual(self.printed(self.call(['code'], cwd=None)), [1])
+        self.assertIsInstance(self.call([None, 5], session='s2'), list)
+        (self.tmp / 'afile').write_text('')
+        env = {**self.env, 'RULE_STATE_DIR': str(self.tmp / 'afile')}
+        self.assertIsInstance(self.call(['code'], session='s3', env=env), list)
+
+
+class WorkLineLessonTest(WorkBase):
+    """Group: dibs-block.py guard appends lessons for a claimed work line's types; lessons never cause a deny."""
+
+    def setUp(self):
+        super().setUp()
+        self.cache = self.root / 'lessons.json'
+        self.env.update({'LESSON_CACHE': str(self.cache), 'LESSON_REFRESH': 'off'})
+        for name in ('LESSON_CAP', 'LESSON_TTL', 'LESSON_RETRY', 'LESSON_REFRESH_CMD'):
+            self.env.pop(name, None)
+
+    def write_cache(self, *lessons):
+        self.cache.write_text(json.dumps({'generated': time.time(), 'lessons': list(lessons)}))
+
+    def context(self, out):
+        self.assert_not_denied(out)
+        return self.ev(out)['additionalContext']
+
+    def test_allowed_call_gets_rules_and_lessons_in_additional_context(self):
+        self.write_cache(lesson(1, triggers=['code'], group='other', hits=9), lesson(2, triggers=['code'], group='repo'))
+        ctx = self.context(self.read(self.say('[work 5 | Fix | code]')))
+        self.assertIn('TEXT-live-repo', ctx)
+        self.assertIn('Lessons for this action:\n[lesson 2] summary 2\n[lesson 1] summary 1', ctx)
+
+    def test_deny_to_show_rules_carries_lessons_once(self):
+        self.write_cache(lesson(1, triggers=['code']))
+        tid = self.say('[work 5 | Change | code]')
+        out = self.touch(tid)
+        reason = self.assert_denied(out)
+        self.assertIn('TEXT-live-repo', reason)
+        self.assertIn('[lesson 1] summary 1', reason)
+        self.assertNotIn('additionalContext', self.ev(out))
+        retry = self.touch(tid)
+        self.assert_not_denied(retry)
+        self.assertNotIn('[lesson 1]', json.dumps(retry))
+
+    def test_lessons_alone_do_not_deny_a_mutating_call(self):
+        self.write_cache(lesson(1, triggers=['research']))
+        ctx = self.context(self.touch(self.say('[work 5 | Look | research]')))
+        self.assertIn('[lesson 1] summary 1', ctx)
+        self.assertNotIn(LATE_PHRASE, ctx)
+        self.assertEqual(self.held(), {'5'})
+
+    def test_new_lessons_with_already_delivered_rules_do_not_deny(self):
+        self.context(self.read(self.say('[work 5 | First | code]')))
+        self.write_cache(lesson(1, triggers=['code']))
+        ctx = self.context(self.touch(self.say('[work 7 | Second | code]', append=True)))
+        self.assertIn('[lesson 1] summary 1', ctx)
+        self.assertNotIn('TEXT-live-repo', ctx)
+        self.assertNotIn(LATE_PHRASE, ctx)
+
+    def test_a_lessons_only_delivery_does_not_use_up_the_rules_hold(self):
+        self.write_cache(lesson(1, triggers=['research']))
+        self.assertIn('[lesson 1]', self.context(self.touch(self.say('[work 5 | Look | research]'))))
+        reason = self.assert_denied(self.touch(self.say('[work 5 | Now change | code]', append=True)))
+        self.assertIn('TEXT-live-repo', reason)
+
+    def test_types_pick_their_own_lessons_only(self):
+        self.write_cache(lesson(1, triggers=['git commit']), lesson(2, triggers=['git']),
+                         lesson(3, triggers=['live site']), lesson(4, triggers=['docs']))
+        ctx = self.context(self.read(self.say('[work 5 | Mixed | git+live-site]')))
+        self.assertEqual(sorted(int(m.group(1)) for m in LESSON_LINE.finditer(ctx)), [2, 3])
+
+    def test_a_lesson_matching_two_work_lines_is_sent_once(self):
+        self.write_cache(lesson(1, triggers=['code', 'docs']))
+        ctx = self.context(self.read(self.say('[work 5 | One | code]', '[work 7 | Two | docs]')))
+        self.assertEqual(ctx.count('[lesson 1]'), 1)
+
+    def test_dedupe_is_shared_with_rule_inject(self):
+        self.write_cache(lesson(1, triggers=['git', 'git commit']))
+        self.assertIn('[lesson 1]', self.context(self.read(self.say('[work 5 | Commit | git]'))))
+        proc = subprocess.run([str(HOOK)], text=True, capture_output=True, env=self.env,
+                              input=json.dumps({'session_id': 'sess-1', 'hook_event_name': 'PreToolUse',
+                                                'tool_name': 'Bash', 'tool_input': {'command': 'git commit -m x'}}))
+        self.assertEqual(proc.stdout.strip(), '')
+
+    def test_output_with_large_rules_and_two_lines_stays_within_the_limit(self):
+        rules = self.root / 'rules.md'
+        text = rules.read_text()
+        for key in ('live-repo', 'md-edit'):
+            text = text.replace(f'TEXT-{key}\n', f'TEXT-{key} ' + 'R' * 3800 + '\n')
+        rules.write_text(text)
+        self.write_cache(*[lesson(i, 'w' * 120, triggers=['code' if i <= 20 else 'docs']) for i in range(1, 41)])
+        self.env['LESSON_CAP'] = '30'
+        ctx = self.context(self.read(self.say('[work 5 | One | code]', '[work 7 | Two | docs]')))
+        self.assertIn('[lesson ', ctx)
+        self.assertLessEqual(len(ctx), 10000)
+
+    def test_refused_work_line_delivers_no_lessons_and_marks_none(self):
+        self.write_cache(lesson(1, triggers=['research']))
+        out = self.read(self.say('[work 6 | closed | research]'))
+        self.assertNotIn('[lesson', json.dumps(out))
+        ctx = self.context(self.read(self.say('[work 5 | open | research]', append=True)))
+        self.assertIn('[lesson 1]', ctx)
+
+    def test_broken_cache_leaves_the_guard_unchanged(self):
+        self.cache.write_text('not json')
+        reason = self.assert_denied(self.touch(self.say('[work 5 | Change | code]')))
+        self.assertIn('TEXT-live-repo', reason)
+        self.assertNotIn('[lesson', reason)
+        self.assertEqual(self.held(), {'5'})
 
 
 if __name__ == '__main__':

@@ -335,6 +335,26 @@ def fitting(picked, parts):
     return kept
 
 
+def lesson_part(path, keys, cwd, have, parts):
+    """The lessons to append to `parts`, as a list of at most one string, recorded as delivered."""
+    picked = fitting(lesson_lines(keys, cwd, have), parts)
+    if not picked:
+        return []
+    with open(path, "a") as f:
+        f.writelines(f"lesson:{i}\n" for i, _ in picked)
+    return [LESSON_HEADER + "\n" + "\n".join(line for _, line in picked)]
+
+
+def lessons_for_types(types, session_id, agent_id, cwd, parts):
+    """Lessons labelled with a work line's types (dibs-block calls this); advisory, so never raises."""
+    try:
+        path = state_file({"session_id": session_id, "agent_id": agent_id})
+        with state_lock(path):
+            return lesson_part(path, types, cwd, delivered(path), parts)
+    except Exception:
+        return []
+
+
 def work_order(obj):
     """The workOrder dict inside a todo_claim tool_response of any wrapping (dict, JSON string, content blocks)."""
     if isinstance(obj, str):
@@ -418,11 +438,7 @@ def run_event(data, ev, session, path):
             f.writelines(f"{n}\n" for n in new)
     if body and ev == "PreToolUse":
         parts.append(LATE)
-    picked = fitting(lesson_lines(keys, data.get("cwd"), have), parts)
-    if picked:
-        parts.append(LESSON_HEADER + "\n" + "\n".join(line for _, line in picked))
-        with open(path, "a") as f:
-            f.writelines(f"lesson:{i}\n" for i, _ in picked)
+    parts += lesson_part(path, keys, data.get("cwd"), have, parts)
     if parts:
         out(ev, "additionalContext", "\n\n".join(parts))
 

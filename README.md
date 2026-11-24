@@ -646,7 +646,8 @@ All projects:
   delivers up to 5 active lessons (`LESSON_CAP`) as `Lessons for this action:` plus one
   `[lesson <id>] <summary>` line each (summary at most 120 characters). A lesson matches when it has
   the label `trigger <key with spaces>` for one of the event's keys (`trigger git commit` for
-  `git-commit`); drafts never match. Ranking: lessons whose Dibs group matches a directory in the
+  `git-commit`); drafts never match. A work line claimed through the Dibs block also delivers the
+  lessons labelled with its types (`trigger code`, `trigger live site`); lessons never hold a call. Ranking: lessons whose Dibs group matches a directory in the
   payload's `cwd` first (case and punctuation ignored), then Hits, then Last seen (undated last), then id. A lesson
   is delivered once per context lifetime (`lesson:<id>` line in the same delivered-set file as the
   rules, so the same compact/clear reset and per-subagent sets apply). The hook never calls Dibs: it
