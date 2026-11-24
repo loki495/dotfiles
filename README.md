@@ -631,6 +631,24 @@ All projects:
   and reminds Claude to pass `contextReset: true`. It is silent and exits 0 whenever the exports are
   missing or the input is malformed.
 
+  **Lesson channel** (`hooks/lessons.py`, imported by the hook): after the rules, the same event
+  delivers up to 5 active lessons (`LESSON_CAP`) as `Lessons for this action:` plus one
+  `[lesson <id>] <summary>` line each (summary at most 120 characters). A lesson matches when it has
+  the label `trigger <key with spaces>` for one of the event's keys (`trigger git commit` for
+  `git-commit`); drafts never match. Ranking: lessons whose Dibs group matches a directory in the
+  payload's `cwd` first (case and punctuation ignored), then Hits, then Last seen, then id. A lesson
+  is delivered once per context lifetime (`lesson:<id>` line in the same delivered-set file as the
+  rules, so the same compact/clear reset and per-subagent sets apply). The hook never calls Dibs: it
+  reads `~/.cache/dibs-lessons.json` (`LESSON_CACHE`), written by `ai/scripts/lessons-export.py`
+  (Dibs CLI `todo:agent:list` plus `show` per active lesson; `DIBS_CLI` overrides the command). A
+  missing cache or one older than `LESSON_TTL` seconds (default 3600) starts that exporter detached
+  without waiting (`LESSON_REFRESH_CMD` overrides the command, `LESSON_REFRESH=off` disables it).
+  A failing exporter keeps the old cache. A missing or malformed cache means no lessons and the
+  rules still go out. Measured size: five lessons of 120 characters add about 0.8 KB (803 characters measured, header included) to an event's context
+  (rules for the same event are far larger). Tests: `tests/test_lesson_inject_hook.py`,
+  `tests/test_lessons_export.py`. Manual check: put a lesson entry in a temporary `LESSON_CACHE`,
+  pipe a PreToolUse Bash `git commit` payload into `hooks/rule-inject.py` with `LESSON_REFRESH=off`.
+
 Laravel projects: on PHP file write Pint (auto-fix) then PHPStan level 6 (report only);
 pre-commit Pint (auto-fix, re-stage), PHPStan level 6 (blocks), Rector dry-run (blocks, shows the diff,
 never auto-applies), Pest (blocks). OpenCart projects: no automatic hooks; opt in through the

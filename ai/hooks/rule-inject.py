@@ -26,6 +26,12 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+try:
+    import lessons
+    LESSON_HEADER = lessons.HEADER
+except Exception:  # a missing module must not take the rules down with it
+    lessons, LESSON_HEADER = None, ""
 DEFAULT_FILES = [os.path.join(os.path.dirname(HERE), "rules.md"),
                  os.path.expanduser("~/.dotfiles-private/ai/rules.private.md")]
 DEFAULT_TRIGGERS = [os.path.join(os.path.dirname(HERE), "rules-triggers.json"),
@@ -308,6 +314,14 @@ def flow_warning(decision, profile):
             "Rule 728: start no new steps; hand off and let a fresh session continue.")
 
 
+def lesson_lines(keys, cwd, have):
+    """Active lessons for the event's keys, as [(id, line)]; any failure means none (rules still go out)."""
+    try:
+        return lessons.pick(keys, cwd, have) if lessons else []
+    except Exception:
+        return []
+
+
 def work_order(obj):
     """The workOrder dict inside a todo_claim tool_response of any wrapping (dict, JSON string, content blocks)."""
     if isinstance(obj, str):
@@ -356,8 +370,8 @@ def run_event(data, ev, session, path):
             with open(path, "a") as f:
                 f.writelines(f"{r['id']}@{r['revision']}\n" for r in rules if r.get("text"))
         return
-    triggers = load_triggers()
-    ids = list(dict.fromkeys(i for k in match(data) for i in triggers.get(k, [])))
+    triggers, keys = load_triggers(), match(data)
+    ids = list(dict.fromkeys(i for k in keys for i in triggers.get(k, [])))
     rules, have = load_rules(), delivered(path)
     fresh = [i for i in ids if i in rules and f"{i}@{rules[i]['rev']}" not in have]
     new = [f"{i}@{rules[i]['rev']}" for i in fresh]
@@ -379,6 +393,10 @@ def run_event(data, ev, session, path):
     body = "\n\n".join(f"[rule {i}] {rules[i]['text']}" for i in fresh)[:CAP]
     if body:
         parts.append(f"Rules for this action:\n\n{body}")
+    picked = lesson_lines(keys, data.get("cwd"), have)
+    if picked:
+        new += [f"lesson:{i}" for i, _ in picked]
+        parts.append(LESSON_HEADER + "\n" + "\n".join(line for _, line in picked))
     bad = hyphen_labels(data) if ev == "PreToolUse" else []
     if bad:
         parts.append(f"Label names use spaces, not hyphens: {', '.join(bad)}.")

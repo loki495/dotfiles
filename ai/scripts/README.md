@@ -117,3 +117,17 @@ reconciler runs the export hourly. The `rule-inject` hook and the other agents r
 Dibs.
 
 Tests: `python3 -I tests/test_rules_export.py`.
+
+## lessons-export.py
+
+Exports the active lesson records to the cache the `rule-inject` hook's lesson channel reads
+(`~/.cache/dibs-lessons.json`, `LESSON_CACHE` overrides). A lesson is active when it is open, labelled
+`lesson`, not labelled `draft`, and has at least one `trigger <key>` label (see the Dibs guide on lesson
+records). Per lesson the cache keeps id, triggers, group and area, and from the body the `Summary:`,
+`Hits:` and `Last seen:` values; a lesson without a `Summary:` line is skipped. The Dibs command prefix
+is `DIBS_CLI` (default `docker exec -u www-data dibs-app php artisan`); the script runs `todo:agent:list
+--knowledge` once and `todo:agent:show` per active lesson. If the list call fails, the old cache stays
+and the exit code is 2. A lock file stops two runs overlapping. The hook starts this script detached
+when the cache is missing or older than `LESSON_TTL` seconds (default 3600); run it by hand to refresh at once.
+
+Tests: `python3 -m unittest tests.test_lessons_export`.
