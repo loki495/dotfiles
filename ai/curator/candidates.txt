@@ -1,0 +1,5 @@
+# tier agent profile model effort
+# File order is preference: the first candidate of the pass tier that has quota runs the pass.
+mechanical claude personal claude-haiku-5-5 low
+balanced   claude personal claude-sonnet-5-5 medium
+advanced   claude personal claude-opus-5-5 high

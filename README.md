@@ -313,7 +313,9 @@ setup has been removed (see "Removed" below).
   `claude-changelog-review.timer` (Wed and Sat 12:00, `Persistent=true`), which starts a
   Sessioneer session from `ai/scheduled/changelog-review.md` to review the Claude Code
   changelog and file Sessioneer follow-ups in Dibs, and `dibs-reconcile.timer` (hourly), which runs
-  `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). `atlas-refresh-nightly.timer` (03:50) runs `ai/scripts/atlas-refresh.py run --nightly`, and
+  `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). `atlas-refresh-nightly.timer` (03:50) runs `ai/scripts/atlas-refresh.py run --nightly`,
+  `curator-light.timer` (hourly) and `curator-heavy.timer` (02:30) run `ai/scripts/curator.py` through
+  `curator@.service` (not enabled by default; see `ai/scripts/README.md`), and
   `claude-job-search-audit.timer` (the 1st of the month, 04:30) starts a Sessioneer session from
   `ai/scheduled/job-search-audit.md`. The units
   Sessioneer generates (its socket-activated host agent, the push-check and
@@ -464,7 +466,8 @@ than per tool.
 - `scripts/` — helper scripts, run by hand, not linked anywhere. `dibs-measure.py` is the repeatable
   workflow measurement (atlas drift, push-vs-atlas, dead claims); `dibs-reconcile.py` is the hourly
   invariant check that keeps a standing findings issue in Dibs and refreshes the rule export;
-  `rules-export.py` writes the rule records to `rules.md`; see `ai/scripts/README.md`.
+  `rules-export.py` writes the rule records to `rules.md`; `curator.py` is the unattended Dibs curator
+  (idle-gated timer runs, config and pass prompts in `ai/curator/`); see `ai/scripts/README.md`.
 - `settings.json`, `settings.local.json.example`, `statusline-command.sh` — Claude
   Code settings and a custom statusline, portable (`$HOME` throughout). The default model is
   `opusplan` (Opus in plan mode, Sonnet otherwise) and `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` keeps

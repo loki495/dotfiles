@@ -1,0 +1,9 @@
+[Unit]
+Description=Unattended Dibs curator, %i pass (idle-gated)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env -i HOME=%h PATH=%h/.local/bin:/usr/local/bin:/usr/bin /usr/bin/python3 %h/dotfiles/ai/scripts/curator.py run --pass %i
+TimeoutStartSec=100min
+TimeoutStopSec=5min
+Nice=10

@@ -1,0 +1,10 @@
+[Unit]
+Description=Curator heavy pass, nightly
+
+[Timer]
+Unit=curator@heavy.service
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

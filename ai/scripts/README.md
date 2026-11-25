@@ -131,3 +131,72 @@ cache stays and the exit code is 2. A lock file stops two runs overlapping. The 
 script detached when the cache is missing or older than `LESSON_TTL` seconds (default 3600); run it by hand to refresh at once.
 
 Tests: `python3 -m unittest tests.test_lessons_export`.
+
+## curator.py
+
+The unattended Dibs curator. A systemd timer starts one pass; the script decides whether
+it may run, launches a fresh agent session bound to Dibs, and keeps the bookkeeping. It never asks
+questions: anything that needs Andres becomes a proposal.
+
+```bash
+python3 ~/dotfiles/ai/scripts/curator.py gate --pass light [--json]   # read-only: would it run now?
+python3 ~/dotfiles/ai/scripts/curator.py run --pass light --dry-run   # gate, candidate, command and prompt; writes nothing
+python3 ~/dotfiles/ai/scripts/curator.py run --pass light             # what the timer runs
+```
+
+Units (not enabled by default): `curator@.service` runs `curator.py run --pass %i` under
+`env -i HOME PATH` (rule 1225); `curator-light.timer` starts `curator@light` hourly with up to 10
+minutes of random delay, `curator-heavy.timer` starts `curator@heavy` at 02:30 (`Persistent=true`).
+Enable with `systemctl --user enable --now curator-light.timer`.
+
+Configuration lives in `ai/curator/`:
+
+- `curator.conf`: `ACTIVE_MIN` (minutes of quiet needed), `ACTIVITY_PATHS` (transcript roots whose file
+  mtimes count as activity), quota freshness and poll intervals, claim heartbeat, run log retention,
+  and the Dibs area and group of the standing issues.
+- `candidates.txt`: `tier agent profile model effort`, cheapest suitable first. Only `claude` has a
+  launcher today; other agents are skipped as `no adapter`.
+- `base.md`: the unattended preamble every pass prompt starts with (no questions, proposal format,
+  authority limits, stop-safe items, a short summary at the end).
+- `passes/<name>.md`: `Key: value` headers (`Tier`, `Timeout-min`, `Budget-usd`, `Min-interval-min`,
+  `Tools`, `Precheck`), a `---` line, then the prompt body. Placeholders: `{run_id}`, `{pass}`,
+  `{runs_issue}`, `{proposals_issue}`, `{last_ok}`, `{model}`. `light.md` and `heavy.md` are
+  read-only placeholders until the light pass (lesson curation, dropped-task consolidation) and the
+  heavy pass (Dibs cleanup, stale atlas refresh) replace their bodies. `Tools` may add only
+  `Read`, `Grep` or `Glob` scoped to an absolute path under `TOOL_PATHS` (curator.conf, default
+  `~/www:~/dotfiles`), written `Read(//home/andres/www/**)` and also passed as `--add-dir`, or single
+  Dibs tools; anything else is a configuration error. `Precheck` is a command whose exit 1 means
+  "nothing to do", so no model starts.
+
+The gate, in order: the lock `~/.local/state/curator/curator.lock` (it records the holder's pid,
+start and deadline; a holder past its own deadline whose process is still that curator run is
+terminated, per skill resource-cleanup), the pass's minimum interval,
+`sessioneer --list` (any session not `idle` or `blocked` blocks; sessions tagged `curator` or named
+`[curator]...` are ignored), recent transcript activity, the precheck, then the first candidate of
+the pass tier whose profile quota is fresh and below `QUOTA_GO_MAX` from skill session-flow
+`thresholds.conf`. With no candidate the run parks and exits 0. Anything that cannot be read counts
+as "do not run".
+
+A run then makes sure the standing issues `Curator runs` and `Curator proposals` exist (label
+`curator`), claims `Curator runs`, snapshots the records labelled `rule`, and starts
+`claude -p --restricted --tools "" --strict-mcp-config --mcp-config <dibs only> --permission-mode
+dontAsk --no-session-persistence` with the candidate's model and effort. The agent can use only the
+Dibs tools (plus the pass's scoped read tools): it cannot run commands, push, edit files or config, or
+reach Sessioneer. Sessions are not persisted, so curator runs never count as activity. While it runs
+the script checks the model of the init event and of every assistant message against the requested
+one (a launcher can silently ignore `--model`; no init event means "model not verified"), stops the agent at `QUOTA_PARK`, at the pass timeout, or on a model mismatch,
+heartbeats the claim, and copies the stream-json output to `~/.local/state/curator/runs/<run id>.jsonl` (stderr to
+`<run id>.stderr`). A SIGTERM from systemd (stop or `TimeoutStartSec`) ends the run the same way:
+the agent's process group is killed and the report and release still happen.
+Afterwards a changed `rule` record marks the run not ok (tool rules cannot block a Dibs edit, so it is
+detected instead). One report comment goes on `Curator runs` (outcome, model verified, cost, quota
+before and after, other models in the usage totals, pass summary), the claim is released on every path, and
+`~/.local/state/curator/last-<pass>.json` records the outcome. Exit codes: 0 ok, skipped or parked;
+2 configuration or Dibs error; 3 run not ok.
+
+Proposals are child tasks of `Curator proposals`: title `Proposal: <decision>`, label `proposal`,
+body lines `Question:`, `Options:` (recommended first), `Evidence:`, `Key:`; idempotency key
+`curator:proposal:<key>`; none are filed past 75 open children. An interactive curator run, started
+by hand, answers them.
+
+Tests: `python3 -I tests/test_curator.py` (fake Sessioneer, Dibs CLI and claude; about a minute).

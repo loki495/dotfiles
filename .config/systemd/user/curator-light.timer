@@ -1,0 +1,11 @@
+[Unit]
+Description=Curator light pass, hourly
+
+[Timer]
+Unit=curator@light.service
+OnCalendar=hourly
+RandomizedDelaySec=10min
+Persistent=false
+
+[Install]
+WantedBy=timers.target
