@@ -16,7 +16,7 @@ that ended or died without a handoff. The context-budget hook reads the same thr
 
 ## Hooks
 
-The hooks (push guard, commit gate, claim overlap, read guard, dibs block, stop gate, context budget, rule inject, Laravel
+The hooks (push guard, commit gate, claim overlap, read guard, dibs block, stop gate, session tags, context budget, rule inject, Laravel
 tooling) are documented in `~/dotfiles/README.md`, section "Hooks". The rule-inject hook delivers
 the Dibs rules relevant to an action; a `git commit`/`git push` gets its rules as context.
 

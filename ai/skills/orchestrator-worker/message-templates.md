@@ -11,6 +11,8 @@ its local Dibs id, never the GitHub number (rule 727).
 - First line of every new session's prompt: `Session name: <name>`. When `sessioneer --name` exists, pass `--name "<name>"` too, on creation and on reassignment.
 - A worker's name starts with `[worker] ` (`[worker] migrate dns`) so the Sessioneer UI can filter it.
   Orchestrators and review sessions use plain names.
+- Tags: launch with `--tag "<role>,project <name>"` (`worker`, `orchestrator`, `handoff receiver`,
+  a persona name); the SessionStart hook adds what is missing for a tracked session (rule 2302).
 - Reassigning a live session: send `Session name: <new name>` as the first line of the message, and
   update the Dibs claim identity (`<agent>:<new name>:<conversation id>`) so UI and Dibs agree.
 - Free-text names use spaces, not hyphens (rule 748).

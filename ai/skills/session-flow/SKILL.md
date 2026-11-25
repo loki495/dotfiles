@@ -85,8 +85,9 @@ Used by ROTATE, `/rotate` and `/orchestrate`.
   Dibs) and does not trust the description. Substantial work keeps the rule 1468 personas, with a
   different agent or model verifying where possible.
 - Launch: `sessioneer --rotate (--plan <id> | --handoff <id> | --prompt "<text>") [--agent <a>]
-  [--model <m>] [--effort <level>] [--profile <p>] [--workdir <dir>] [--set-name "<name>"]`, with
-  `--dry-run` first when the prompt matters. The target defaults to this session; name one when the
+  [--model <m>] [--effort <level>] [--profile <p>] [--workdir <dir>] [--set-name "<name>"]
+  --tag "handoff receiver,project <name>"`, with `--dry-run` first when the prompt matters. The
+  receiver does not inherit the source's tags, so `--tag` sets them (rule 2302). The target defaults to this session; name one when the
   receiver replaces another session. Without the shaping options the receiver keeps the source's
   agent, workdir, effort and profile, and it must be Claude or Codex, so name `--agent` for any
   other agent. A cross-agent rotate refuses `--model` and `--effort`, a tool-less session cannot

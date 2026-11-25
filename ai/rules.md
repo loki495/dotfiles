@@ -276,3 +276,10 @@ Do:
 1. Keep plans, drafts, reviews, handoffs and notes in Dibs (plan or task body, comment, temporary task), never as files in the filesystem, `~/www` or a repo.
 2. Write a file only when Andres asks for one or the project's own deliverable needs it; name it and say where. Throwaway scripts and output go in the session scratchpad or `/tmp` and are deleted in the same step.
 3. To let Andres review long material, print it in the message or put it in a Dibs comment.
+
+## 2302@2 Rule: Tag every tracked session with its role and project
+When: A session starts, changes role, or launches another session.
+Do:
+1. A session Sessioneer tracks carries one role tag (worker, orchestrator, curator, handoff receiver, a persona name such as implementer, or interactive) and `project <name>`. The SessionStart hook adds what it can tell and names what is missing; add it with `sessioneer --tag-add <tags>`. Agents without the hook check `sessioneer --whoami --json` at start.
+2. Launch and rotate with `--tag "<role>,project <name>"`. On a role change, `--tag-remove` the old role and add the new one.
+3. Sessioneer does not track the session (`--whoami` prints nothing): skip tagging. Never adopt or take over a session only to tag it.

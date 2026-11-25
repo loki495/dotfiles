@@ -33,7 +33,7 @@ Otherwise serialize. Say the graph and the first wave in a few lines before laun
 
 Per task pick **agent, model, effort** as `session-flow` "Choose the receiver" says: the task's `tier` if set, else by work type. Re-read `sessioneer --usage` before each wave and weigh the models the whole wave asks for, so one agent isn't drained while another sits idle. Name agent, model, effort and reason before launching, and record each launched worker's name and conversation id in the plan checkpoint so it can be archived ("Clear what you spawned").
 
-`sessioneer --workdir <repo or worktree> --agent <a> --model <m> --effort <e> --mode auto [--profile <p>] "<prompt>"`
+`sessioneer --workdir <repo or worktree> --agent <a> --model <m> --effort <e> --mode auto [--profile <p>] --tag "worker,project <name>" "<prompt>"`
 
 Prompt (small, self-contained):
 `You are a worker for plan <id>. Claim task <tid> (agentName <agent>:<session name>:<conversation id>) and follow its work order. Done means every done requirement in the task is met, with evidence in a todo_comment: commit SHA, test command and its output, doc/atlas changes. Do not push. Do not ask Andres anything the task does not leave open; message the orchestrator (<my session name>) with sessioneer --send for blockers. When finished, complete the task with that evidence and release the claim. <decisions from step 2 that apply>.`

@@ -611,6 +611,16 @@ All projects:
   be written, or Dibs is unreachable, nothing is asked. `DIBS_LESSON_PROMPT=off` disables it. A session
   that edits only through shell commands or claims only through a `dibs` block, with no failed call, is
   not asked. The injected question is about 0.8 KB (825 characters). Test: `tests/test_stop_gate_hook.py`.
+- **Session tags** (`hooks/session-tags.py`, SessionStart on startup/resume and UserPromptSubmit):
+  carries out rule 2302 for a session Sessioneer tracks (`$SESSIONEER_SELF`, else the conversation id).
+  SessionStart only starts a detached worker and returns at once, because during a headless launch the
+  session's own `sessioneer --show` blocks until the launch finishes. The worker waits until the record
+  is readable (`SESSION_TAGS_READY`, default 60 s), gives launch tags a moment to land
+  (`SESSION_TAGS_WAIT`, default 3 s), then adds `project <repo>` (from the git common dir, so worktrees
+  share the main repo's name) and `worker` when the session name starts with `[worker]`, in one
+  `--tag-add`. When the session still has no role tag, or the add fails, it writes a one-line message to
+  `$SESSION_TAGS_DIR` (else `$XDG_RUNTIME_DIR/session-tags`) that the next UserPromptSubmit delivers once.
+  An untracked session gets nothing. Test: `tests/test_session_tags_hook.py`.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): reads its numbers from
   `ai/skills/session-flow/thresholds.conf` (the single thresholds file of the `session-flow` skill; the
   `CLAUDE_CTX_BUDGET`, `CLAUDE_CTX_IDLE_MIN` and `CLAUDE_CTX_IDLE_FLOOR` variables override it). Over

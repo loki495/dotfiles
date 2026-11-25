@@ -100,6 +100,7 @@ Google developer documentation style guide.
 - [1344] Use local Dibs ids and canonical conversation ids, names only as labels; describe ids once in user replies. Claim identity is <agent>:<session name>:<conversation id>.
 - [1468] Record a persona profile before substantial coding; use separate contexts where required and keep recoverable role evidence.
 - [1853] Keep plans, drafts, reviews, handoffs and notes in Dibs, never as files; write a file only when Andres asks for one, and delete scratch files in the same step.
+- [2302] Tag a tracked session with its role and `project <name>` at start (the hook does most); launch with `--tag`; untracked sessions skip it.
 
 ### Rule index
 Pull: when an index line below applies and its text isn't in your context, run `awk '/^## /{p=($2 ~ /^<id>@/)} p' ~/dotfiles/ai/rules.md`, or `todo_show <id>` with `fullBody`.

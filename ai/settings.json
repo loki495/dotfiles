@@ -503,6 +503,15 @@
         ]
       },
       {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/session-tags.py"
+          }
+        ]
+      },
+      {
         "matcher": "*",
         "hooks": [
           {
@@ -539,6 +548,15 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/context-budget.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/session-tags.py"
           }
         ]
       },
