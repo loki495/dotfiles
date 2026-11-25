@@ -773,5 +773,104 @@ class DetachedTest(SessionTagsTest):
         self.assertEqual(self.calls(), [])
 
 
+class DirSafetyTest(SessionTagsTest):
+    """The message dir is used only when it is a real directory owned by us; files never follow links."""
+
+    def setUp(self):
+        super().setUp()
+        self.configure(show=rec(['alpha']), add={'ok': True, 'tags': ['alpha']})
+        self.outside = self.tmp / 'outside.txt'
+        self.outside.write_text('original')
+
+    def prompt(self):
+        return self.payload(hook_event_name='UserPromptSubmit', source=None)
+
+    def linked_dir(self):
+        real = self.tmp / 'real'
+        real.mkdir()
+        self.msgdir = self.tmp / 'link'
+        self.msgdir.symlink_to(real)
+        return real
+
+    def mode(self, path):
+        return os.lstat(path).st_mode & 0o777
+
+    def test_a_created_dir_is_mode_0700_and_the_file_is_0600(self):
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual(self.context(proc), role_msg(['alpha']))
+        self.assertEqual(self.mode(self.msgdir), 0o700)
+        self.assertEqual(self.mode(self.msg_path()), 0o600)
+
+    def test_a_symlinked_dir_is_never_written_or_cleaned(self):
+        real = self.linked_dir()
+        old = real / 'old.msg'
+        old.write_text('x')
+        os.utime(old, (time.time() - 90000, time.time() - 90000))
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual((proc.returncode, proc.stdout), (0, ''))
+        self.assertEqual(sorted(p.name for p in real.iterdir()), ['old.msg'])
+        self.assertTrue(old.exists())
+
+    def test_a_symlinked_dir_delivers_nothing(self):
+        real = self.linked_dir()
+        (real / 'sid-9.msg').write_text('injected text')
+        proc, _ = self.run_hook(self.prompt())
+        self.assertEqual((proc.returncode, proc.stdout), (0, ''))
+
+    def test_a_path_that_is_a_regular_file_is_unusable_but_harmless(self):
+        self.msgdir.write_text('i am a file')
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual((proc.returncode, proc.stdout), (0, ''))
+        self.assertEqual(self.msgdir.read_text(), 'i am a file')
+        proc, _ = self.run_hook(self.prompt())
+        self.assertEqual((proc.returncode, proc.stdout), (0, ''))
+
+    def test_a_loose_dir_we_own_is_tightened_to_0700_and_used_by_the_worker(self):
+        self.msgdir.mkdir()
+        os.chmod(self.msgdir, 0o755)
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual(self.context(proc), role_msg(['alpha']))
+        self.assertEqual(self.mode(self.msgdir), 0o700)
+
+    def test_a_loose_dir_we_own_is_tightened_and_used_by_the_prompt_hook(self):
+        self.msgdir.mkdir()
+        (self.msgdir / 'sid-9.msg').write_text('hello')
+        os.chmod(self.msgdir, 0o777)
+        proc, _ = self.run_hook(self.prompt())
+        self.assertEqual(json.loads(proc.stdout)['hookSpecificOutput']['additionalContext'], 'hello')
+        self.assertEqual(self.mode(self.msgdir), 0o700)
+
+    def test_the_worker_never_writes_through_a_symlinked_msg_file(self):
+        self.msgdir.mkdir(mode=0o700)
+        self.msg_path().symlink_to(self.outside)
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.outside.read_text(), 'original')
+
+    def test_a_symlinked_msg_file_is_not_delivered_and_the_link_is_removed(self):
+        self.msgdir.mkdir(mode=0o700)
+        self.outside.write_text('injected text')
+        self.msg_path().symlink_to(self.outside)
+        proc, _ = self.run_hook(self.prompt())
+        self.assertEqual((proc.returncode, proc.stdout), (0, ''))
+        self.assertFalse(os.path.lexists(self.msg_path()))
+        self.assertEqual(self.outside.read_text(), 'injected text')
+
+    def test_stale_cleanup_never_follows_links_or_removes_non_files(self):
+        self.msgdir.mkdir(mode=0o700)
+        link, folder = self.msgdir / 'x.msg', self.msgdir / 'dir.msg'
+        link.symlink_to(self.outside)
+        folder.mkdir()
+        old = time.time() - 90000
+        os.utime(link, (old, old), follow_symlinks=False)
+        os.utime(folder, (old, old))
+        os.utime(self.outside, (old, old))
+        self.configure(show=rec(['project proj', 'interactive']))
+        proc, _ = self.run_hook(self.payload())
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.outside.read_text(), 'original')
+        self.assertTrue(folder.is_dir())
+
+
 if __name__ == '__main__':
     unittest.main()

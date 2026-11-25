@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -93,24 +94,39 @@ def msg_dir():
     return f"/tmp/session-tags-{os.getuid()}"
 
 
-def msg_file(data):
+def safe_dir():
+    """The message directory when it is a real directory owned by us (made private), else None."""
+    directory = msg_dir()
+    os.makedirs(directory, mode=0o700, exist_ok=True)
+    info = os.lstat(directory)
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid():
+        return None
+    if info.st_mode & 0o077:
+        os.chmod(directory, 0o700)
+    return directory
+
+
+def msg_file(data, directory):
     session_id = data.get("session_id")
     if not isinstance(session_id, str) or not session_id:
         return None
-    return os.path.join(msg_dir(), re.sub(r"[^A-Za-z0-9_-]", "_", session_id) + ".msg")
+    return os.path.join(directory, re.sub(r"[^A-Za-z0-9_-]", "_", session_id) + ".msg")
 
 
 def write_message(data, message):
-    directory = msg_dir()
-    os.makedirs(directory, exist_ok=True)
+    directory = safe_dir()
+    if directory is None:
+        return
     cutoff = time.time() - 24 * 3600
     for name in os.listdir(directory):
         path = os.path.join(directory, name)
-        if name.endswith(".msg") and os.path.getmtime(path) < cutoff:
+        info = os.lstat(path)
+        if name.endswith(".msg") and stat.S_ISREG(info.st_mode) and info.st_mtime < cutoff:
             os.unlink(path)
-    path = msg_file(data)
+    path = msg_file(data, directory)
     if message and path:
-        with open(path, "w") as f:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "w") as f:
             f.write(message)
 
 
@@ -166,14 +182,19 @@ def worker(data):
 
 
 def deliver(data):
-    path = msg_file(data)
-    if not path or not os.path.exists(path):
+    directory = safe_dir()
+    path = directory and msg_file(data, directory)
+    if not path or not os.path.lexists(path):
         return
-    with open(path) as f:
-        text = f.read()
+    try:
+        with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW)) as f:
+            text = f.read()
+    except OSError:
+        text = None
     os.unlink(path)
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
-                                             "additionalContext": text}}))
+    if text is not None:
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
+                                                 "additionalContext": text}}))
 
 
 def main():

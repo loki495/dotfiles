@@ -619,7 +619,10 @@ All projects:
   (`SESSION_TAGS_WAIT`, default 3 s), then adds `project <repo>` (from the git common dir, so worktrees
   share the main repo's name) and `worker` when the session name starts with `[worker]`, in one
   `--tag-add`. When the session still has no role tag, or the add fails, it writes a one-line message to
-  `$SESSION_TAGS_DIR` (else `$XDG_RUNTIME_DIR/session-tags`) that the next UserPromptSubmit delivers once.
+  `$SESSION_TAGS_DIR` (else `$XDG_RUNTIME_DIR/session-tags`, else `/tmp/session-tags-<uid>`) that the next
+  UserPromptSubmit delivers once. The directory is used only when it is a real directory you own (it is
+  tightened to 0700), and message files are opened without following symlinks, so another account cannot
+  plant text in a session's context.
   An untracked session gets nothing. Test: `tests/test_session_tags_hook.py`.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): reads its numbers from
   `ai/skills/session-flow/thresholds.conf` (the single thresholds file of the `session-flow` skill; the
