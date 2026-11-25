@@ -315,7 +315,7 @@ setup has been removed (see "Removed" below).
   changelog and file Sessioneer follow-ups in Dibs, and `dibs-reconcile.timer` (hourly), which runs
   `ai/scripts/dibs-reconcile.py` (start it once with `systemctl --user start dibs-reconcile.timer`). `atlas-refresh-nightly.timer` (03:50) runs `ai/scripts/atlas-refresh.py run --nightly`,
   `curator-light.timer` (hourly) and `curator-heavy.timer` (02:30) run `ai/scripts/curator.py` through
-  `curator@.service` (not enabled by default; see `ai/scripts/README.md`), and
+  `curator@.service` (the heavy timer is enabled, the light one is not; see `ai/scripts/README.md`), and
   `claude-job-search-audit.timer` (the 1st of the month, 04:30) starts a Sessioneer session from
   `ai/scheduled/job-search-audit.md`. The units
   Sessioneer generates (its socket-activated host agent, the push-check and

@@ -144,10 +144,11 @@ python3 ~/dotfiles/ai/scripts/curator.py run --pass light --dry-run   # gate, ca
 python3 ~/dotfiles/ai/scripts/curator.py run --pass light             # what the timer runs
 ```
 
-Units (not enabled by default): `curator@.service` runs `curator.py run --pass %i` under
+Units: `curator@.service` runs `curator.py run --pass %i` under
 `env -i HOME PATH` (rule 1225); `curator-light.timer` starts `curator@light` hourly with up to 10
 minutes of random delay, `curator-heavy.timer` starts `curator@heavy` at 02:30 (`Persistent=true`).
-Enable with `systemctl --user enable --now curator-light.timer`.
+`curator-heavy.timer` is enabled (tracked wants link); the light timer is not, so its hourly runs
+start only after `systemctl --user enable --now curator-light.timer`.
 
 Configuration lives in `ai/curator/`:
 
