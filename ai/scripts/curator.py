@@ -4,9 +4,10 @@
 A pass file (ai/curator/passes/<name>.md) holds `Key: value` headers, a `---` line and the prompt body;
 ai/curator/base.md is prepended to every prompt. The gate skips when another run holds the lock, the
 pass ran recently, a Sessioneer session is active, agent transcripts changed recently, the pass
-precheck fails, or no candidate has quota. A run claims the standing issue `Curator runs`, launches
+precheck fails, or no candidate has quota (a run probes the live quota with one tiny PROBE_MODEL call
+per profile; `gate` and `--dry-run` do not). A run claims the standing issue `Curator runs`, launches
 `claude -p` bound to Dibs only (plus Read/Grep/Glob on paths under TOOL_PATHS), checks the model from the
-init and assistant events, polls quota, posts one report comment and releases. SIGTERM and SIGINT stop
+init and assistant events and the quota from its rate limit events, posts one report comment and releases. SIGTERM and SIGINT stop
 the agent's process group, then report and release (outcome `stopped by signal`, exit 3). The lock file
 holds `pid start deadline` while a run is live and is truncated on release.
 
@@ -29,6 +30,7 @@ import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 import uuid
@@ -97,7 +99,7 @@ def number(text, label, minimum=0.0, allow_equal=False):
 
 def load_config():
     curator_home = os.path.expanduser(os.environ.get("CURATOR_HOME") or "~/dotfiles/ai/curator")
-    raw = {"ACTIVE_MIN": "30", "ACTIVITY_PATHS": "", "QUOTA_MAX_AGE_MIN": "60", "QUOTA_POLL_SEC": "300",
+    raw = {"ACTIVE_MIN": "30", "ACTIVITY_PATHS": "", "PROBE_MODEL": "claude-haiku-5-5", "PROBE_TIMEOUT_SEC": "90",
            "HEARTBEAT_SEC": "600", "LOG_DAYS": "14", "LOG_KEEP": "200", "DIBS_AREA": "2",
            "DIBS_GROUP": "AI workflows", "TOOL_PATHS": "~/www:~/dotfiles"}
     raw.update(read_keyvalues(os.path.join(curator_home, "curator.conf")))
@@ -105,8 +107,8 @@ def load_config():
         "home": curator_home,
         "state": os.path.expanduser(os.environ.get("CURATOR_STATE_DIR") or "~/.local/state/curator"),
         "active_min": number(raw["ACTIVE_MIN"], "ACTIVE_MIN"),
-        "quota_max_age_min": number(raw["QUOTA_MAX_AGE_MIN"], "QUOTA_MAX_AGE_MIN"),
-        "quota_poll_sec": number(raw["QUOTA_POLL_SEC"], "QUOTA_POLL_SEC"),
+        "probe_model": raw["PROBE_MODEL"],
+        "probe_timeout_sec": number(raw["PROBE_TIMEOUT_SEC"], "PROBE_TIMEOUT_SEC"),
         "heartbeat_sec": number(raw["HEARTBEAT_SEC"], "HEARTBEAT_SEC"),
         "log_days": number(raw["LOG_DAYS"], "LOG_DAYS"),
         "log_keep": int(number(raw["LOG_KEEP"], "LOG_KEEP", 0, True)),
@@ -372,59 +374,63 @@ def precheck_result(p):
     return rc if rc in (0, 1) else 2
 
 
-def parse_time(text):
-    when = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
-    if when.tzinfo is None:
-        raise ValueError("no timezone")
-    return when
-
-
-def profile_quota(usage, cand, max_age_min):
-    """Return (pct or None, resets_at list, problem or None). max_age_min None skips the freshness check."""
-    try:
-        profile = usage["agents"][cand["agent"]]["profiles"][cand["profile"]]
-    except (KeyError, TypeError):
-        return None, [], "profile missing"
-    if not isinstance(profile, dict):
-        return None, [], "profile unreadable"
-    try:
-        quota = profile["quota"]
-        resets = [quota[k]["resets_at"] for k in ("session", "week_all") if quota[k].get("resets_at")]
-    except (KeyError, TypeError, AttributeError):
-        quota, resets = None, []
-    if profile.get("ok") is not True:
-        return None, resets, "profile not ok"
-    try:
-        values = [quota[k]["pct"] for k in ("session", "week_all")]
-        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not 0 <= v <= 100 for v in values):
-            raise ValueError("bad pct")
-        if max_age_min is not None:
-            age = time.time() - parse_time(quota["captured_at"]).timestamp()
-            if not 0 <= age <= max_age_min * 60:
-                return None, resets, "quota stale"
-    except (KeyError, TypeError, ValueError, AttributeError):
-        return None, resets, "quota unknown"
+def rate_limit(event):
+    """Read a rate_limit_event. Return (pct or None, reset epochs, problem or None)."""
+    info = event.get("rate_limit_info")
+    if not isinstance(info, dict):
+        return None, [], "quota unreadable"
+    windows = info.get("unifiedWindows")
+    windows = windows if isinstance(windows, dict) else {}
+    values, resets = [], []
+    for name in ("five_hour", "seven_day"):
+        window = windows.get(name)
+        window = window if isinstance(window, dict) else {}
+        used, reset = window.get("utilization"), window.get("resetsAt")
+        if isinstance(reset, (int, float)):
+            resets.append(reset)
+        if not isinstance(used, bool) and isinstance(used, (int, float)) and math.isfinite(used) and used >= 0:
+            values.append(used * 100)
+    if info.get("isUsingOverage"):
+        return None, resets, "pay-as-you-go overage in use"
+    if info.get("status") == "rejected":
+        return 100.0, resets, None
+    if len(values) != 2:
+        return None, resets, "quota unreadable"
     return max(values), resets, None
 
 
-def fetch_usage():
-    return run_json(sessioneer_cmd("--usage"))
+def probe_command(cfg):
+    return split_cmd("CURATOR_CLAUDE", "claude") + [
+        "-p", "--model", cfg["probe_model"], "--effort", "low", "--no-session-persistence", "--restricted",
+        "--strict-mcp-config", "--mcp-config", json.dumps({"mcpServers": {}}), "--permission-mode", "dontAsk",
+        "--tools", "", "--system-prompt", "Reply with OK.", "--max-budget-usd", "0.05",
+        "--output-format", "stream-json", "--verbose"]
 
 
-def earliest(times):
-    parsed = []
-    for t in times:
+def probe_quota(cfg, cand):
+    """One tiny model call on the candidate's account. Return (pct or None, reset epochs, problem or None)."""
+    try:
+        with tempfile.TemporaryDirectory(prefix="curator-probe-") as empty:
+            out = subprocess.run(probe_command(cfg), cwd=empty, env=agent_env(cand), input="Reply with OK.",
+                                 capture_output=True, text=True, errors="replace", timeout=cfg["probe_timeout_sec"])
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return None, [], f"quota probe failed: {type(e).__name__}"
+    found = None
+    for line in out.stdout.splitlines():
         try:
-            parsed.append((parse_time(t), t))
-        except (ValueError, AttributeError):
+            event = json.loads(line)
+        except ValueError:
             continue
-    return min(parsed)[1] if parsed else None
+        if isinstance(event, dict) and event.get("type") == "rate_limit_event":
+            found = rate_limit(event)
+    if found:
+        return found
+    return None, [], f"quota probe failed: no rate limit event (exit {out.returncode})"
 
 
-def choose_candidate(cfg, p):
-    """Return (candidate, pct, None) or (None, None, parked reason)."""
-    usage = fetch_usage()
-    reasons, resets = [], []
+def choose_candidate(cfg, p, probe):
+    """Return (candidate, pct, None) or (None, None, parked reason). Without probe, quota is not checked."""
+    readings, reasons, resets = {}, [], []
     for cand in cfg["candidates"]:
         if cand["tier"] != p["tier"]:
             continue
@@ -432,7 +438,11 @@ def choose_candidate(cfg, p):
         if cand["agent"] != "claude":
             reasons.append(f"{label}: no adapter for {cand['agent']}")
             continue
-        pct, found, problem = profile_quota(usage, cand, cfg["quota_max_age_min"])
+        if not probe:
+            return cand, None, None
+        if cand["profile"] not in readings:
+            readings[cand["profile"]] = probe_quota(cfg, cand)
+        pct, found, problem = readings[cand["profile"]]
         resets += found
         if problem:
             reasons.append(f"{label}: {problem}")
@@ -444,11 +454,13 @@ def choose_candidate(cfg, p):
     if not reasons:
         reasons.append(f"no candidate for tier {p['tier']}")
     reason += " (" + "; ".join(reasons)
-    soonest = earliest(resets)
-    return None, None, reason + (f"; earliest reset {soonest}" if soonest else "") + ")"
+    upcoming = [t for t in resets if t > time.time()]
+    if upcoming:
+        reason += f"; earliest reset {datetime.datetime.fromtimestamp(min(upcoming)).astimezone().isoformat(timespec='seconds')}"
+    return None, None, reason + ")"
 
 
-def decide(cfg, p, lock_taker):
+def decide(cfg, p, lock_taker, probe=False):
     """Run the gate checks in order. Returns a decision dict; 'lock' holds the lock file when taken."""
     d = {"run": False, "reason": "", "candidate": None, "kind": "skip", "lock": None, "pct": None}
     lock, reason = lock_taker(cfg, p)
@@ -473,11 +485,12 @@ def decide(cfg, p, lock_taker):
         if result == 1:
             d.update(reason="nothing to do", kind="nothing")
             return d
-    cand, pct, parked = choose_candidate(cfg, p)
+    cand, pct, parked = choose_candidate(cfg, p, probe)
     if not cand:
         d.update(reason=parked, kind="parked")
         return d
-    d.update(run=True, reason=f"would run {cand['agent']} {cand['profile']} {cand['model']} {cand['effort']}",
+    note = "" if probe else " (quota is probed at run time)"
+    d.update(run=True, reason=f"would run {cand['agent']} {cand['profile']} {cand['model']} {cand['effort']}{note}",
              candidate=cand, kind="go", pct=pct)
     return d
 
@@ -597,14 +610,17 @@ def kill_group(proc):
     proc.wait()
 
 
-def watch(cfg, p, cand, proc, log, token, runs_issue):
-    """Read the stream until the agent ends or a limit stops it. Returns (outcome or None, result event, init model seen)."""
+def watch(cfg, p, cand, proc, log, token, runs_issue, info):
+    """Read the stream until the agent ends or a limit stops it. Returns (outcome or None, result event, init model seen).
+
+    The latest quota reading from the stream is kept in info["quota_pct"].
+    """
     sel = selectors.DefaultSelector()
     sel.register(proc.stdout, selectors.EVENT_READ)
     fd = proc.stdout.fileno()
     now = time.monotonic()
     deadline = now + p["timeout_min"] * 60
-    next_poll, next_beat = now + cfg["quota_poll_sec"], now + cfg["heartbeat_sec"]
+    next_beat = now + cfg["heartbeat_sec"]
     outcome, result, init_seen, buf = None, None, False, b""
 
     while outcome is None:
@@ -635,16 +651,17 @@ def watch(cfg, p, cand, proc, log, token, runs_issue):
                         init_seen = True
                 if event.get("type") == "result":
                     result = event
+                if event.get("type") == "rate_limit_event":
+                    pct = rate_limit(event)[0]
+                    if pct is not None:
+                        info["quota_pct"] = pct
+                        if outcome is None and result is None and pct >= cfg["quota_park"]:
+                            outcome = f"parked at quota {round(pct)}%"
         elif proc.poll() is not None:
             break
         now = time.monotonic()
         if outcome is None and now > deadline:
             outcome = "timeout"
-        if outcome is None and now >= next_poll:
-            next_poll = now + cfg["quota_poll_sec"]
-            pct, _resets, _problem = profile_quota(fetch_usage(), cand, None)
-            if pct is not None and pct >= cfg["quota_park"]:
-                outcome = f"parked at quota {round(pct)}%"
         if outcome is None and now >= next_beat:
             next_beat = now + cfg["heartbeat_sec"]
             try:
@@ -658,7 +675,7 @@ def watch(cfg, p, cand, proc, log, token, runs_issue):
 
 def run_agent(cfg, p, cand, prompt, session_id, token, runs_issue, log_path, err_path):
     """Launch and watch the agent. Returns a dict with outcome, result event, verified model, other models."""
-    info = {"outcome": None, "result": None, "verified": None, "others": []}
+    info = {"outcome": None, "result": None, "verified": None, "others": [], "quota_pct": None}
     work = os.path.join(cfg["state"], "work")
     os.makedirs(work, exist_ok=True)
     with open(log_path, "w") as log, open(err_path, "w") as err:
@@ -676,7 +693,7 @@ def run_agent(cfg, p, cand, prompt, session_id, token, runs_issue, log_path, err
                 proc.stdin.close()
             except OSError:
                 pass
-            outcome, result, init_seen = watch(cfg, p, cand, proc, log, token, runs_issue)
+            outcome, result, init_seen = watch(cfg, p, cand, proc, log, token, runs_issue, info)
             if outcome is None:
                 try:
                     proc.wait(timeout=30)
@@ -779,12 +796,11 @@ def do_run(cfg, p, d, run_id):
 
     def report():
         took = time.time() - started
-        after_pct = profile_quota(fetch_usage(), cand, None)[0]
         rules = changed_ids(before[0], rule_snapshot()) if before else []
         if rules and info["outcome"] == "ok":
             info["outcome"] = "rule records changed: " + ", ".join(map(str, rules))
         say(f"outcome: {info['outcome']}")
-        quota = (pct_text(d["pct"]), pct_text(after_pct))
+        quota = (pct_text(d["pct"]), pct_text(info.get("quota_pct")))
         dibs("todo:agent:comment", runs_issue, "--body",
              report_text(run_id, p, cand, started, took, info, quota, rules, log_paths),
              "--idempotency-key", f"curator:report:{run_id}")
@@ -830,7 +846,7 @@ def stop_on_signal():
 
 def command_run(cfg, p, dry_run):
     run_id = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-") + p["name"]
-    d = decide(cfg, p, probe_lock if dry_run else take_lock)
+    d = decide(cfg, p, probe_lock if dry_run else take_lock, probe=not dry_run)
     try:
         if not d["run"]:
             say(f"skip: {d['reason']}" if d["kind"] == "skip" else d["reason"])

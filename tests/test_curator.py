@@ -110,6 +110,32 @@ FAKE_CLAUDE = '''#!__PY__
 import json, os, subprocess, sys, time
 d = os.path.dirname(os.path.abspath(__file__))
 stdin = sys.stdin.read()
+if '--system-prompt' in sys.argv:
+    with open(os.path.join(d, 'probe.jsonl'), 'a') as f:
+        f.write(json.dumps({'argv': sys.argv[1:], 'stdin': stdin, 'env': dict(os.environ)}) + '\\n')
+    if os.path.exists(os.path.join(d, 'vanish_after_probe')):
+        os.unlink(os.path.abspath(__file__))
+    raw = os.path.join(d, 'probe_scenario.json')
+    if os.path.exists(raw):
+        sc = json.load(open(raw))
+        time.sleep(sc.get('sleep', 0))
+        for e in sc.get('events', []):
+            print(json.dumps(e), flush=True)
+        sys.exit(sc.get('exit', 0))
+    profile = 'work' if os.environ.get('CLAUDE_CONFIG_DIR', '').endswith('.claude-work') else 'personal'
+    try:
+        entry = json.load(open(os.path.join(d, 'usage.json')))['agents']['claude']['profiles'][profile]
+        assert entry['ok'] is True
+        quota = entry['quota']
+        windows = {}
+        for key, window in (('session', 'five_hour'), ('week_all', 'seven_day')):
+            windows[window] = {'utilization': quota[key]['pct'] / 100}
+            if 'resets_at' in quota[key]:
+                windows[window]['resetsAt'] = quota[key]['resets_at']
+    except Exception:
+        sys.exit(1)
+    print(json.dumps({'type': 'rate_limit_event', 'rate_limit_info': {'status': 'allowed', 'unifiedWindows': windows}}))
+    sys.exit(0)
 rec = {'argv': sys.argv[1:], 'stdin': stdin, 'env': dict(os.environ), 'cwd': os.path.realpath(os.getcwd()),
        'listing': sorted(os.listdir('.')), 'pid': os.getpid(), 'pgrp': os.getpgrp(), 'sid': os.getsid(0),
        'parent_pgrp': os.getpgid(os.getppid())}
@@ -134,8 +160,6 @@ for st in sc['steps']:
         print(json.dumps(st['emit']), flush=True)
     elif 'sleep' in st:
         time.sleep(st['sleep'])
-    elif 'write_usage' in st:
-        atomic(os.path.join(d, 'usage.json'), st['write_usage'])
     elif 'rules' in st:
         dp = os.path.join(d, 'dibs_state.json')
         state = json.load(open(dp))
@@ -206,9 +230,14 @@ def ok_steps(model=MODEL, **kw):
     return [init(model), assistant(model), result(models=(model,), **kw)]
 
 
-def profile_entry(session=10, week=10, age=0, ok=True, resets=None):
-    ts = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=age)
-    quota = {'session': {'pct': session}, 'week_all': {'pct': week}, 'captured_at': ts.isoformat()}
+def quota_event(session=10, week=10, status='allowed', **info):
+    windows = {'five_hour': {'utilization': session / 100}, 'seven_day': {'utilization': week / 100}}
+    info = {'status': status, 'unifiedWindows': windows, **info}
+    return {'emit': {'type': 'rate_limit_event', 'rate_limit_info': info}}
+
+
+def profile_entry(session=10, week=10, ok=True, resets=None):
+    quota = {'session': {'pct': session}, 'week_all': {'pct': week}}
     if resets:
         quota['session']['resets_at'], quota['week_all']['resets_at'] = resets
     return {'ok': ok, 'quota': quota}
@@ -288,7 +317,7 @@ class CuratorCase(unittest.TestCase):
 
     def write_conf(self, **overrides):
         values = {'ACTIVE_MIN': 30, 'ACTIVITY_PATHS': '~/.claude/projects:~/.claude-work/projects:~/.codex/sessions',
-                  'QUOTA_MAX_AGE_MIN': 60, 'QUOTA_POLL_SEC': 1, 'HEARTBEAT_SEC': 1, 'LOG_DAYS': 14,
+                  'PROBE_TIMEOUT_SEC': 30, 'HEARTBEAT_SEC': 1, 'LOG_DAYS': 14,
                   'LOG_KEEP': 200, 'DIBS_AREA': 2, 'DIBS_GROUP': 'AI workflows', 'TOOL_PATHS': str(self.tmp)}
         values.update(overrides)
         (self.chome / 'curator.conf').write_text(
@@ -355,6 +384,13 @@ class CuratorCase(unittest.TestCase):
 
     def claude_calls(self):
         return self.lines('claude.jsonl')
+
+    def probe_calls(self):
+        return self.lines('probe.jsonl')
+
+    def probe_scenario(self, events=(), exit_code=0, sleep=0):
+        (self.fakes / 'probe_scenario.json').write_text(
+            json.dumps({'events': list(events), 'exit': exit_code, 'sleep': sleep}))
 
     def sessioneer_calls(self):
         return self.lines('sessioneer.jsonl')
@@ -958,7 +994,7 @@ class PrecheckTests(CuratorCase):
 
 
 class CandidateTests(CuratorCase):
-    """Tier match, file order, freshness, ok flag, quota ceiling, adapter."""
+    """Tier match, file order, quota probe, quota ceiling, adapter."""
 
     def setUp(self):
         super().setUp()
@@ -988,16 +1024,32 @@ class CandidateTests(CuratorCase):
             '\n'
             'balanced claude work model-second low\n')
 
+    def launched_model(self):
+        before = len(self.claude_calls())
+        self.run_pass()
+        calls = self.claude_calls()
+        self.assertEqual(len(calls), before + 1, 'no agent launched')
+        (self.state / 'last-light.json').unlink(missing_ok=True)
+        return flag(calls[-1]['argv'], '--model')
+
+    def assert_parked(self, text='no candidate with quota'):
+        r = self.run_pass()
+        self.assertEqual(r.code, 0, r.out + r.err)
+        self.assertIn('parked: no candidate with quota', r.out)
+        self.assertIn(text, r.out)
+        self.assertEqual(self.claude_calls(), [])
+        self.assertEqual(self.dibs_writes(), [])
+        return r
+
     def test_file_order_is_preference(self):
         self.two_balanced()
         self.set_usage(usage_doc({'personal': profile_entry(), 'work': profile_entry()}))
-        self.assertIn('model-first', self.candidate())
+        self.assertEqual(self.launched_model(), 'model-first')
+        self.assertEqual(len(self.probe_calls()), 1)
 
     def test_later_candidate_is_used_when_the_first_does_not_qualify(self):
         cases = {
-            'profile not ok': {'personal': profile_entry(ok=False), 'work': profile_entry()},
-            'profile missing': {'work': profile_entry()},
-            'stale captured_at': {'personal': profile_entry(age=70), 'work': profile_entry()},
+            'probe fails': {'personal': profile_entry(ok=False), 'work': profile_entry()},
             'session quota at the ceiling': {'personal': profile_entry(session=80), 'work': profile_entry()},
             'week quota above the ceiling': {'personal': profile_entry(session=5, week=85), 'work': profile_entry()},
         }
@@ -1005,50 +1057,88 @@ class CandidateTests(CuratorCase):
             with self.subTest(label):
                 self.two_balanced()
                 self.set_usage(usage_doc(profiles))
-                self.assertIn('model-second', self.candidate())
+                self.assertEqual(self.launched_model(), 'model-second')
 
-    def test_unreadable_or_not_exactly_true_profiles_do_not_qualify(self):
-        def with_ok(value):
-            entry = profile_entry()
-            entry['ok'] = value
-            return entry
-        bad = {'string': 'garbage', 'null': None, 'list': [], 'number': 7, 'ok as string': with_ok('true'),
-               'ok as 1': with_ok(1), 'ok as null': with_ok(None), 'ok as list': with_ok([True])}
-        for label, entry in bad.items():
+    def test_each_profile_is_probed_once(self):
+        self.set_candidates('balanced claude personal model-a low\nbalanced claude personal model-b low\n')
+        self.set_usage(usage_doc({'personal': profile_entry(99, 99)}))
+        self.assert_parked()
+        self.assertEqual(len(self.probe_calls()), 1)
+
+    def test_probe_is_a_tiny_restricted_call_on_the_candidate_account(self):
+        self.set_candidates('balanced claude work claude-sonnet-5-5 medium\n')
+        self.set_usage(usage_doc({'work': profile_entry()}))
+        self.run_pass()
+        call = self.probe_calls()[0]
+        args = call['argv']
+        self.assertEqual(flag(args, '--model'), 'claude-haiku-5-5')
+        self.assertEqual(flag(args, '--tools'), '')
+        self.assertEqual(json.loads(flag(args, '--mcp-config')), {'mcpServers': {}})
+        for name in ('-p', '--restricted', '--strict-mcp-config', '--no-session-persistence'):
+            self.assertIn(name, args)
+        self.assertEqual(flag(args, '--max-budget-usd'), '0.05')
+        self.assertEqual(call['env']['CLAUDE_CONFIG_DIR'], f'{self.home}/.claude-work')
+
+    def test_probe_model_comes_from_the_conf(self):
+        self.write_conf(PROBE_MODEL='probe-x')
+        self.run_pass()
+        self.assertEqual(flag(self.probe_calls()[0]['argv'], '--model'), 'probe-x')
+
+    def test_stored_sessioneer_usage_is_not_consulted(self):
+        self.run_pass()
+        self.assertFalse(any('--usage' in c for c in self.sessioneer_calls()))
+        self.assertEqual(len(self.claude_calls()), 1)
+
+    def test_unreadable_probe_results_park(self):
+        window = {'utilization': 0.1}
+        def event(**info):
+            return {'type': 'rate_limit_event', 'rate_limit_info': info}
+        cases = {
+            'no event': ([{'type': 'result'}], 'no rate limit event'),
+            'no info': ([{'type': 'rate_limit_event'}], 'quota unreadable'),
+            'one window': ([event(status='allowed', unifiedWindows={'five_hour': window})], 'quota unreadable'),
+            'bad utilization': ([event(status='allowed', unifiedWindows={
+                'five_hour': {'utilization': 'x'}, 'seven_day': window})], 'quota unreadable'),
+            'overage': ([event(status='allowed', isUsingOverage=True, unifiedWindows={
+                'five_hour': window, 'seven_day': window})], 'overage'),
+            'rejected': ([event(status='rejected')], 'quota 100%'),
+        }
+        for label, (events, text) in cases.items():
             with self.subTest(label):
-                self.two_balanced()
-                self.set_usage(usage_doc({'personal': entry, 'work': profile_entry()}))
-                self.assertIn('model-second', self.candidate())
-        no_ok = profile_entry()
-        del no_ok['ok']
-        self.two_balanced()
-        self.set_usage(usage_doc({'personal': no_ok, 'work': profile_entry()}))
-        self.assertIn('model-second', self.candidate())
+                self.probe_scenario(events)
+                self.assert_parked(text)
 
-    def test_a_usage_document_that_is_not_a_dict_does_not_crash_the_gate(self):
-        for doc in ({'agents': []}, {'agents': {'claude': 'x'}}, {'agents': {'claude': {'profiles': []}}}, []):
-            with self.subTest(doc=doc):
-                self.set_usage(doc)
-                r, out = self.gate()
-                self.assertEqual(r.code, 1, r.out + r.err)
-                self.assertIn('no candidate with quota', out['reason'])
+    def test_probe_timeout_parks(self):
+        self.write_conf(PROBE_TIMEOUT_SEC=1)
+        self.probe_scenario(sleep=20)
+        r = self.assert_parked('quota probe failed: TimeoutExpired')
+        self.assertLess(r.seconds, 15)
 
-    def test_first_candidate_is_used_just_inside_the_limits(self):
+    def test_probe_that_cannot_start_parks(self):
+        self.env_extra['CURATOR_CLAUDE'] = str(self.tmp / 'no-such-claude')
+        self.assert_parked('quota probe failed')
+
+    def test_gate_and_dry_run_never_probe(self):
+        self.set_usage(usage_doc({'personal': profile_entry(99, 99)}))
+        doc = self.assert_would_run()
+        self.assertIn('probed at run time', doc['reason'])
+        self.assertEqual(self.run_pass('light', '--dry-run').code, 0)
+        self.assertEqual(self.probe_calls(), [])
+
+    def test_no_probe_when_the_gate_skips(self):
+        self.set_list({'ok': True, 'sessions': [{'name': 'busy', 'status': 'working'}]})
+        self.run_pass()
+        self.assertEqual(self.probe_calls(), [])
+
+    def test_a_probe_result_just_inside_the_limits_qualifies(self):
         self.two_balanced()
-        self.set_usage(usage_doc({'personal': profile_entry(session=79, week=79, age=50), 'work': profile_entry()}))
-        self.assertIn('model-first', self.candidate())
+        self.set_usage(usage_doc({'personal': profile_entry(session=79, week=79), 'work': profile_entry()}))
+        self.assertEqual(self.launched_model(), 'model-first')
 
     def test_environment_overrides_the_thresholds_file(self):
         self.env_extra['QUOTA_GO_MAX'] = '50'
         self.set_usage(usage_doc({'personal': profile_entry(60, 10)}))
-        r, doc = self.gate()
-        self.assertEqual(r.code, 1)
-        self.assertIn('no candidate with quota', doc['reason'])
-
-    def test_quota_max_age_comes_from_the_conf(self):
-        self.write_conf(QUOTA_MAX_AGE_MIN=5)
-        self.set_usage(usage_doc({'personal': profile_entry(age=10)}))
-        self.assertIn('no candidate with quota', self.gate()[1]['reason'])
+        self.assert_parked('quota 60% at or above 50%')
 
     def test_unknown_agent_has_no_adapter(self):
         self.set_candidates('balanced codex personal gpt-x medium\nbalanced claude personal model-claude low\n')
@@ -1072,12 +1162,16 @@ class CandidateTests(CuratorCase):
     def test_parked_outcome_logs_each_reason_and_the_earliest_reset(self):
         self.two_balanced()
         self.set_usage(usage_doc({
-            'personal': profile_entry(95, 10, resets=('2031-01-01T10:00:00+00:00', '2031-01-05T00:00:00+00:00')),
-            'work': profile_entry(ok=False, resets=('2031-01-01T08:00:00+00:00', '2031-01-04T00:00:00+00:00'))}))
+            'personal': profile_entry(95, 10, resets=(1925035200, 1925337600)),
+            'work': profile_entry(10, 95, resets=(1925028000, 1925251200))}))
+        self.two_balanced()
         r = self.run_pass()
         self.assertEqual(r.code, 0, r.out + r.err)
         self.assertIn('parked: no candidate with quota', r.out)
-        self.assertIn('2031-01-01T08:00:00', r.out)
+        earliest = datetime.datetime.fromtimestamp(1925028000).astimezone().isoformat(timespec='seconds')
+        self.assertIn(f'earliest reset {earliest}', r.out)
+        self.assertIn('model-first', r.out)
+        self.assertIn('model-second', r.out)
 
     def test_parked_run_writes_nothing_to_dibs_and_launches_nothing(self):
         self.set_usage(usage_doc({'personal': profile_entry(99, 99)}))
@@ -1101,16 +1195,12 @@ class CandidateTests(CuratorCase):
         self.assertIsNone(self.last_file()['ok_at'])
 
     def test_gate_json_for_a_parked_decision(self):
-        self.set_usage(usage_doc({'personal': profile_entry(99, 99)}))
+        self.set_candidates('balanced codex personal gpt-x medium\n')
         r, doc = self.gate()
         self.assertEqual(r.code, 1)
         self.assertIs(doc['run'], False)
         self.assertIn('no candidate with quota', doc['reason'])
         self.assertIsNone(doc['candidate'])
-
-    def test_usage_is_asked_with_the_usage_flag(self):
-        self.assert_would_run()
-        self.assertTrue(any('--usage' in c for c in self.sessioneer_calls()))
 
 
 class GateCliTests(CuratorCase):
@@ -1594,14 +1684,14 @@ class ModelVerificationTests(CuratorCase):
 
 
 class QuotaParkDuringRunTests(CuratorCase):
-    """QUOTA_POLL_SEC polling: the agent is stopped when the profile reaches QUOTA_PARK."""
+    """The agent is stopped when a rate limit event in its stream reaches QUOTA_PARK."""
 
     def setUp(self):
         super().setUp()
         self.standing()
 
     def test_quota_reaching_the_park_level_stops_the_run(self):
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(95, 10)})},
+        self.scenario([init(MODEL), quota_event(95, 10),
                        {'sleep': 40}, {'emit': result()['emit']}, {'mark': 'survived'}])
         r = self.run_pass()
         self.assertEqual(r.code, 0, r.out + r.err)
@@ -1615,44 +1705,45 @@ class QuotaParkDuringRunTests(CuratorCase):
         self.assert_released(r, 'parked at quota 95%')
 
     def test_week_quota_counts_too(self):
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(5, 92)})}, {'sleep': 40}])
+        self.scenario([init(MODEL), quota_event(5, 92), {'sleep': 40}])
         r = self.run_pass()
         self.assertEqual(r.code, 0, r.out + r.err)
         self.assertEqual(self.last_file()['outcome'], 'parked at quota 92%')
 
+    def test_a_rejected_status_stops_the_run(self):
+        self.scenario([init(MODEL), quota_event(10, 10, status='rejected'), {'sleep': 40}])
+        self.assertEqual(self.run_pass().code, 0)
+        self.assertEqual(self.last_file()['outcome'], 'parked at quota 100%')
+
     def test_quota_below_park_does_not_stop_the_run(self):
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(85, 10)})},
-                       {'sleep': 2.5}, result()])
+        self.scenario([init(MODEL), quota_event(85, 10), {'sleep': 1}, result()])
         r = self.run_pass()
         self.assertEqual(r.code, 0, r.out + r.err)
         self.assertEqual(self.last_file()['outcome'], 'ok')
 
-    def test_unreadable_profile_during_the_run_does_not_terminate_it(self):
-        def not_true(value):
-            entry = profile_entry(95, 95)
-            entry['ok'] = value
-            return {'personal': entry}
-        docs = {'garbage entry': {'personal': 'garbage'}, 'ok as string': not_true('true'),
-                'ok false': not_true(False), 'ok as 1': not_true(1)}
-        for label, profiles in docs.items():
-            with self.subTest(label):
-                self.set_usage(usage_doc())
-                (self.state / 'last-light.json').unlink(missing_ok=True)
-                self.scenario([init(MODEL), {'write_usage': usage_doc(profiles)}, {'sleep': 2.5}, result()])
-                r = self.run_pass()
-                self.assertEqual(r.code, 0, r.out + r.err)
-                self.assertEqual(self.last_file()['outcome'], 'ok')
+    def test_an_event_after_the_result_does_not_undo_the_run(self):
+        self.scenario([init(MODEL), result(), quota_event(95, 95)])
+        self.assertEqual(self.run_pass().code, 0)
+        self.assertEqual(self.last_file()['outcome'], 'ok')
+
+    def test_unreadable_quota_event_during_the_run_does_not_terminate_it(self):
+        bad = {'type': 'rate_limit_event', 'rate_limit_info': 'garbage'}
+        partial = {'type': 'rate_limit_event',
+                   'rate_limit_info': {'unifiedWindows': {'five_hour': {'utilization': 0.95}}}}
+        self.scenario([init(MODEL), {'emit': bad}, {'emit': partial}, {'sleep': 1}, result()])
+        r = self.run_pass()
+        self.assertEqual(r.code, 0, r.out + r.err)
+        self.assertEqual(self.last_file()['outcome'], 'ok')
 
     def test_park_level_comes_from_the_thresholds_file(self):
         self.thresholds.write_text('QUOTA_GO_MAX=80\nQUOTA_PARK=97\n')
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(95, 10)})},
-                       {'sleep': 2.5}, result()])
+        self.scenario([init(MODEL), quota_event(95, 10), {'sleep': 1}, result()])
         self.assertEqual(self.run_pass().code, 0)
         self.assertEqual(self.last_file()['outcome'], 'ok')
 
     def test_park_level_can_be_overridden_by_the_environment(self):
         self.env_extra['QUOTA_PARK'] = '50'
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(60, 10)})}, {'sleep': 40}])
+        self.scenario([init(MODEL), quota_event(60, 10), {'sleep': 40}])
         self.assertEqual(self.run_pass().code, 0)
         self.assertEqual(self.last_file()['outcome'], 'parked at quota 60%')
 
@@ -1770,7 +1861,7 @@ class ReportTests(CuratorCase):
 
     def test_report_layout_for_an_ok_run(self):
         self.scenario([init(MODEL), assistant(MODEL),
-                       {'write_usage': usage_doc({'personal': profile_entry(20, 33)})},
+                       quota_event(20, 33),
                        result(cost=0.25, turns=3, text='Open drafts: 4\nDropped tasks: 2')])
         self.set_usage(usage_doc({'personal': profile_entry(10, 5)}))
         r = self.run_pass()
@@ -1797,7 +1888,7 @@ class ReportTests(CuratorCase):
 
     def test_cost_is_two_decimals_and_quota_a_whole_percent(self):
         self.scenario([init(MODEL), result(cost=0.4567, turns=12),
-                       {'write_usage': usage_doc({'personal': profile_entry(33.6, 20.2)})}])
+                       quota_event(33.6, 20.2)])
         self.set_usage(usage_doc({'personal': profile_entry(10.4, 5)}))
         self.run_pass()
         self.assertRegex(self.report_body(), r'(?m)^- Cost: \$0\.46 over 12 turns; quota \d+% to \d+%\.?$')
@@ -1856,7 +1947,7 @@ class ReleaseTests(CuratorCase):
         self.assertRegex(left, r'^Curator run \d{8}-\d{6}-light finished: ok$')
 
     def test_release_when_the_agent_cannot_be_started(self):
-        self.env_extra['CURATOR_CLAUDE'] = str(self.tmp / 'no-such-claude')
+        (self.fakes / 'vanish_after_probe').write_text('1')
         r = self.run_pass()
         self.assertEqual(r.code, 3, r.out + r.err)
         self.assertRegex(self.last_file()['outcome'], r'^agent error: .+')
@@ -1888,7 +1979,7 @@ class ReleaseTests(CuratorCase):
         self.assert_released(r, 'model mismatch: claude-opus-5-5')
 
     def test_release_after_a_quota_park(self):
-        self.scenario([init(MODEL), {'write_usage': usage_doc({'personal': profile_entry(95, 1)})}, {'sleep': 40}])
+        self.scenario([init(MODEL), quota_event(95, 1), {'sleep': 40}])
         r = self.run_pass()
         self.assert_released(r, 'parked at quota')
 

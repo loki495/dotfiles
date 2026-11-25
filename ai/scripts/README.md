@@ -153,7 +153,7 @@ start only after `systemctl --user enable --now curator-light.timer`.
 Configuration lives in `ai/curator/`:
 
 - `curator.conf`: `ACTIVE_MIN` (minutes of quiet needed), `ACTIVITY_PATHS` (transcript roots whose file
-  mtimes count as activity), quota freshness and poll intervals, claim heartbeat, run log retention,
+  mtimes count as activity), the quota probe model and timeout, claim heartbeat, run log retention,
   and the Dibs area and group of the standing issues.
 - `candidates.txt`: `tier agent profile model effort`, cheapest suitable first. Only `claude` has a
   launcher today; other agents are skipped as `no adapter`.
@@ -174,9 +174,15 @@ start and deadline; a holder past its own deadline whose process is still that c
 terminated, per skill resource-cleanup), the pass's minimum interval,
 `sessioneer --list` (any session not `idle` or `blocked` blocks; sessions tagged `curator` or named
 `[curator]...` are ignored), recent transcript activity, the precheck, then the first candidate of
-the pass tier whose profile quota is fresh and below `QUOTA_GO_MAX` from skill session-flow
+the pass tier whose live profile quota is below `QUOTA_GO_MAX` from skill session-flow
 `thresholds.conf`. With no candidate the run parks and exits 0. Anything that cannot be read counts
 as "do not run".
+
+The quota comes from a probe, because the stored Sessioneer reading goes stale while no session runs:
+one `claude -p` call per candidate profile with `PROBE_MODEL` (no tools, no MCP, no persisted session,
+budget $0.05) whose `rate_limit_event` gives the five-hour and seven-day use. A probe can start a new
+five-hour window. A failed probe, an unreadable event or pay-as-you-go overage parks the run. `gate`
+and `--dry-run` never probe: they name the first candidate of the tier without checking its quota.
 
 A run then makes sure the standing issues `Curator runs` and `Curator proposals` exist (label
 `curator`), claims `Curator runs`, snapshots the records labelled `rule`, and starts
@@ -185,7 +191,8 @@ dontAsk --no-session-persistence` with the candidate's model and effort. The age
 Dibs tools (plus the pass's scoped read tools): it cannot run commands, push, edit files or config, or
 reach Sessioneer. Sessions are not persisted, so curator runs never count as activity. While it runs
 the script checks the model of the init event and of every assistant message against the requested
-one (a launcher can silently ignore `--model`; no init event means "model not verified"), stops the agent at `QUOTA_PARK`, at the pass timeout, or on a model mismatch,
+one (a launcher can silently ignore `--model`; no init event means "model not verified"), stops the agent at `QUOTA_PARK` (read from the run's own `rate_limit_event` lines), at the pass
+timeout, or on a model mismatch,
 heartbeats the claim, and copies the stream-json output to `~/.local/state/curator/runs/<run id>.jsonl` (stderr to
 `<run id>.stderr`). A SIGTERM from systemd (stop or `TimeoutStartSec`) ends the run the same way:
 the agent's process group is killed and the report and release still happen.
