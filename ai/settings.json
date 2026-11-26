@@ -577,6 +577,15 @@
             "command": "$HOME/.claude/hooks/dibs-block.py prompt"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/continuation-link.py"
+          }
+        ]
       }
     ]
   },

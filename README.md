@@ -634,6 +634,17 @@ All projects:
   tightened to 0700), and message files are opened without following symlinks, so another account cannot
   plant text in a session's context.
   An untracked session gets nothing. Test: `tests/test_session_tags_hook.py`.
+- **Continuation link** (`hooks/continuation-link.py`, UserPromptSubmit): when the prompt names the
+  session it continues, tells Claude that Sessioneer archives that source once it is idle and holds no
+  claim, and starts a detached worker that runs `sessioneer --replaces SOURCE --session <session_id>
+  --json`. The source comes from, first match wins: `/takeover <agent> [profile] <id>` (or the takeover
+  skill sentence), a `Source session: NAME [ID] (AGENT)` line, a `Session: <agent> <id>` line, and on the
+  first prompt only (marker `<session_id>.seen`) the `Session:` line of a Dibs handoff task or of a plan
+  comment (`DIBS_SHOW_CMD`). The worker retries every `CONTINUATION_LINK_RETRY_SECONDS` (3) up to
+  `CONTINUATION_LINK_RETRY_LIMIT` (60 s) while Sessioneer does not know the session yet; another refusal
+  is written to `$CONTINUATION_LINK_DIR` (else `$XDG_RUNTIME_DIR/continuation-link`) and shown once on
+  the next prompt, under the same directory and symlink checks as session tags. `SESSIONEER_BIN` picks
+  the binary. It never blocks a prompt. Test: `tests/test_continuation_link_hook.py`.
 - **Context budget** (`hooks/context-budget.sh`, UserPromptSubmit): reads its numbers from
   `ai/skills/session-flow/thresholds.conf` (the single thresholds file of the `session-flow` skill; the
   `CLAUDE_CTX_BUDGET`, `CLAUDE_CTX_IDLE_MIN` and `CLAUDE_CTX_IDLE_FLOOR` variables override it). Over

@@ -136,9 +136,11 @@ work that is being parked, create one temporary task labelled `handoff` using th
 body, give Andres its id, then release with what remains and the exact next step. Keep durable
 lessons/decisions on permanent records. Disclose work done unclaimed in closing evidence.
 
-Check `sessioneer --usage` before long work and periodically. Archive a replaced own session only
-after it is idle, unclaimed and recoverable cold; never kill another agent's active session. Report
-which conversation ids were archived and which records/replacements continue them.
+Check `sessioneer --usage` before long work and periodically. Sessioneer archives a replaced
+session once its receiver has started and it is idle and unclaimed (`session-flow`, "Archive a
+replaced session"); a receiver without the Claude prompt hook runs `sessioneer --replaces <source>`
+first. Never kill another agent's active session. Report which conversation ids were archived and
+which records/replacements continue them.
 
 Claude's stop gate checks the status line first, then claims: Archive/All-done/transfer
 with a claim open blocks once; Continue-in-this-session/Waiting renews instead. If the status was

@@ -74,8 +74,10 @@ it; it may not be the only copy.
 ## Receiving one
 
 1. Find it: `todo_list label=handoff state=OPEN` — every parked session, all agents, one screen.
-2. Claim it. That is the lock; two sessions must not both act on the same handoff. Once it is
-   claimed, archive the source session by `session-flow`, "Archive a replaced session".
+2. Claim it. That is the lock; two sessions must not both act on the same handoff. Sessioneer
+   archives the source named in its `Session:` field as soon as it is idle and claim-free
+   (`session-flow`, "Archive a replaced session"); without the Claude prompt hook, run
+   `sessioneer --replaces <source>` first.
 3. Do the work. The body is meant to be self-sufficient; resume the parked session only if the
    work genuinely needs its transcript.
 4. Fold anything durable into the plan or a knowledge record first.

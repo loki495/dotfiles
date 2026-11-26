@@ -29,7 +29,7 @@ Follow skill `session-flow`, "Questions": collect every question that stops the 
 
 - **GO:** continue here. For a plan, `todo_next`, `todo_claim` the step it returns, and follow its work order.
 - **WARM_TIGHT / CHECKPOINT:** finish the current step, write the checkpoint, update the plan and records, and release claims. Start no large step.
-- **ROTATE:** file the handoff with skill `session-handoff` unless a plan step's work order already carries everything the receiver needs, then launch under "Launch and finish" with the receiver the decision names or your own choice from `session-flow` "Choose the receiver". Add `--dry-run` first when the prompt matters. Report the receiver's name, finish what is left here, and leave this session running: the receiver archives it.
+- **ROTATE:** file the handoff with skill `session-handoff` unless a plan step's work order already carries everything the receiver needs, then launch under "Launch and finish" with the receiver the decision names or your own choice from `session-flow` "Choose the receiver". Add `--dry-run` first when the prompt matters. Report the receiver's name, finish what is left here, and leave this session running: Sessioneer archives it as soon as it is idle and holds no claim.
 - **PARK:** file the handoff, release claims, and say when quota resets.
 - **WAIT:** the status line only; the claim may stay.
 - **DONE:** closer checks, clear what this session spawned, then the status line.
@@ -40,6 +40,6 @@ With no hook, or when Andres would rather tap than wait for a launch, post the r
 
 ## 6. Launch and finish
 
-Launch with the `sessioneer --rotate` forms, shaping options, refusals and source naming in `session-flow`, "Handoff and prompt". Tell Andres the receiver's name, agent, model, effort, profile and workdir, and that it archives this session once it has claimed the work ("Archive a replaced session"). If the launch is refused, say why and leave the session as it is. Nothing is pushed as part of a rotate.
+Launch with the `sessioneer --rotate` forms, shaping options, refusals and source naming in `session-flow`, "Handoff and prompt". Tell Andres the receiver's name, agent, model, effort, profile and workdir, and that Sessioneer archives this session as soon as it is idle and holds no claim ("Archive a replaced session"). If the launch is refused, say why and leave the session as it is. Nothing is pushed as part of a rotate.
 
-Afterwards finish anything still left (answer a peer, record a last checkpoint), clear what this session spawned ("Clear what you spawned"), and confirm no claim is held (`todo_claim_status`). After a rotate the last line is **"Waiting on other work: the receiver <name> takes over and archives this session."** When you continued here instead, say **"Safe to archive this session."** only once nothing is held; if something is still open (a claim, an unanswered question, uncommitted work that is not yours), say what blocks archiving instead.
+Afterwards finish anything still left (answer a peer, record a last checkpoint), clear what this session spawned ("Clear what you spawned"), and confirm no claim is held (`todo_claim_status`). After a rotate the last line is **"Waiting on other work: the receiver <name> takes over; Sessioneer archives this session once it is idle."** When you continued here instead, say **"Safe to archive this session."** only once nothing is held; if something is still open (a claim, an unanswered question, uncommitted work that is not yours), say what blocks archiving instead.

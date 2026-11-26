@@ -33,7 +33,7 @@ did:
 | WARM_TIGHT | Context or quota between the GO and park/rotate limits | Finish the current step, then CHECKPOINT. Start no large step. |
 | CHECKPOINT | A step ends while running tight (`--intent step-end`), or before any leaving | Write the checkpoint, update the plan and records, release claims. |
 | PARK | Quota at `QUOTA_PARK` or more and no other agent or profile has room | File the handoff, release, say when quota resets. Offer a scheduled wake-up (`at`) only when the job exists; phase 3 adds it. |
-| ROTATE | A trigger fired (context at `CTX_ROTATE`, cold cache with big context, quota) and another agent or profile has room | File the handoff, launch the receiver, archive this session once the receiver has claimed it. |
+| ROTATE | A trigger fired (context at `CTX_ROTATE`, cold cache with big context, quota) and another agent or profile has room | File the handoff and launch the receiver; Sessioneer archives this session as soon as it is idle and holds no claim. |
 | WAIT | Waiting on Andres or another session (`--intent wait`), or the session is blocked | Status line only; the claim may stay. When the wait is on other sessions, run `sessioneer --waiting-on NAMES` (tracked session names, never conversation ids) (comma separated session names) so the dashboard shows it; `sessioneer --waiting-on none` when you resume. |
 | DONE | The plan or request is finished (`--intent done`) | Closer checks, clear spawned sessions, then "Safe to archive" or "All planned work is done". |
 | UNKNOWN | No facts could be read | Measure by hand (Inputs) and decide from those. |
@@ -97,11 +97,12 @@ Used by ROTATE, `/rotate` and `/orchestrate`.
   other agent. A cross-agent rotate refuses `--model` and `--effort`, a tool-less session cannot
   rotate, and the call refuses while the source holds a Dibs claim, so release claims first. Report
   the receiver's name, agent, model, effort, profile and workdir. Do not keep working on the same
-  step afterwards: the receiver archives this session (see "Archive a replaced session"). A push
-  still needs Andres's explicit confirmation.
-- Name the source so the receiver can archive it. The `--handoff` prompt finds it in the handoff's
-  `Session:` field. For `--plan` and `--prompt`, put `Session: <agent> <conversation id>` (from
-  `sessioneer --whoami`) in the step's checkpoint comment or in the prompt text.
+  step afterwards: Sessioneer archives this session once it is idle and holds no claim (see
+  "Archive a replaced session"). A push still needs Andres's explicit confirmation.
+- Name the source so a hand-started receiver can be linked to it. The handoff's `Session:` field
+  does this for `--handoff`. For a plan, put `Session: <agent> <conversation id>` (from `sessioneer
+  --whoami`) in the step's checkpoint comment; for a prompt, in the prompt text. `--rotate` itself
+  records the link, and so does a plain launch with `--replaces <this session>`.
 - Auto-continue: a plan body with its own line `Auto-continue: on` (case-insensitive; `online` or a
   mention in a sentence is off) lets the session start the receiver itself instead of posting an
   offer. Run `sessioneer --next --plan <id> --post --no-gates`; `--no-gates` is your affirmation that
@@ -142,20 +143,30 @@ Before continuing past a step boundary, launching a receiver or parking, do all 
 ## Archive a replaced session
 
 One procedure for every case where a session is replaced: a rotate receiver, a takeover, a parked
-coordinator or worker, a session whose quota ran out. The successor runs it, because a session
-cannot archive itself.
+coordinator or worker, a session whose quota ran out. Sessioneer does it, with no prompt, as soon as
+the receiver has started and the source is idle, holds no Dibs claim and has no pending question
+(the `sessioneer-flow-reap` timer, every 30 seconds, plus an attempt at once when the link is
+recorded). It never forces a working or blocked source, and an archived session stays resumable with
+its transcript readable, so a receiver that still has to read the source loses nothing.
 
-1. Confirm the successor record exists: the handoff or task is claimed by you and carries the
-   recovery details, so a cold session could continue from Dibs alone.
-2. Recheck the source: its latest turn, `sessioneer --show <id>`, and its claims (`todo_claim_status`
-   for its conversation id). Reconcile anything new before going on.
-3. Archive it only when it is idle and holds no claim: `sessioneer --kill <name or conversation id>`,
-   with `--agent <agent>` for Codex and OpenCode. A killed session stays resumable.
-4. Never use `--force` on a working or blocked session, never answer its pending prompt as Andres,
-   never archive the session you are running or another agent's session. A source that is still
-   working or holds a claim stays visible: coordinate or wait, and say so.
-5. Already archived: record that and continue. Say which session you archived and which record now
-   carries the work.
+What links a receiver to its source:
+
+- `sessioneer --rotate` (the CLI, `/rotate`, the dashboard band and auto-continue) records it.
+- A plain launch with `sessioneer --workdir <dir> --replaces <source> "<prompt>"` records it.
+- In Claude, the `continuation-link` prompt hook finds the source in a prompt: `/takeover
+  <agent> [profile] <id>`, a `Source session:` or `Session: <agent> <id>` line, and in the first
+  prompt only the `Session:` field of a handoff the prompt names or the `Session:` line of the plan
+  comment it names ("resume plan N from comment M"). It runs `sessioneer --replaces` and says so in the session's context.
+- Anywhere else (Codex, OpenCode, no hook): run `sessioneer --replaces <source name or conversation
+  id>` as the first step, before any other work.
+
+The receiver does not archive the source by hand and does not wait for its own claim. A source that
+still holds a claim or is working stays until it is idle and claim-free: transfer or release the
+claim (takeover) and it is archived on the next pass. `--replaces` refuses the receiver's own
+launcher (the launcher uses `--rotate` or `--replaces` at launch instead), the receiver itself and a
+source already replaced by another live session. Without Sessioneer:
+recheck the source (`sessioneer --show`, `todo_claim_status`) and `sessioneer --kill` it only when it
+is idle and claim-free, never with `--force`, never another agent's session.
 
 ## Clear what you spawned
 
@@ -165,10 +176,11 @@ this session launched: idle, claim-free ones with `sessioneer --kill <name or co
 conversation id) in the task checkpoint at launch, because `--list` does not yet show who spawned
 a session. A session that is still working is not archived; the status is then Waiting on other work,
 and you run `sessioneer --waiting-on NAMES` for it first (`--waiting-on none` once you resume).
-A session you replaced counts too. Never archive another agent's session.
+A session you replaced is archived by Sessioneer (above); kill it yourself only when no link exists.
+Never archive another agent's session.
 
 ## Sessioneer commands every agent should know
 
 `sessioneer --usage`, `--whoami`, `--peers`, `--list [--json]`, `--show TARGET`, `--send TARGET "msg"`,
-`--kill TARGET`, `--waiting-on NAMES|none`, `--next [TARGET] [--json]`, `--rotate (...)`, `--offer [--clear]`, `--take-over TARGET`,
+`--kill TARGET`, `--replaces SOURCE`, `--waiting-on NAMES|none`, `--next [TARGET] [--json]`, `--rotate (...)`, `--offer [--clear]`, `--take-over TARGET`,
 and the launch form in "Handoff and prompt". Read `peer-sessions` before messaging another session.
