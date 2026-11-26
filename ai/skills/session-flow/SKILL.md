@@ -49,6 +49,10 @@ tool (Claude: AskUserQuestion; in Sessioneer it appears as a prompt band), one d
 recommended option first. Never leave "waiting for you to pick" as plain text. Only an agent with no
 question tool uses a numbered list at the end of the reply.
 
+A proposal to continue in a new session offers to launch it (recommended: launch now); on yes, release
+claims and run `sessioneer --rotate` ("Handoff and prompt"). Claude's stop gate blocks a "Continue in a
+different session" ending that has neither the question nor a launch.
+
 Collect questions before the handoff when quota is under `QUOTA_CARRY`. Answers already given go in
 the handoff under Decisions made. At or above `QUOTA_CARRY`, carry the open ones under Open questions
 and the receiver asks them. The receiver asks only what Decisions made does not cover.

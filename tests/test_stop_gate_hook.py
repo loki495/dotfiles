@@ -319,6 +319,122 @@ class StopGateTest(unittest.TestCase):
         self.assertIn('skipped', out['systemMessage'])
 
 
+def prompt(text='go', **extra):
+    return {'type': 'user', 'message': {'content': text}, **extra}
+
+
+def use(name, ident='t1', **args):
+    return {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'id': ident, 'name': name, 'input': args}]}}
+
+
+def result(ident='t1', content='ok', error=False):
+    return {'type': 'user', 'message': {'content': [
+        {'type': 'tool_result', 'tool_use_id': ident, 'content': content, 'is_error': error}]}}
+
+
+def bash(command, **outcome):
+    return [use('Bash', command=command), result(**outcome)]
+
+
+ASKED = [use('AskUserQuestion', 'q1'), result('q1')]
+
+
+class LaunchOfferTest(unittest.TestCase):
+    """"Continue in a different session" needs a question this turn or a launch in this session."""
+
+    setUp = StopGateTest.setUp
+    run_hook = StopGateTest.run_hook
+
+    def stop(self, entries, status=OTHER, claims='echo "[]"', env=None, **extra):
+        path = Path(self.tmp.name) / 'transcript.jsonl'
+        path.write_text(''.join(json.dumps(e, separators=(',', ':')) + '\n' for e in entries))
+        proc = self.run_hook(claims, env={'DIBS_LESSON_PROMPT': 'off', **(env or {})},
+                             extra={'last_assistant_message': 'Report.\n' + status, 'transcript_path': str(path), **extra})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return json.loads(proc.stdout) if proc.stdout.strip() else {}
+
+    def assert_blocked(self, entries, msg=None):
+        out = self.stop(entries)
+        self.assertEqual(out.get('decision'), 'block', msg)
+        for part in ('AskUserQuestion', 'launch now', 'sessioneer --rotate'):
+            self.assertIn(part, out['reason'])
+
+    def test_blocks_a_plain_text_proposal(self):
+        self.assert_blocked([prompt(), *bash('git status')])
+
+    def test_allows_after_a_question_in_this_turn(self):
+        self.assertEqual(self.stop([prompt(), *ASKED]), {})
+
+    def test_hook_feedback_and_task_notifications_do_not_end_the_turn(self):
+        noise = [prompt('Stop hook feedback: x', isMeta=True), prompt('<task-notification>', origin={'kind': 'task-notification'})]
+        self.assertEqual(self.stop([prompt(), *ASKED, *noise]), {})
+
+    def test_a_question_from_an_earlier_turn_or_a_subagent_does_not_count(self):
+        self.assert_blocked([prompt(), *ASKED, prompt('next')])
+        self.assert_blocked([prompt(), {**use('AskUserQuestion'), 'isSidechain': True}])
+
+    def test_allows_after_a_launch_anywhere_in_the_session(self):
+        for command in ('sessioneer --rotate --handoff 12', 'cd /x && sessioneer --rotate --plan 3 --tag "a,b"',
+                        'sessioneer --workdir /x --set-name "[worker] y" "do; the thing"',
+                        'X=1 timeout 60 sessioneer \\\n  --rotate --prompt "$(cat /x)"', 'sessioneer --usage\nsessioneer --rotate --plan 3',
+                        "cat > f <<'EOF'\nit's the brief\nEOF\nsessioneer --workdir /x - < f",
+                        'for s in 1 2; do sessioneer --workdir /x "go $s"; done',
+                        'sessioneer --rotate --prompt "$(cat <<EOF\nit\'s \"quoted\"\nEOF\n)"'):
+            with self.subTest(command=command):
+                self.assertEqual(self.stop([prompt(), *bash(command), prompt('next')]), {})
+
+    def test_allows_after_an_auto_continued_receiver(self):
+        command = 'sessioneer --next --plan 3 --post --no-gates'
+        self.assertEqual(self.stop([prompt(), *bash(command, content='auto-continued: kid')]), {})
+        self.assert_blocked([prompt(), *bash(command, content='offer posted')])
+
+    def test_things_that_are_not_a_launch_still_block(self):
+        for command in ('sessioneer --rotate --plan 3 --dry-run', 'grep -n "sessioneer --rotate" README.md',
+                        'sessioneer --send peer "run --rotate"', 'sessioneer --offer --plan 3', 'echo sessioneer --rotate',
+                        "cat > job <<'EOF'\nsessioneer --workdir /x go\nEOF"):
+            with self.subTest(command=command):
+                self.assert_blocked([prompt(), *bash(command)])
+
+    def test_a_failed_or_unanswered_launch_blocks(self):
+        self.assert_blocked([prompt(), *bash('sessioneer --rotate --plan 3', error=True)])
+        self.assert_blocked([prompt(), use('Bash', command='sessioneer --rotate --plan 3')])
+
+    def test_unreadable_transcript_allows(self):
+        extra = {'last_assistant_message': OTHER}
+        for path in (self.tmp.name, str(Path(self.tmp.name) / 'absent'), None):
+            with self.subTest(path=path):
+                proc = self.run_hook('echo "[]"', env={'DIBS_LESSON_PROMPT': 'off'},
+                                     extra={**extra, **({'transcript_path': path} if path else {})})
+                self.assertEqual((proc.returncode, proc.stdout.strip()), (0, ''))
+        junk = Path(self.tmp.name) / 'junk'
+        junk.write_bytes(b'\xff not json\n[1]\n')
+        proc = self.run_hook('echo "[]"', env={'DIBS_LESSON_PROMPT': 'off'}, extra={**extra, 'transcript_path': str(junk)})
+        self.assertEqual((proc.returncode, proc.stdout.strip()), (0, ''))
+
+    def test_stop_hook_active_does_not_block_again(self):
+        self.assertEqual(self.stop([prompt()], stop_hook_active=True), {})
+
+    def test_other_statuses_need_no_offer(self):
+        for status in (SAFE, DONE, SAME, ANDRES, WORK):
+            self.assertEqual(self.stop([prompt()], status=status), {}, status)
+
+    def test_gate_off_needs_no_offer(self):
+        self.assertEqual(self.stop([prompt()], env={'DIBS_STOP_GATE': 'off'}), {})
+
+    def test_joins_the_claim_and_lesson_messages(self):
+        out = self.stop([prompt(), use('Edit')], claims='echo \'[{"issueId":7}]\'', env={'DIBS_LESSON_PROMPT': ''})
+        for part in ('task 7', 'handoff', 'AskUserQuestion whether to launch', 'Lesson check'):
+            self.assertIn(part, out['reason'])
+        out = self.stop([prompt(), use('Edit')], env={'DIBS_LESSON_PROMPT': ''}, session_id='sess-2')
+        for part in ('AskUserQuestion whether to launch', 'Lesson check'):
+            self.assertIn(part, out['reason'])
+
+    def test_unreachable_dibs_still_asks_for_the_offer(self):
+        out = self.stop([prompt()], claims='exit 1')
+        self.assertEqual(out['decision'], 'block')
+        self.assertIn('skipped', out['systemMessage'])
+
+
 class LessonPromptTest(unittest.TestCase):
     """The once-per-session lesson check on a completion status."""
 

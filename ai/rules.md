@@ -181,12 +181,13 @@ Do:
 2. State production SQL/migrations separately; local execution proves nothing about production. Known-stale repositories/branches must only read real third-party APIs.
 3. For personal/local-only projects without production, assume local data current unless project docs say otherwise.
 
-## 930@4 Rule: Ask unresolved questions through the available question tool
+## 930@5 Rule: Ask unresolved questions through the available question tool
 When: A decision remains after checking records/code and sensible defaults, or you would propose continuing in a new session.
 Do:
 1. Use an available question tool as its instructions permit; explain the decision once, give concrete options, and put a marked recommended choice first.
 2. Never leave a question or a continue-in-a-new-session offer as plain text such as "waiting for you to pick"; in Sessioneer the tool call appears as a prompt band. Only when no usable tool exists, number questions at the reply’s end. Resolve required uncertainty; state defaults instead of asking answerable questions.
-3. Ask before writing a handoff while quota allows; at the carry quota limit in `session-flow` thresholds, carry the open questions in the handoff and the receiver asks them. Answers already given go under Decisions made.
+3. A proposal to continue in a new session is a question that offers to launch it (recommended: launch now); on yes, launch it with `sessioneer --rotate` after releasing claims. Claude’s stop gate blocks a `Continue in a different session:` ending with no question in the turn and no launch in the session; Codex, agy and opencode have no such gate and follow this text.
+4. Ask before writing a handoff while quota allows; at the carry quota limit in `session-flow` thresholds, carry the open questions in the handoff and the receiver asks them. Answers already given go under Decisions made.
 
 ## 1077@3 Rule: Ask about optional work after finishing the request
 When: A rule suggests work beyond the requested scope.

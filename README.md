@@ -601,6 +601,16 @@ All projects:
   after applying bookkeeping; Dibs outages allow with a warning. A recently registered,
   user-owned entry in `dibs-stop-gate-skip` skips one-off sessions entirely.
 
+  **Launch offer:** `Continue in a different session:` blocks once unless the current turn called
+  `AskUserQuestion` or the session already launched one (a successful `sessioneer --rotate` or
+  `--workdir` launch, or `--next` reporting `auto-continued:`; dry runs do not count). The block asks
+  the agent to offer the launch (recommended: launch now) and to run `sessioneer --rotate` on yes.
+  `hooks/stop-gate-launch.py` reads the transcript; a task notification does not start a new turn. An
+  unreadable transcript allows, a repeated stop (`stop_hook_active`) is not blocked again, and
+  `DIBS_STOP_GATE=off` skips the check. It joins the claim and lesson messages and still applies when
+  Dibs is unreachable. Only Claude Code has this gate: Codex's `Stop` hook only reports status to
+  Sessioneer, and agy and opencode run no stop gate, so they follow rule 930's text.
+
   **Lesson check:** the first completion status of a session (archive, all done, or continue in a
   different session) blocks once and asks whether an error, correction, blocked action or better way
   occurred. The agent searches Dibs for a duplicate, then adds a recurrence comment or files a record

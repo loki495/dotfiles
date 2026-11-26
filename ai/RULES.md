@@ -94,7 +94,7 @@ Google developer documentation style guide.
 - [744] Surface unexpected local/debug errors; rethrow in debug and report/log before a production fallback.
 - [924] Document current behavior; default to no code comments, adding only concise non-obvious reasons.
 - [926] Delegate >10k-token output and mechanical bulk >15 records; this is the standing subagent request. State agent/model/effort/reason and use ranked routing. Full-history forks inherit and cannot accept overrides; frontier needs Andres.
-- [930] Ask every question, and every proposal to continue in a new session, through an available permitted question tool, with one explanation and recommended option first; never as plain text. If no tool exists, put numbered questions at the end.
+- [930] Ask every question, and every proposal to continue in a new session (offering to launch it), through an available permitted question tool, with one explanation and recommended option first; never as plain text. If no tool exists, put numbered questions at the end.
 - [1077] Finish requested work; ask at the end before optional scope: do it anyway, file in Dibs, skip, or type something else.
 - **Status line [1226].** End every FINAL reply with exactly one of: "Safe to archive this session." / "Continue in this session: <what and why>." / "Continue in a different session: <which and why>." / "Waiting on Andres: <input needed>." / "Waiting on other work: <what and when>." / "All planned work is done."
 - [1344] Use local Dibs ids and canonical conversation ids, names only as labels; describe ids once in user replies. Claim identity is <agent>:<session name>:<conversation id>.

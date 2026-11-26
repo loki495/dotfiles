@@ -5,6 +5,8 @@
 # A repeated stop allows with a warning. DIBS_STOP_GATE=off skips the gate; Dibs outages warn and allow.
 # A session whose exact cwd is registered in STOP_GATE_SKIP_DIR (fresh, user-owned entry) is skipped entirely.
 # DIBS_CLAIMS_CMD overrides the command (tests); it receives --held-by=<session id> appended.
+# Launch offer: "Continue in a different session" blocks once unless this turn called AskUserQuestion or the
+# session already launched one with sessioneer (stop-gate-launch.py; an unreadable transcript allows).
 # Lesson check: the first completion status of a session whose transcript shows work (an edit, a Dibs claim or
 # completion, a failed tool call) asks once for a draft lesson. Marker in STOP_GATE_STATE_DIR; if it cannot be
 # written nothing is asked. DIBS_LESSON_PROMPT=off disables it.
@@ -35,8 +37,21 @@ block_msg=$(jq -r '.systemMessage // empty' <<<"$block" 2>/dev/null)
 [ "${DIBS_STOP_GATE:-}" = off ] && { [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'; exit 0; }
 [ -n "$session" ] || exit 0
 
+offer=""
+if [ "$status" = 'Continue in a different session:' ] && [ "$active" != true ]; then
+  transcript=$(jq -r '.transcript_path // empty' <<<"$input")
+  if [ -f "$transcript" ] && [ "$("$(dirname "$0")/stop-gate-launch.py" "$transcript" 2>/dev/null)" = missing ]; then
+    offer='ask with AskUserQuestion whether to launch the next session (recommended option: launch now), and on yes launch it with sessioneer --rotate, which needs every claim released first'
+  fi
+fi
+
 warn() {
-  jq -n --arg m "${block_msg:+$block_msg | }$1" '{systemMessage: $m}'
+  if [ -n "$offer" ]; then
+    jq -n --arg r "A proposal to continue in a different session must offer to launch it (rule 930): $offer." \
+      --arg m "${block_msg:+$block_msg | }$1" '{decision: "block", reason: $r, systemMessage: $m}'
+  else
+    jq -n --arg m "${block_msg:+$block_msg | }$1" '{systemMessage: $m}'
+  fi
   exit 0
 }
 
@@ -78,8 +93,11 @@ lesson_due() {
 lesson="Lesson check (asked once per session): did an error, a correction, a blocked or failed action, or a better way come up that would prevent a repeat? If yes, search Dibs first (todo_search, one or two keywords, then a synonym, open and closed); add a recurrence comment to a match, else file a draft with todo_create: title 'Lesson: <do or avoid>', labels lesson, draft and fitting 'trigger <key>' labels, an idempotency key, the project's Area and Group, and body lines Summary (max 120 characters), Symptom, Cause, Do instead, Evidence, Confidence, Hits and Last seen, Expires (Dibs guide 2272). Keep the draft label and mention the id. Skip one-off facts that code or git history already record. If there is nothing, say 'No lesson to file.' Then end with your status line again, repeating any dibs block or [complete] line"
 
 if [ "$count" -eq 0 ] && [ -z "$idle" ]; then
-  if lesson_due; then
-    jq -n --arg r "$lesson." --arg m "$block_msg" '{decision: "block", reason: $r} + (if $m == "" then {} else {systemMessage: $m} end)'
+  reason=""
+  [ -n "$offer" ] && reason="A proposal to continue in a different session must offer to launch it (rule 930): $offer."
+  lesson_due && reason="${reason:+$reason Also, }$lesson."
+  if [ -n "$reason" ]; then
+    jq -n --arg r "$reason" --arg m "$block_msg" '{decision: "block", reason: $r} + (if $m == "" then {} else {systemMessage: $m} end)'
     exit 0
   fi
   [ -n "$block_msg" ] && jq -n --arg m "$block_msg" '{systemMessage: $m}'
@@ -99,6 +117,7 @@ if [ "$status" = 'Continue in a different session:' ]; then
 else
   [ "$count" -gt 0 ] && steps+=("output [complete <id> | sha=... tests=\"...\" | notes] or release with todo_release and a comment saying what is left")
 fi
+[ -n "$offer" ] && steps+=("$offer")
 [ -n "$idle" ] && steps+=("run sessioneer --reap to archive the idle claim-free ones, or archive them as the session-flow skill describes")
 reason="This session $problem. Fix everything in one pass: $(IFS=';'; printf '%s' "${steps[*]}" | sed 's/;/; and /')."
 lesson_due && reason="$reason Also, $lesson."
