@@ -243,11 +243,11 @@ Do:
 2. Name every session; prefix workers with `[worker] `. Start prompts with `Session name: <name>` and include model/effort, task/plan, paths and acceptance criteria.
 3. Use supported naming flags; on reassignment send the name first and update claim identity.
 
-## 1344@3 Rule: Use canonical record and session identities
+## 1344@6 Rule: Use canonical record and session identities
 When: Claiming or mentioning records/sessions.
 Do:
 1. Read identity checks in `orchestrator-worker/work-tracking.md`; use local Dibs ids and conversation ids, never GitHub ids/URLs or names alone. Unambiguous eight-character session prefixes are allowed.
-2. Describe each id once in user replies; group related ids.
+2. In user-facing updates, write each session reference as an inline Markdown link in the form `[Dashboard title](https://sessioneer.example/session?agent_session_id=conversation-id)`, using the exact title shown in the Sessioneer dashboard or archive as the label. Escape brackets and backslashes in titles when needed. Read the dashboard title so custom names take precedence. On the verified dashboard base URL, use `/session?agent_session_id=<conversation id>` so the same link opens the current live session or the archived transcript. If an active session has no conversation ID yet, use `/session?session=<tracked name>`. If a link or title is unavailable, identify the session by the most specific verified title, project, or Dibs task. Include an ID when the user needs it for a command or troubleshooting, and group related IDs.
 3. Claim as `<agent>:<session name>:<conversation id>`; first checkpoint includes identity/workdir/branch; update after reassignment.
 
 ## 1468@3 Rule: Choose independent personas for substantial coding work
@@ -264,11 +264,11 @@ Do:
 2. At 80, stop adding direct children; choose/create a themed sub-parent labelled `parent`.
 3. Never exceed 100; split full containers and move children with `todo_revise(parentId)` to repair stuck parent links.
 
-## 1772@1 Rule: Archive the sessions you spawned before finishing
+## 1772@2 Rule: Archive the sessions you spawned before finishing
 When: Launching a session or worker, or ending a session or continuation with a final status.
 Do:
 1. Record each session or worker you launch (name and conversation id) in the task checkpoint at launch.
-2. Before "Safe to archive this session." or "All planned work is done.", archive every session or worker you launched, including ones you replaced, once it is idle and holds no claim (`sessioneer --kill <name or id>`, never `--force` on a working or blocked one). A spawned session still working makes the status Waiting on other work.
+2. Before "Safe to archive this session." or "All planned work is done.", archive every session or worker you launched once it is idle and holds no claim (`sessioneer --kill <name or id>`, never `--force` on a working or blocked one). A session you replaced is archived by Sessioneer once it is linked (`--rotate`, `--replaces`, or the Claude continuation-link hook); kill it yourself only when no link exists. A spawned session still working makes the status Waiting on other work.
 3. Never archive another agent's session. Details in skill `session-flow`, "Clear what you spawned".
 
 ## 1853@2 Rule: Keep plans, notes and handoffs in Dibs, not as files
